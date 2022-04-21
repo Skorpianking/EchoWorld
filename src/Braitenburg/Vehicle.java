@@ -87,6 +87,13 @@ public class Vehicle extends SimulationBody {
         baseVehicle.addFixture(leftSensor);
         baseVehicle.addFixture(rightSensor);
         baseVehicle.setColor(Color.CYAN);
+
+        //Random rand = new Random();
+        int max = 15;
+        int min = -15;
+        Math.floor(Math.random()*(max-min+1)+min);
+        baseVehicle.translate(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min));
+
        // baseVehicle.setMass(new Mass(baseVehicle.getWorldCenter(),0.5,0.5)); // work in progress
     }
 
@@ -138,13 +145,13 @@ public class Vehicle extends SimulationBody {
             List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.raycast(ray, length, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
             for (RaycastResult<SimulationBody, BodyFixture> result : results) {
                 // draw the intersection
-                Vector2 point = result.getRaycast().getPoint();
-                g.setColor(Color.GREEN);
-                g.fill(new Ellipse2D.Double(
-                        point.x * rayScale - r * 0.5,
-                        point.y * rayScale - r * 0.5,
-                        r,
-                        r));
+                //Vector2 point = result.getRaycast().getPoint();
+             //   g.setColor(Color.GREEN);
+             //   g.fill(new Ellipse2D.Double(
+             //           point.x * rayScale - r * 0.5,
+             //           point.y * rayScale - r * 0.5,
+             //           r,
+             //           r));
                 objectsDetected.add(result.getBody());
                 detectingRay.add(ray);
             }
@@ -232,6 +239,7 @@ public class Vehicle extends SimulationBody {
                 }
 
             }
+
             // -- Right now ignore other objects, although this allows for obstacle avoidance in the future.
             // And, fun fact, dyn4j already allows rays to be blocked by other objects which is pretty cool.
             i++;
@@ -241,7 +249,6 @@ public class Vehicle extends SimulationBody {
     @Override
     public void render(Graphics2D g, double scale) {
         super.render(g, scale);
-
         // Following code block moves the vehicle
         if (this.driveVehicle.get()) {
             Vector2 normal1 = this.baseVehicle.getTransform().getTransformedR(new Vector2(0.0, 1.0));
@@ -261,7 +268,6 @@ public class Vehicle extends SimulationBody {
         double av = baseVehicle.getAngularVelocity();
         av = Interval.clamp(av, -maxTorque, maxTorque);
         baseVehicle.setAngularVelocity(av);
-
 
         // reset detected objects array
         objectsDetected.clear();

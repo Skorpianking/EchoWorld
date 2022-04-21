@@ -7,18 +7,19 @@ import org.dyn4j.world.World;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class Braitenberg extends SimulationFrame {
     /** The serial version id */
     private static final long serialVersionUID = -8518496222422955267L;
-    private ArrayList<SimulationBody> myVehicles = new ArrayList<>();
+    public ArrayList<SimulationBody> myVehicles = new ArrayList<>();
 
     /**
      * Constructor.
      */
     public Braitenberg() {
         super("Vehicles", 20);
-        for(int i = 0; i < 1; i++) {
+        for(int i = 0; i < 20; i++) {
             // Add my new vehicle class
             Vehicle test = new Vehicle(this.world);
             myVehicles.add(test);
