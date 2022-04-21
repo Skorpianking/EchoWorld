@@ -1,0 +1,22 @@
+<component name="libraryTable">
+  <library name="KotlinJavaRuntime">
+    <CLASSES>
+      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-stdlib.jar!/" />
+      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-reflect.jar!/" />
+      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-test.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/AFOSR Research Project/EchoWorld/dyn4j-4.2.1.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/AFOSR Research Project/EchoWorld/gluegen-rt-natives-macosx-universal.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/AFOSR Research Project/EchoWorld/gluegen-rt.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/AFOSR Research Project/EchoWorld/jogl-all-noawt-natives-macosx-universal.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/AFOSR Research Project/EchoWorld/jogl-all.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-stdlib-sources.jar!/" />
+      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-reflect-sources.jar!/" />
+      <root url="jar://$KOTLIN_BUNDLED$/lib/kotlin-test-sources.jar!/" />
+      <root url="jar://$USER_HOME$/Desktop/AFOSR Research Project/EchoWorld/gluegen-java-src.zip!/" />
+      <root url="jar://$USER_HOME$/Desktop/AFOSR Research Project/EchoWorld/jogl-java-src.zip!/" />
+    </SOURCES>
+  </library>
+</component>
