@@ -95,6 +95,7 @@ public class Braitenberg extends SimulationFrame {
 
         // Now move vehicles
         for(SimulationBody v : myVehicles) {
+            ((Vehicle)v).sense(g); // call to sense the world.
             ((Vehicle)v).decideAction(g); // must cast it so we can call the decideAction function.
             v.render(g,elapsedTime);
         }
