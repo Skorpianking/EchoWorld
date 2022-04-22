@@ -38,6 +38,8 @@ public class Vehicle extends SimulationBody {
     private Set<SimulationBody> objectsDetected = new HashSet<SimulationBody>();
     private ArrayList<Ray> detectingRay = new ArrayList<Ray>();
 
+    private int raycastUpdateCounter = 0;
+    private int RAYCASTUPDATERATE = 20;
 
     // These next items (combined) create the motion. Really, rotate is the important one, drive just
     // pushes the vehicle forward at a constant speed.
@@ -122,6 +124,10 @@ public class Vehicle extends SimulationBody {
         final double r = 4.0;
         final double length = SENSOR_RANGE;
         final double rayScale = 20;//48; // <-- this has to match the world scale, otherwise you get wonky results
+        raycastUpdateCounter++;
+        if (raycastUpdateCounter%RAYCASTUPDATERATE != 0)
+            return;
+
         Vector2 start = baseVehicle.getTransform().getTransformed(new Vector2(sensor_x, sensor_y));
 
         // array of values to "sweep" across -- hand jammed to get a reasonable sweep that doesn't eat too much processing time

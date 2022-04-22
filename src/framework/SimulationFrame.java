@@ -271,6 +271,7 @@ public abstract class SimulationFrame extends JFrame {
         this.last = time;
     	// convert from nanoseconds to seconds
     	double elapsedTime = (double)diff / NANO_TO_BASE;
+//    	System.out.println(elapsedTime);
 		
 		// render anything about the simulation (will render the World objects)
     	AffineTransform tx = g.getTransform();

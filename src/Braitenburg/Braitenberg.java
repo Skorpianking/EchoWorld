@@ -1,5 +1,7 @@
 package Braitenburg;
 
+/* Profiler: -XX:+UnlockCommercialFeatures -agentlib:hprof=cpu=samples,interval=10 */
+
 import framework.SimulationBody;
 import framework.SimulationFrame;
 import org.dyn4j.geometry.*;
@@ -19,7 +21,7 @@ public class Braitenberg extends SimulationFrame {
      */
     public Braitenberg() {
         super("Vehicles", 20);
-        for(int i = 0; i < 20; i++) {
+        for(int i = 0; i < 100; i++) {
             // Add my new vehicle class
             Vehicle test = new Vehicle(this.world);
             myVehicles.add(test);
@@ -30,7 +32,7 @@ public class Braitenberg extends SimulationFrame {
     @Override
     protected void initializeWorld() {
         this.world.setGravity(World.ZERO_GRAVITY);
-        int scale = 20; // this doesn't appear to be something you can pull from the world at this point.
+        int scale = 30; // this doesn't appear to be something you can pull from the world at this point.
 
         // add bounding shapes to the world, these are the walls
         SimulationBody right = new SimulationBody();
