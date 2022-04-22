@@ -106,14 +106,16 @@ public class Vehicle extends SimulationBody {
     /**
      *
      */
-    public void sense(Graphics2D g) {
+    public boolean sense(Graphics2D g) {
         if ((sensingUpdateCounter++)%SENSING_UPDATE_RATE != 0)
-            return;
+            return false;
 
         state.tick();
         // Following code block draws Rays out from each sensor and stores data into objectsDetected
         rayCasting(g, -0.50, 0.8, 0); // left sensor
         rayCasting(g, 0.50, 0.8, 1); // right sensor
+
+        return true;
     }
 
     /**

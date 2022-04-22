@@ -22,11 +22,15 @@ public class MyVehicle extends Vehicle {
      * Every vehicle senses the world
      * @param g
      */
-    public void sense(Graphics2D g){
+    public boolean sense(Graphics2D g){
         // Must update the base sensors first
-        super.sense(g);
+        boolean result = super.sense(g);
+        if (!result)
+            return result;
 
         // Place any other state updating you would like to do here:
+
+        return true;
     }
 
     /**
