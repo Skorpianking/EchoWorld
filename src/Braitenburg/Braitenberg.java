@@ -35,6 +35,7 @@ public class Braitenberg extends SimulationFrame {
         }
     }
 
+
     @Override
     protected void initializeWorld() {
         this.world.setGravity(World.ZERO_GRAVITY);
