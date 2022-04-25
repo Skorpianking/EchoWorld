@@ -13,9 +13,13 @@ import java.awt.*;
 public class MyVehicle extends Vehicle {
     private State state;
 
-    public MyVehicle(World<SimulationBody> myWorld) {
-        super(myWorld);
+    public MyVehicle() {
         state = new State();
+    }
+
+    public void initialize(World<SimulationBody> myWorld) {
+        super.initialize(myWorld);
+        baseVehicle.setColor(new Color(160,0,255));
     }
 
     /**
@@ -35,9 +39,9 @@ public class MyVehicle extends Vehicle {
 
     /**
      * For the UBF...
-     * @param g
      */
-    public void decideAction(Graphics2D g) {
-        super.decideAction(g);
+    public void decideAction() { //Graphics2D g) {
+        super.decideAction();
+
     }
 }

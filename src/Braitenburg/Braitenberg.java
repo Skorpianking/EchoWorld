@@ -19,11 +19,17 @@ public class Braitenberg extends SimulationFrame {
     /**
      * Constructor.
      */
-    public Braitenberg() {
+    public Braitenberg() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         super("Vehicles", 20);
-        for(int i = 0; i < 100; i++) {
+        Vehicle test = (Vehicle) Class.forName(new String("Braitenburg.MyVehicle")).newInstance();
+        System.out.println("Classname:" + test.getClass().getName());
+        test.initialize(this.world);
+        myVehicles.add(test);
+        this.world.addBody(test);
+        for(int i = 0; i < 5; i++) {
             // Add my new vehicle class
-            Vehicle test = new Vehicle(this.world);
+            test = new Vehicle();
+            test.initialize(this.world);
             myVehicles.add(test);
             this.world.addBody(test);
         }
@@ -96,7 +102,7 @@ public class Braitenberg extends SimulationFrame {
         // Now move vehicles
         for(SimulationBody v : myVehicles) {
             ((Vehicle)v).sense(g); // call to sense the world.
-            ((Vehicle)v).decideAction(g); // must cast it so we can call the decideAction function.
+            ((Vehicle)v).decideAction(); // must cast it so we can call the decideAction function.
             v.render(g,elapsedTime);
         }
     }
@@ -106,7 +112,11 @@ public class Braitenberg extends SimulationFrame {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        Braitenberg simulation = new Braitenberg();
-        simulation.run();
+        try {
+            Braitenberg simulation = new Braitenberg();
+            simulation.run();
+        } catch(Exception e) {
+            System.out.println("FAIL:" + e);
+        }
     }
 }

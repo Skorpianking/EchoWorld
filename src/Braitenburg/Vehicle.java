@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Vehicle extends SimulationBody {
     // Basic vehicle build
-    private SimulationBody baseVehicle;
+    protected SimulationBody baseVehicle;
     private double[] motors = {0.5,0.5}; // how much power the wheels have, capped between 0,1!
     private double leftSpeed = 0;
     private double rightSpeed = 0;
@@ -55,7 +55,10 @@ public class Vehicle extends SimulationBody {
     // Testing variables
     boolean FEAR = false;
 
-    public Vehicle(World<SimulationBody> myWorld) {
+    public Vehicle() {
+    }
+
+    public void initialize(World<SimulationBody> myWorld) {
         this.myWorld = myWorld;
 
         // Create our vehicle
@@ -124,7 +127,7 @@ public class Vehicle extends SimulationBody {
      * I anticipate that this will become the "intelligence" function
      *
      */
-    public void decideAction(Graphics2D g) {
+    public void decideAction() { //Graphics2D g) {
         // add intelligent code here -- for now, we are just doing Braitenberg things
 
         if ((actingUpdateCounter++)%ACTING_UPDATE_RATE != 0)
