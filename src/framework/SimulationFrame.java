@@ -85,19 +85,19 @@ public abstract class SimulationFrame extends JFrame {
 	private boolean stopped;
 	
 	/** The time stamp for the last iteration */
-	private long last;
+	public long last; // changed from private
 	
 	/** Tracking for the step number when in manual stepping mode */
-	private long stepNumber;
+	public long stepNumber; // changed from private
 	
 	// camera
 	
-	private final Camera camera;
+	public final Camera camera; // changed from private
 	
 	// interaction (mouse/keyboard)
 	
-	private final ToggleStateKeyboardInputHandler paused;
-	private final ToggleStateKeyboardInputHandler step;
+	public final ToggleStateKeyboardInputHandler paused; // changed from private
+	public final ToggleStateKeyboardInputHandler step; // changed from private
 	
 	private final MousePickingInputHandler picking;
 	private final MousePanningInputHandler panning;

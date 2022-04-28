@@ -39,7 +39,7 @@ public class Braitenberg extends SimulationFrame {
     @Override
     protected void initializeWorld() {
         this.world.setGravity(World.ZERO_GRAVITY);
-        int scale = 30; // this doesn't appear to be something you can pull from the world at this point.
+        int scale = 20; // this doesn't appear to be something you can pull from the world at this point.
 
         // add bounding shapes to the world, these are the walls
         SimulationBody right = new SimulationBody();
