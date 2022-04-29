@@ -4,8 +4,11 @@ package Braitenburg;
 
 import framework.SimulationBody;
 import framework.SimulationFrame;
+import org.dyn4j.dynamics.TimeStep;
 import org.dyn4j.geometry.*;
+import org.dyn4j.world.PhysicsWorld;
 import org.dyn4j.world.World;
+import org.dyn4j.world.listener.StepListener;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -21,20 +24,19 @@ public class Braitenberg extends SimulationFrame {
      */
     public Braitenberg() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         super("Vehicles", 20);
-        Vehicle test = (Vehicle) Class.forName(new String("Braitenburg.MyVehicle")).newInstance();
+        Vehicle test = (Vehicle) Class.forName(new String("Sample.MyVehicle")).newInstance();
         System.out.println("Classname:" + test.getClass().getName());
         test.initialize(this.world);
         myVehicles.add(test);
         this.world.addBody(test);
-        for(int i = 0; i < 5; i++) {
+//        for(int i = 0; i < 1; i++) {
             // Add my new vehicle class
-            test = new Vehicle();
-            test.initialize(this.world);
-            myVehicles.add(test);
-            this.world.addBody(test);
-        }
+//            test = new Vehicle();
+//            test.initialize(this.world);
+//            myVehicles.add(test);
+//            this.world.addBody(test);
+//        }
     }
-
 
     @Override
     protected void initializeWorld() {
@@ -92,6 +94,10 @@ public class Braitenberg extends SimulationFrame {
         polygon.translate(new Vector2(-2.0, 0));
         polygon.setMass(MassType.INFINITE);
         this.world.addBody(polygon);
+
+        CustomStepListener listen = new CustomStepListener();
+        listen.setUpdateRate(3);
+        this.world.addStepListener(listen);
     }
 
     /* (non-Javadoc)
@@ -99,13 +105,11 @@ public class Braitenberg extends SimulationFrame {
      */
     protected void render(Graphics2D g, double elapsedTime) {
         super.render(g, elapsedTime);
-
         // Now move vehicles
-        for(SimulationBody v : myVehicles) {
-            ((Vehicle)v).sense(g); // call to sense the world.
+/*        for(SimulationBody v : myVehicles) {
+            ((Vehicle)v).sense(); // call to sense the world.
             ((Vehicle)v).decideAction(); // must cast it so we can call the decideAction function.
-            v.render(g,elapsedTime);
-        }
+        }*/
     }
 
     /**
@@ -118,6 +122,42 @@ public class Braitenberg extends SimulationFrame {
             simulation.run();
         } catch(Exception e) {
             System.out.println("FAIL:" + e);
+        }
+    }
+
+
+
+    private class CustomStepListener implements StepListener {
+        private int UPDATE_RATE = 3;
+        private int updateCounter = 0;
+
+        @Override
+        public void begin(TimeStep timeStep, PhysicsWorld physicsWorld) {
+            if ((updateCounter++)%UPDATE_RATE != 0)
+                return;
+
+            // Now move vehicles
+            for(SimulationBody v : myVehicles) {
+                ((Vehicle)v).sense(); // call to sense the world.
+                Action act = ((Vehicle)v).decideAction(); // must cast it so we can call the decideAction function.
+                ((Vehicle)v).act(act);
+            }
+        }
+
+        @Override
+        public void updatePerformed(TimeStep timeStep, PhysicsWorld physicsWorld) {
+        }
+
+        @Override
+        public void postSolve(TimeStep timeStep, PhysicsWorld physicsWorld) {
+        }
+
+        @Override
+        public void end(TimeStep timeStep, PhysicsWorld physicsWorld) {
+        }
+
+        public void setUpdateRate(int rate) {
+            UPDATE_RATE = rate;
         }
     }
 }

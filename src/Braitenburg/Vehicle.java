@@ -1,8 +1,8 @@
 package Braitenburg;
 
-import framework.Graphics2DRenderer;
 import framework.SimulationBody;
 import org.dyn4j.dynamics.BodyFixture;
+import org.dyn4j.dynamics.joint.WeldJoint;
 import org.dyn4j.geometry.*;
 import org.dyn4j.world.DetectFilter;
 import org.dyn4j.world.World;
@@ -10,7 +10,6 @@ import org.dyn4j.world.result.RaycastResult;
 
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
-import java.awt.geom.Line2D;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,40 +24,31 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Vehicle extends SimulationBody {
     // Basic vehicle build
-    protected SimulationBody baseVehicle;
-    private double[] motors = {0.5,0.5}; // how much power the wheels have, capped between 0,1!
-    private double leftSpeed = 0;
-    private double rightSpeed = 0;
+    private SimulationBody baseVehicle;
+    private SimulationBody leftWheel;
+    private SimulationBody rightWheel;
 
-    private double maxVelocity = 2; // arbitrary right now
+    private Vector2 leftWheelLocation = new Vector2(-0.5, -0.5);
+    private Vector2 rightWheelLocation = new Vector2( 0.5, -0.5);
+
+    private double MAX_VELOCITY = 2; // arbitrary right now
+    private int MAX_TORQUE = 1; // how fast we can turn
     private int SENSOR_RANGE = 20; // how far the line casts go
-    private int maxTorque = 1; // how fast we can turn
-    private int TOLERANCE = 2; // how far "off" the target can be, allows us to home in on a target
+    private int TOLERANCE = 0; // how far "off" the target can be, allows us to home in on a target
 
     private State state;
 
-    // Update loop settings. Set separate sensing and acting rates
-    private int sensingUpdateCounter = 0;
-    private int SENSING_UPDATE_RATE = 10;
-
-    private int actingUpdateCounter = 0;
-    private int ACTING_UPDATE_RATE = 5;
-
-    // These next items (combined) create the motion. Really, rotate is the important one, drive just
-    // pushes the vehicle forward at a constant speed.
-    private final AtomicBoolean driveVehicle = new AtomicBoolean(true);
-    private final AtomicBoolean rotateVehicle = new AtomicBoolean(true);
-
     // Creates the world
-    World<SimulationBody> myWorld;
+    protected World<SimulationBody> myWorld;
 
     // Testing variables
     boolean FEAR = false;
+    private double[] motors = {0.5,0.5}; // how much power the wheels have, capped between 0,1!
 
     public Vehicle() {
     }
 
-    public void initialize(World<SimulationBody> myWorld) {
+    private void bulkInit(World<SimulationBody> myWorld) {
         this.myWorld = myWorld;
 
         // Create our vehicle
@@ -67,13 +57,6 @@ public class Vehicle extends SimulationBody {
         baseVehicle.addFixture(Geometry.createCircle(0.35));
         baseVehicle.setMass(MassType.NORMAL);
         myWorld.addBody(baseVehicle);
-
-        // -- "wheels"
-        Convex leftWheel = Geometry.createRectangle(.33, .5);
-        Convex rightWheel = Geometry.createRectangle(.33, .5);
-        // if we add these as-is to the body they will both be positioned at the center, so we have to offset them
-        leftWheel.translate(-.5,-.50);
-        rightWheel.translate(.5, -.50);
 
         // -- grabbers
         Convex leftGrabber = Geometry.createRectangle(.1, .2);
@@ -88,35 +71,63 @@ public class Vehicle extends SimulationBody {
         rightSensor.translate(.50, .8);
 
         // add to the vehicle -- note: these are like the portholes on a '57 chevy, they are just for looks
-        baseVehicle.addFixture(leftWheel);
-        baseVehicle.addFixture(rightWheel);
         baseVehicle.addFixture(leftGrabber);
         baseVehicle.addFixture(rightGrabber);
         baseVehicle.addFixture(leftSensor);
         baseVehicle.addFixture(rightSensor);
         baseVehicle.setColor(Color.CYAN);
 
+        // -- "wheels"
+        leftWheel = new SimulationBody();
+        leftWheel.addFixture(Geometry.createRectangle(.33, .5));
+        rightWheel = new SimulationBody();
+        rightWheel.addFixture(Geometry.createRectangle(.33, .5));
+        // if we add these as-is to the body they will both be positioned at the center, so we have to offset them
+        leftWheel.translate(-.5,-.50);
+        rightWheel.translate(.5, -.50);
+        // Set their mass to be light so that they move with the vehicle
+        leftWheel.setMass(MassType.NORMAL);
+        rightWheel.setMass(MassType.NORMAL);
+
+        myWorld.addBody(leftWheel);
+        myWorld.addBody(rightWheel);
+
+        // Add weld joints between wheels and body so that everything moves together
+        WeldJoint<SimulationBody> lw = new WeldJoint<>(baseVehicle, leftWheel, leftWheelLocation);
+        this.myWorld.addJoint(lw);
+
+        WeldJoint<SimulationBody> rw = new WeldJoint<>(baseVehicle, rightWheel, rightWheelLocation);
+        this.myWorld.addJoint(rw);
+
         //Random rand = new Random();
         int max = 15;
         int min = -15;
         Math.floor(Math.random()*(max-min+1)+min);
         baseVehicle.translate(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min));
+    }
 
-       // baseVehicle.setMass(new Mass(baseVehicle.getWorldCenter(),0.5,0.5)); // work in progress
+    public void initialize(World<SimulationBody> myWorld) {
+        bulkInit(myWorld);
         state = new State();
+    }
+
+    public void initialize(World<SimulationBody> myWorld, State s) {
+       // baseVehicle.setMass(new Mass(baseVehicle.getWorldCenter(),0.5,0.5)); // work in progress
+        bulkInit(myWorld);
+        state = s;
     }
 
     /**
      *
      */
-    public boolean sense(Graphics2D g) {
-        if ((sensingUpdateCounter++)%SENSING_UPDATE_RATE != 0)
-            return false;
-
+    public boolean sense() {
         state.tick();
         // Following code block draws Rays out from each sensor and stores data into objectsDetected
-        rayCasting(g, -0.50, 0.8, 0); // left sensor
-        rayCasting(g, 0.50, 0.8, 1); // right sensor
+        rayCasting(-0.50, 0.8, 0); // left sensor
+        rayCasting(0.50, 0.8, 1); // right sensor
+
+//        state.setHeading(baseVehicle.getWorldCenter()); // WorldCenter is the center of the vehicle
+        state.setVelocity(baseVehicle.getLinearVelocity()); // LinearVelocity captures heading and speed
 
         return true;
     }
@@ -127,27 +138,30 @@ public class Vehicle extends SimulationBody {
      * I anticipate that this will become the "intelligence" function
      *
      */
-    public void decideAction() { //Graphics2D g) {
+    public Action decideAction() { //Graphics2D g) {
+        Action result = new Action();
         // add intelligent code here -- for now, we are just doing Braitenberg things
 
-        if ((actingUpdateCounter++)%ACTING_UPDATE_RATE != 0)
-            return;
+
+        if (true) // Basically causing the entire block to get skipped. Just saving it in case we need it later....
+            return result;
 
         // The objectsDetected array contains all the detected objects for this time step.
         // As we iterate through the array, we can bias the vehicles direction
         double angle = 0;
         int i = 0;
-        // Cheesing this right now to make fewer code changes - just asking the state for the entire list
-        Set<SimulationBody> objectsDetected = state.getAllDetectedObjects();
+        List<SensedObject> sensedObjects = state.getSensedObjects();
 
-        for (SimulationBody obj : objectsDetected) {
-            if (obj instanceof Light) {
+        for (SensedObject obj : sensedObjects) {
+            if(obj.getType().equals("Light") ) {
+                angle = obj.getAngle()* 180 / Math.PI;;// conversion from radians to degrees
+
                 // Get the vector between the target and the vehicle's center of mass.  We also need
                 // the angle to be able to apply the right torque.
-                Vector2 headed = new Vector2(baseVehicle.getWorldCenter(), ((SimulationBody)obj).getWorldCenter());
+/*                Vector2 headed = new Vector2(baseVehicle.getWorldCenter(), obj.getHit()); //((SimulationBody)obj).getWorldCenter());
                 angle = headed.getAngleBetween(baseVehicle.getLinearVelocity()); // radians
                 angle = angle * 180 / Math.PI; // degrees
-
+*/
                 // Get angles from respective "sensors" -- since this isn't something dyn4j will let you do, we
                 // have to make an assumption.  If the sensors do not overlap, then we can say that the angle
                 // returned correlates to the side of the sensor.  Example. Positive angle (> 2) means the right side
@@ -157,7 +171,8 @@ public class Vehicle extends SimulationBody {
                 //System.out.println("angle: " + angle);
                 //System.out.println("magnitude: " + headed.getMagnitude());
 
-                if(angle > TOLERANCE) {
+                Vector2 headed = obj.getHeading();
+               if(angle > TOLERANCE) {
                     // Roughly:  right = motors[right]*headed.magnitude)
                     //System.out.println("Turn right");
                     if(!FEAR)
@@ -173,6 +188,7 @@ public class Vehicle extends SimulationBody {
                     else
                         baseVehicle.applyTorque(-motors[0]*headed.getMagnitude());
                 }
+
                 baseVehicle.setLinearVelocity(headed.add(baseVehicle.getLinearVelocity()));
             }
             else {
@@ -183,10 +199,11 @@ public class Vehicle extends SimulationBody {
                 // This is where we want to add some deflection (obstacle avoidance code)
                 // Get the vector between the target and the vehicle's center of mass.  We also need
                 // the angle to be able to apply the right torque.
-                Vector2 headed = new Vector2(baseVehicle.getWorldCenter(), ((SimulationBody)obj).getWorldCenter());
+/*                Vector2 headed = new Vector2(baseVehicle.getWorldCenter(), ((SimulationBody)obj).getWorldCenter());
                 angle = headed.getAngleBetween(baseVehicle.getLinearVelocity()); // radians
                 angle = angle * 180 / Math.PI; // degrees
-
+*/
+                Vector2 heading = obj.getHeading();
                 // Get angles from respective "sensors" -- since this isn't something dyn4j will let you do, we
                 // have to make an assumption.  If the sensors do not overlap, then we can say that the angle
                 // returned correlates to the side of the sensor.  Example. Positive angle (> 2) means the right side
@@ -196,11 +213,11 @@ public class Vehicle extends SimulationBody {
                 //System.out.println("angle: " + angle);
                 //System.out.println("magnitude: " + headed.getMagnitude());
 
-                if(angle > 0 && angle < 180 && headed.getMagnitude() < 5) {
+                if(angle > 0 && angle < 180 && heading.getMagnitude() < 5) {
                     // Roughly:  right = motors[right]*headed.magnitude)
                     baseVehicle.applyTorque(-Math.PI/4);
                 }
-                else if(angle < 0 && angle > -180 && headed.getMagnitude() < 5) {
+                else if(angle < 0 && angle > -180 && heading.getMagnitude() < 5) {
                     // Roughly:  right = motors[left]*headed.magnitude)
                     baseVehicle.applyTorque(Math.PI/4);
                 }
@@ -211,18 +228,18 @@ public class Vehicle extends SimulationBody {
             i++;
         }
         // System.out.println("I made a decision");
+        return result;
     }
 
     /**
      * Called from render.  Must provide it the coordinates of the specific sensor you want to ray cast
      * from. -- still very much a work in progress.
      *
-     * @param g
      * @param sensor_x
      * @param sensor_y
      * @param sensor_dir
      */
-    private void rayCasting(Graphics2D g, double sensor_x, double sensor_y, int sensor_dir) {
+    private void rayCasting(double sensor_x, double sensor_y, int sensor_dir) {
         final double r = 4.0;
         final double length = SENSOR_RANGE;
         final double rayScale = 20;//48; // <-- this has to match the world scale, otherwise you get wonky results
@@ -237,6 +254,7 @@ public class Vehicle extends SimulationBody {
 
         double x = 0.0;
         double y = 0.01;
+        SensedObject obj;
         for(double i : sweepValues) { //sweepValues) {
             // +- i is determined by directionality... so, we will add that as a temp variable until I discuss
             // some of these choices with Bert.
@@ -249,17 +267,19 @@ public class Vehicle extends SimulationBody {
 
             List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.raycast(ray, length, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
             for (RaycastResult<SimulationBody, BodyFixture> result : results) {
-                // draw the intersection
-                //Vector2 point = result.getRaycast().getPoint();
-             //   g.setColor(Color.GREEN);
-             //   g.fill(new Ellipse2D.Double(
-             //           point.x * rayScale - r * 0.5,
-             //           point.y * rayScale - r * 0.5,
-             //           r,
-             //           r));
-                // objectsDetected.add(result.getBody());
-                // detectingRay.add(ray);
-                state.addDetectedObject(result.getBody(),ray);
+                // Get the direction between the center of the vehicle and the impact point
+                Vector2 heading = new Vector2(baseVehicle.getWorldCenter(), result.getRaycast().getPoint());
+                double angle = heading.getAngleBetween(baseVehicle.getLinearVelocity()); // radians
+                double distance = result.getRaycast().getDistance();
+                String type;
+                if (result.getBody() instanceof Light) { // TODO: DAVE: Has to be a better way to do the light versus other object tagging
+                    type = new String("Light");
+                } else {
+                    type = new String("Obstacle");
+                }
+
+                obj = new SensedObject(heading, angle, distance, type, result.getRaycast().getPoint());
+                state.addSensedObject(obj);
             }
         }
     }
@@ -267,30 +287,76 @@ public class Vehicle extends SimulationBody {
     @Override
     public void render(Graphics2D g, double scale) {
         super.render(g, scale);
-        // Following code block moves the vehicle
-        if (this.driveVehicle.get()) {
-            Vector2 normal1 = this.baseVehicle.getTransform().getTransformedR(new Vector2(0.0, 1.0));
-            normal1.multiply(maxVelocity); // add to our position
-            baseVehicle.applyForce(normal1);
-        }
 
-        // make sure the linear velocity is already in the direction of the tank front
-        Vector2 normal = this.baseVehicle.getTransform().getTransformedR(new Vector2(0.0, 1.0));
-        double defl = baseVehicle.getLinearVelocity().dot(normal);
+        // draw the sensor intersections
+        final double r = 4.0;
+        final double length = SENSOR_RANGE;
+        final double rayScale = 20;//48; // <-- this has to match the world scale, otherwise you get wonky results
+        List<SensedObject> sensedObjects = state.getSensedObjects();
+        for (SensedObject obj : sensedObjects) {
+                Vector2 point = obj.getHit(); //result.getRaycast().getPoint();
+                g.setColor(Color.GREEN);
+                g.fill(new Ellipse2D.Double(
+                        point.x * rayScale - r * 0.5,
+                        point.y * rayScale - r * 0.5,
+                        r,
+                        r));
+        }
+    }
+
+    /**
+     *  Applies the action to the vehicle. Calculates the torque and force from the left and right wheel velocity
+     *  requests and then clamps them into a performance range.
+     *
+     * @param a Action being applied to the vehicle
+     */
+    public void act(Action a) {
+        double left = a.getLeftWheelVelocity();
+        double right = a.getRightWheelVelocity();
+
+        // Calculate Torque
+        Vector2 applyLeft = new Vector2(0.0, 1.0);
+        applyLeft.multiply(left);
+        Vector2 applyRight = new Vector2(0.0,1.0);
+        applyRight.multiply(right);
+        double torqueL = leftWheelLocation.cross(applyLeft);
+        double torqueR = rightWheelLocation.cross(applyRight);
+
+        System.out.println("Left Torque: " + torqueL + " Right Torque: " + torqueR);
+
+        // Apply torque to baseVehicle
+        double baseTorque = torqueL + torqueR;
+        baseVehicle.applyTorque(baseTorque);
+
+        // Constrain the vehicle to prevent spinning out of control
+        // Apply the forces in the direction the baseVehicle is facing
+        Vector2 baseNormal = baseVehicle.getTransform().getTransformedR(new Vector2(0.0,1.0));
+        baseNormal.multiply(left+right);
+        System.out.println(baseNormal);
+        baseVehicle.setLinearVelocity(baseNormal);
+
+        // Get the linear velocity in the direction of the baseVehicle's front
+        Vector2 clamp = this.baseVehicle.getTransform().getTransformedR(new Vector2(0.0, 1.0));
+        double defl = baseVehicle.getLinearVelocity().dot(clamp);
 
         // clamp the velocity
-        defl = Interval.clamp(defl, 0.5, maxVelocity);
-        baseVehicle.setLinearVelocity(normal.multiply(defl));
+        defl = Interval.clamp(defl, 0.0, MAX_VELOCITY);
+        baseVehicle.setLinearVelocity(baseNormal.multiply(defl));
 
         // clamp the angular velocity
         double av = baseVehicle.getAngularVelocity();
-        av = Interval.clamp(av, -maxTorque, maxTorque);
+        av = Interval.clamp(av, -MAX_TORQUE, MAX_TORQUE);
         baseVehicle.setAngularVelocity(av);
-
-        // reset detected objects array
-        // objectsDetected.clear();
     }
 
+    /**
+     * Set the color of the vehicle
+     *
+     * @param c Color
+     */
+    public void setColor(Color c) {
+        baseVehicle.setColor(c);
+    }
 }
 
 

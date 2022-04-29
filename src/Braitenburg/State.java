@@ -1,10 +1,14 @@
 package Braitenburg;
 
 import framework.SimulationBody;
+import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.geometry.Ray;
+import org.dyn4j.geometry.Vector2;
+import org.dyn4j.world.result.RaycastResult;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -12,32 +16,31 @@ import java.util.Set;
  */
 public class State {
 
-    // Using set to hold detectedObjects, set guarantees we will not have duplicates
-    private Set<SimulationBody> objectsDetected = new HashSet<SimulationBody>();
-    private ArrayList<Ray> detectingRay = new ArrayList<Ray>();
+    private ArrayList<SensedObject> sensedObjects = new ArrayList<SensedObject>();
+
+    private Vector2 heading = new Vector2();
+    private Vector2 velocity = new Vector2();
 
     /**
      * Each clock tick, clear the ray cast detected objects.
      */
     public void tick() {
-        objectsDetected.clear();
-        detectingRay.clear();
+        sensedObjects.clear();
     }
 
-    /**
-     * An object has been seen, update the state
-     * @param obj
-     * @param ray
-     */
-    public void addDetectedObject(SimulationBody obj, Ray ray) {
-        objectsDetected.add(obj);
-        detectingRay.add(ray);
+    public void setVelocity(Vector2 v) {
+        velocity = v;
     }
 
-    /**
-     *
-     */
-    public Set<SimulationBody> getAllDetectedObjects() {
-        return objectsDetected;
+    public Vector2 getVelocity() {
+        return velocity;
+    }
+
+    public void addSensedObject(SensedObject obj) {
+        this.sensedObjects.add(obj);
+    }
+
+    public List<SensedObject> getSensedObjects() {
+        return sensedObjects;
     }
 }
