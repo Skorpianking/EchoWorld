@@ -2,6 +2,8 @@ package behaviorFramework;
 
 import behaviorFramework.arbiters.HighestPriority;
 
+import Braitenburg.State;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

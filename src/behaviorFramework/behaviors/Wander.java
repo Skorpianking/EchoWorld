@@ -1,8 +1,9 @@
 package behaviorFramework.behaviors;
 
 import behaviorFramework.Action;
-import behaviorFramework.State;
 import behaviorFramework.Behavior;
+
+import Braitenburg.State;
 
 import java.util.Random;
 
@@ -19,11 +20,9 @@ public class Wander extends Behavior {
         Action action = new Action();
         Random rand = new Random();
 
-
-//        	System.out.println( "Ack! Im hitting a wall!" ) ;
-        	action.setLeftWheelVelocity(-8.0);
-        	action.setRightWheelVelocity(0.0);
-        	action.setVote( 10 ) ;
+        action.setLeftWheelVelocity(-8.0);
+        action.setRightWheelVelocity(0.0);
+        action.setVote( 10 ) ;
 
 		return action;
 	}

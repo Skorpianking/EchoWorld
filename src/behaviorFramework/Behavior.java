@@ -1,5 +1,7 @@
 package behaviorFramework;
 
+import Braitenburg.State;
+
 /**
  * All interchangable Behavior Units must conform to this standard interface
  * to be usable within the behavior framework.

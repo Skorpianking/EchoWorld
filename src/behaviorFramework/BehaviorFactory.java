@@ -1,7 +1,7 @@
 package behaviorFramework;
 
 import behaviorFramework.arbiters.SimplePriority;
-import behaviorFramework.behaviors.SittingDuck;
+import behaviorFramework.behaviors.NoOp;
 import behaviorFramework.behaviors.Wander;
 
 /**
@@ -30,9 +30,9 @@ public class BehaviorFactory {
 
 			cb.setArbitrationUnit(arbiter);
 			cb.add(new Wander());
-			cb.add(new SittingDuck());
+			cb.add(new NoOp());
 			return cb;
 		}
-		else return new SittingDuck();
+		else return new NoOp();
 	}
 }

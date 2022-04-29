@@ -1,20 +1,19 @@
 package Sample;
 
 import Braitenburg.Action;
-import Braitenburg.Light;
 import Braitenburg.SensedObject;
+import Braitenburg.State;
 import Braitenburg.Vehicle;
+import behaviorFramework.ArbitrationUnit;
+import behaviorFramework.CompositeBehavior;
+import behaviorFramework.arbiters.SimplePriority;
+import behaviorFramework.behaviors.NoOp;
+import behaviorFramework.behaviors.Wander;
 import framework.SimulationBody;
-import org.dyn4j.dynamics.BodyFixture;
-import org.dyn4j.geometry.Interval;
-import org.dyn4j.geometry.Vector2;
 import org.dyn4j.world.World;
-import org.dyn4j.world.result.RaycastResult;
 
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 
 /**
@@ -24,6 +23,8 @@ import java.util.Set;
 
 public class MyVehicle extends Vehicle {
     private MyState state;
+    private behaviorFramework.Action action = new behaviorFramework.Action();
+    CompositeBehavior behaviorTree;
 
     public MyVehicle() {
         state = new MyState();
@@ -32,6 +33,14 @@ public class MyVehicle extends Vehicle {
     public void initialize(World<SimulationBody> myWorld) {
         super.initialize(myWorld, state);
         setColor(new Color(160,0,255));
+
+        // Instantiate behaviorTree
+        ArbitrationUnit arbiter = new SimplePriority();
+        behaviorTree = new CompositeBehavior();
+
+        behaviorTree.setArbitrationUnit(arbiter);
+        behaviorTree.add(new Wander());
+        behaviorTree.add(new NoOp());
     }
 
     /**
@@ -39,9 +48,7 @@ public class MyVehicle extends Vehicle {
      */
     public boolean sense(){
         // Must update the base sensors first
-        boolean result = super.sense();
-        if (!result)
-            return result;
+        super.sense();
 
         // Place any other state updating you would like to do here:
         state.setMyMemory(6);
@@ -52,8 +59,12 @@ public class MyVehicle extends Vehicle {
     /**
      * For the UBF...
      */
-    public Action decideAction() { //Graphics2D g) {
-        Action result =  new Action();
+    public Action decideAction() {
+        action.clear();
+
+        // Get an action from the behaviorTree
+        behaviorTree.genAction(state);
+
         double angle;
         List<SensedObject> sensedObjects = state.getSensedObjects();
 
@@ -61,19 +72,15 @@ public class MyVehicle extends Vehicle {
             if(obj.getType().equals("Light") ) {
                 angle = obj.getAngle()* 180 / Math.PI;;// conversion from radians to degrees
                 state.getVelocity();
-/*                baseVehicle.applyTorque(0.1); // left
-                Vector2 normal = baseVehicle.getTransform().getTransformedR(new Vector2(0.0, 1.0));
-                normal.multiply(5);
-                baseVehicle.applyForce(normal);
-*/
+
 //                System.out.println("Velocity: " + state.getVelocity() + " Angle: " + angle);
             }
         }
 
-        result.setLeftWheelVelocity(1);
-        result.setRightWheelVelocity(1);
+        action.setLeftWheelVelocity(1);
+        action.setRightWheelVelocity(1);
 
-        return result;
+        return action;
     }
 }
 
