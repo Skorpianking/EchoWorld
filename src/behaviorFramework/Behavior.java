@@ -3,10 +3,8 @@ package behaviorFramework;
 import Braitenburg.State;
 
 /**
- * All interchangable Behavior Units must conform to this standard interface
- * to be usable within the behavior framework.
- *  
- * @author Brian Woolley - for use by AFIT/ENG - CSCE623 and CSCE723
+ * All Behaviors must return an action based on the state.
+ *
  */
 public class Behavior {
 	public Action genAction(State state) { return null; }

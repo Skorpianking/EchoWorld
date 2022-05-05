@@ -17,9 +17,11 @@ import java.util.Set;
 public class State {
 
     private ArrayList<SensedObject> sensedObjects = new ArrayList<SensedObject>();
-
-    private Vector2 heading = new Vector2();
     private Vector2 velocity = new Vector2();
+    private double leftWheelVelocity;
+    private double rightWheelVelocity;
+    private boolean holding;
+
 
     /**
      * Each clock tick, clear the ray cast detected objects.
@@ -42,5 +44,29 @@ public class State {
 
     public List<SensedObject> getSensedObjects() {
         return sensedObjects;
+    }
+
+    public void setRightWheelVelocity(double rightWheelVelocity) {
+        this.rightWheelVelocity = rightWheelVelocity;
+    }
+
+    public void setLeftWheelVelocity(double leftWheelVelocity) {
+        this.leftWheelVelocity = leftWheelVelocity;
+    }
+
+    public double getRightWheelVelocity() {
+        return rightWheelVelocity;
+    }
+
+    public double getLeftWheelVelocity() {
+        return leftWheelVelocity;
+    }
+
+    public void setHolding(boolean holding) {
+        this.holding = holding;
+    }
+
+    public boolean isHolding() {
+        return holding;
     }
 }

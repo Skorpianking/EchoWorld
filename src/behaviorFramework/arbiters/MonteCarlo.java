@@ -10,9 +10,8 @@ import java.util.Random;
 /**
  * The MonteCarlo arbitration method randomly selects actions from a
  * weighted distribution of the action's vote * an internal weight.
- * The selected action is ecacted for 20 game turns.
- * 
- * @author Brian Woolley - for use by AFIT/ENG
+ * The selected action is returned for 20 iterations.
+ *
  */
 public class MonteCarlo extends ArbitrationUnit {
 	Random rand = new Random();

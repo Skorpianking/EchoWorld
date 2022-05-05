@@ -314,6 +314,9 @@ public class Vehicle extends SimulationBody {
         double left = a.getLeftWheelVelocity();
         double right = a.getRightWheelVelocity();
 
+        state.setLeftWheelVelocity(left);
+        state.setRightWheelVelocity(right);
+
         // Calculate Torque
         Vector2 applyLeft = new Vector2(0.0, 1.0);
         applyLeft.multiply(left);

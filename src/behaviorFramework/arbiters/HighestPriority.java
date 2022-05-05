@@ -9,8 +9,7 @@ import java.util.Collection;
 /**
  * This arbiter selects the action with the highest priority, (if it voted)
  * winner takes all.   --if (vote > 0) priority = weight
- *  
- * @author Brian Woolley - for use by AFIT/ENG
+ *
  */
 public class HighestPriority extends ArbitrationUnit {
 

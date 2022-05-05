@@ -7,10 +7,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * This arbiter selects the action with the highest utility value, winner takes all.
+ * This arbiter selects the action with the highest utility value.
  *  (utility = action.getVote * weight)
- *  
- * @author Brian Woolley - for use by AFIT/ENG
+ *
  */
 public class HighestActivation extends ArbitrationUnit {
 

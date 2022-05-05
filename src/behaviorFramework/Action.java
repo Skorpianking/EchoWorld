@@ -26,6 +26,14 @@ public class Action extends Braitenburg.Action {
 		this.setVote(0.0);
 	}
 
+	public Action () {
+		f_vote = 0.0;
+	}
+
+	public Action(Action a) {
+		//super(a);
+		this.f_vote = a.f_vote;
+	}
 	private boolean allStopRequested = false;
 
 }

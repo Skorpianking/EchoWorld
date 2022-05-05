@@ -63,8 +63,9 @@ public class MyVehicle extends Vehicle {
         action.clear();
 
         // Get an action from the behaviorTree
-        behaviorTree.genAction(state);
+        action = behaviorTree.genAction(state);
 
+        System.out.println("Action: " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
         double angle;
         List<SensedObject> sensedObjects = state.getSensedObjects();
 
@@ -76,9 +77,6 @@ public class MyVehicle extends Vehicle {
 //                System.out.println("Velocity: " + state.getVelocity() + " Angle: " + angle);
             }
         }
-
-        action.setLeftWheelVelocity(1);
-        action.setRightWheelVelocity(1);
 
         return action;
     }

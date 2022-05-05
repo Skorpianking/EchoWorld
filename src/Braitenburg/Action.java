@@ -3,9 +3,17 @@ package Braitenburg;
 public class Action {
     private double leftWheelVelocity; // {-1..1}
     private double rightWheelVelocity; // {-1..1}
+    private boolean grab;
 
     public Action() {
         leftWheelVelocity = rightWheelVelocity = 0.0;
+        grab = false;
+    }
+
+    public Action(Action a) {
+        this.leftWheelVelocity = a.leftWheelVelocity;
+        this.rightWheelVelocity = a.rightWheelVelocity;
+        this.grab = a.grab;
     }
 
     public void setLeftWheelVelocity(double leftWheelVelocity) {
@@ -24,11 +32,19 @@ public class Action {
         this.rightWheelVelocity = rightWheelVelocity;
     }
 
+    public void setGrab(boolean grab) {
+        this.grab = grab;
+    }
+
     public double getLeftWheelVelocity() {
         return leftWheelVelocity;
     }
 
     public double getRightWheelVelocity() {
         return rightWheelVelocity;
+    }
+
+    public boolean isGrab() {
+        return grab;
     }
 }
