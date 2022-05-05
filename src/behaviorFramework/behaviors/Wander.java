@@ -18,6 +18,8 @@ import java.util.Random;
 public class Wander extends Behavior {
     private double ST_DEV = 0.2;
 
+    // Vote = 1
+
     public Action genAction(State state) {
         assert (state != null);
 

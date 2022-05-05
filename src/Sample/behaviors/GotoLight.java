@@ -10,7 +10,11 @@ import java.util.List;
 
 public class GotoLight extends Behavior {
     private double lastSeenAngle = 0.0;
-    private int lastSeenCounter = 0;
+    private int lastSeenCounter = 0; // Set to 5 when seen
+
+    // Vote = 1
+    // Angle limit = 75 deg
+    // motor outputs are 1 and 1 - angle in radians
 
     public Action genAction(State state) {
         assert (state != null);

@@ -1,15 +1,9 @@
 package Braitenburg;
 
-import framework.SimulationBody;
-import org.dyn4j.dynamics.BodyFixture;
-import org.dyn4j.geometry.Ray;
 import org.dyn4j.geometry.Vector2;
-import org.dyn4j.world.result.RaycastResult;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * State object for vehicle's memory
