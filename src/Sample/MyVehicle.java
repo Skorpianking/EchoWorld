@@ -1,9 +1,8 @@
 package Sample;
 
 import Braitenburg.Action;
-import Braitenburg.SensedObject;
-import Braitenburg.State;
 import Braitenburg.Vehicle;
+import Sample.behaviors.AvoidObstacle;
 import behaviorFramework.ArbitrationUnit;
 import behaviorFramework.CompositeBehavior;
 import behaviorFramework.arbiters.SimplePriority;
@@ -13,8 +12,6 @@ import framework.SimulationBody;
 import org.dyn4j.world.World;
 
 import java.awt.*;
-import java.util.List;
-
 
 /**
  * Sample Vehicle
@@ -39,6 +36,7 @@ public class MyVehicle extends Vehicle {
         behaviorTree = new CompositeBehavior();
 
         behaviorTree.setArbitrationUnit(arbiter);
+        behaviorTree.add(new AvoidObstacle());
         behaviorTree.add(new Wander());
         behaviorTree.add(new NoOp());
     }
@@ -57,7 +55,8 @@ public class MyVehicle extends Vehicle {
     }
 
     /**
-     * For the UBF...
+     * Call the behavior framework
+     *
      */
     public Action decideAction() {
         action.clear();
@@ -65,18 +64,7 @@ public class MyVehicle extends Vehicle {
         // Get an action from the behaviorTree
         action = behaviorTree.genAction(state);
 
-        System.out.println("Action: " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
-        double angle;
-        List<SensedObject> sensedObjects = state.getSensedObjects();
-
-        for (SensedObject obj : sensedObjects) {
-            if(obj.getType().equals("Light") ) {
-                angle = obj.getAngle()* 180 / Math.PI;;// conversion from radians to degrees
-                state.getVelocity();
-
-//                System.out.println("Velocity: " + state.getVelocity() + " Angle: " + angle);
-            }
-        }
+        System.out.println(action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
 
         return action;
     }

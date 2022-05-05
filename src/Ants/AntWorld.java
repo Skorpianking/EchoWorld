@@ -1,12 +1,7 @@
 package Ants;
 
-import Braitenburg.Braitenberg;
-import Braitenburg.Light;
-import Braitenburg.Vehicle;
 import framework.SimulationBody;
 import framework.SimulationFrame;
-import org.dyn4j.collision.Filter;
-import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.geometry.Geometry;
 import org.dyn4j.geometry.MassType;
 import org.dyn4j.geometry.Vector2;
@@ -74,6 +69,7 @@ public class AntWorld extends SimulationFrame {
         right.addFixture(Geometry.createRectangle(0.2, 40+scale));
         right.setMass(MassType.INFINITE);
         right.translate(16.65+scale*1.16, 7);
+        right.setUserData(new String("Obstacle"));
         this.world.addBody(right);
 
         SimulationBody left = new SimulationBody();
@@ -81,6 +77,7 @@ public class AntWorld extends SimulationFrame {
         left.addFixture(Geometry.createRectangle(0.2, 40+scale));
         left.setMass(MassType.INFINITE);
         left.translate(-16.65-scale*1.16, 7);
+        left.setUserData(new String("Obstacle"));
         this.world.addBody(left);
 
         SimulationBody top = new SimulationBody();
@@ -88,6 +85,7 @@ public class AntWorld extends SimulationFrame {
         top.addFixture(Geometry.createRectangle(40+scale*2, 0.2));
         top.setMass(MassType.INFINITE);
         top.translate(0, 8.25+scale*0.58);
+        top.setUserData(new String("Obstacle"));
         this.world.addBody(top);
 
         SimulationBody bottom = new SimulationBody();
@@ -95,10 +93,11 @@ public class AntWorld extends SimulationFrame {
         bottom.addFixture(Geometry.createRectangle(40+scale*2, 0.2));
         bottom.setMass(MassType.INFINITE);
         bottom.translate(0, -8.25-scale*0.58);
+        bottom.setUserData(new String("Obstacle"));
         this.world.addBody(bottom);
 
         // Light (a polygon)
-        Light newLight = new Light();
+        SimulationBody newLight = new SimulationBody();
         newLight.setColor(Color.yellow);
         newLight.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
         newLight.translate(new Vector2(-8.0-scale*.5, -5-scale*.5));
@@ -106,11 +105,12 @@ public class AntWorld extends SimulationFrame {
         this.world.addBody(newLight);
 
         // Extra light
-        Light extraLight = new Light();
+        SimulationBody extraLight = new SimulationBody();
         extraLight.setColor(Color.yellow);
         extraLight.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
         extraLight.translate(new Vector2(8.0+scale*.5, 5+scale*0.5));
         extraLight.setMass(MassType.INFINITE);
+        extraLight.setUserData(new String("Light"));
         this.world.addBody(extraLight);
 
         // Obstacle
@@ -119,6 +119,7 @@ public class AntWorld extends SimulationFrame {
         polygon.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
         polygon.translate(new Vector2(-2.0, 0));
         polygon.setMass(MassType.INFINITE);
+        polygon.setUserData(new String("UNKNOWN"));
         this.world.addBody(polygon);
     }
 

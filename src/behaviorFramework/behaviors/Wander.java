@@ -35,6 +35,7 @@ public class Wander extends Behavior {
         action.setLeftWheelVelocity(left);
         action.setRightWheelVelocity(right);
         action.setVote( 10 ) ;
+        action.name = new String("Wander");
 
 		return action;
 	}

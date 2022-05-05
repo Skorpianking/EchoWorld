@@ -20,8 +20,10 @@ public class SimplePriority extends ArbitrationUnit {
 		// Accept the first action with  a non-zero vote
 		//
 		for(Action a : actionSet) {
-			if (a.getVote() != 0) action = a;
-			break;
+			if (a.getVote() != 0) {
+				action = a;
+				break;
+			}
 		}
 
 		// returns a noOp if no action in the set votes

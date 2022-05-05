@@ -9,7 +9,9 @@ package behaviorFramework;
  * @author Brian Woolley - for use by AFIT/ENG - CSCE623 and CSCE723
  */
 public class Action extends Braitenburg.Action {
-	
+
+	public String name;
+
 	//--------------------------------------------------Vote
 	private double f_vote = 0.0;
 	public double getVote() {
