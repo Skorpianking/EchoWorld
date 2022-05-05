@@ -24,19 +24,22 @@ public class AvoidObstacle extends Behavior {
         Action action = new Action();
         List<SensedObject> sensedObjects = state.getSensedObjects();
 
-        double angle = 0;
         action.name = new String("AvoidObstacle");
+
+        double angle = 0;
+        double heading = 0;
         for (SensedObject obj : sensedObjects) {
             angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
+            heading = state.getVelocity().getDirection();
 
             if (angle > 0 && angle < 75 && obj.getDistance() < 3) { // Obstacle on right
                 action.setRightWheelVelocity(0.7);
                 action.setLeftWheelVelocity(0.01);
-                action.setVote(100);
+                action.setVote(1);
             } else if (angle < 0 && angle > -75 && obj.getDistance() < 3) { // Obstacle on left
                 action.setRightWheelVelocity(0.01);
                 action.setLeftWheelVelocity(0.7);
-                action.setVote(100);
+                action.setVote(1);
             }
         }
 

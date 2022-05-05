@@ -34,6 +34,11 @@ public class State {
         velocity = v;
     }
 
+    /*
+     * Returns vehicles current velocity.
+     * Call .getDirection() on this to get the current heading
+     * (vel.getDirection()*180)/Math.PI will provide heading in degrees
+     */
     public Vector2 getVelocity() {
         return velocity;
     }
