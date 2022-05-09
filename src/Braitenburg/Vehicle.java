@@ -33,6 +33,12 @@ public class Vehicle extends SimulationBody {
 
     private State state;
 
+    // array of values to "sweep" across -- hand jammed to get a reasonable sweep that doesn't eat too much processing time
+    double[] sweepValues = {0.0, 0.0001, 0.0010, 0.0020, 0.0040, 0.0060, 0.0080, 0.0100, 0.0110, 0.0120, 0.0140, 0.0160, 0.0180,
+            0.0200, 0.0220, 0.240, 0.260, 0.280, 0.300, 0.320, 0.340, 0.360, 0.380, 0.400, 0.420, 0.440, 0.460, 0.480, 0.500,
+            0.0520, 0.0540, 0.560, 0.580, 0.600, 0.620, 0.640, 0.660, 0.680, 0.700, 0.720, 0.740, 0.760, 0.780, 0.800, 0.820,
+            0.0840, 0.0860, 0.880, 0.900, 0.920, 0.940, 0.960, 0.980, 1.00};
+
     // Creates the world
     protected World<SimulationBody> myWorld;
 
@@ -139,95 +145,6 @@ public class Vehicle extends SimulationBody {
     public Action decideAction() { //Graphics2D g) {
         Action result = new Action();
 
-        if (true) // Basically causing the entire block to get skipped. Just saving it in case we need it later....
-            return result;
-
-        // add intelligent code here -- for now, we are just doing Braitenberg things
-
-
-        // The objectsDetected array contains all the detected objects for this time step.
-        // As we iterate through the array, we can bias the vehicles direction
-        double angle = 0;
-        List<SensedObject> sensedObjects = state.getSensedObjects();
-
-        for (SensedObject obj : sensedObjects) {
-            if(obj.getType().equals("Light") ) {
-                angle = obj.getAngle()* 180 / Math.PI;;// conversion from radians to degrees
-
-                // Get the vector between the target and the vehicle's center of mass.  We also need
-                // the angle to be able to apply the right torque.
-/*                Vector2 headed = new Vector2(baseVehicle.getWorldCenter(), obj.getHit()); //((SimulationBody)obj).getWorldCenter());
-                angle = headed.getAngleBetween(baseVehicle.getLinearVelocity()); // radians
-                angle = angle * 180 / Math.PI; // degrees
-*/
-                // Get angles from respective "sensors" -- since this isn't something dyn4j will let you do, we
-                // have to make an assumption.  If the sensors do not overlap, then we can say that the angle
-                // returned correlates to the side of the sensor.  Example. Positive angle (> 2) means the right side
-                // sensor detected the object, negative angle (<2) indicates the left side sensor detected it.
-                // getMagnitude() tells me how "far" the object is away from center of mass, this could help
-                // with any type of intensity settings for light, e.g. closer = stronger pull, or stronger resistance
-                //System.out.println("angle: " + angle);
-                //System.out.println("magnitude: " + headed.getMagnitude());
-
-                double[] motors = {0.5,0.5}; // how much power the wheels have, capped between 0,1!
-                boolean FEAR = false;
-
-                Vector2 headed = obj.getHeading();
-               if(angle > TOLERANCE) {
-                    // Roughly:  right = motors[right]*headed.magnitude)
-                    //System.out.println("Turn right");
-                    if(!FEAR)
-                        baseVehicle.applyTorque(-motors[0]*headed.getMagnitude());
-                    else
-                        baseVehicle.applyTorque(motors[0]*headed.getMagnitude());
-                }
-                else if(angle < -TOLERANCE) {
-                    // Roughly:  right = motors[left]*headed.magnitude)
-                    //System.out.println("Turn left");
-                    if(!FEAR)
-                        baseVehicle.applyTorque(motors[0]*headed.getMagnitude());
-                    else
-                        baseVehicle.applyTorque(-motors[0]*headed.getMagnitude());
-                }
-
-                baseVehicle.setLinearVelocity(headed.add(baseVehicle.getLinearVelocity()));
-            }
-            else {
-                // -- Ideally this would be some type of small vector added to the overall vehicle's movement
-                // this would prevent fighting between going towards/away from a light source and the obstacle
-                // itself.  Also, ideally, we would only care if the obstacle is truly in the way, like a collision.
-
-                // This is where we want to add some deflection (obstacle avoidance code)
-                // Get the vector between the target and the vehicle's center of mass.  We also need
-                // the angle to be able to apply the right torque.
-/*                Vector2 headed = new Vector2(baseVehicle.getWorldCenter(), ((SimulationBody)obj).getWorldCenter());
-                angle = headed.getAngleBetween(baseVehicle.getLinearVelocity()); // radians
-                angle = angle * 180 / Math.PI; // degrees
-*/
-                Vector2 heading = obj.getHeading();
-                // Get angles from respective "sensors" -- since this isn't something dyn4j will let you do, we
-                // have to make an assumption.  If the sensors do not overlap, then we can say that the angle
-                // returned correlates to the side of the sensor.  Example. Positive angle (> 2) means the right side
-                // sensor detected the object, negative angle (<2) indicates the left side sensor detected it.
-                // getMagnitude() tells me how "far" the object is away from center of mass, this could help
-                // with any type of intensity settings for light, e.g. closer = stronger pull, or stronger resistance
-                //System.out.println("angle: " + angle);
-                //System.out.println("magnitude: " + headed.getMagnitude());
-
-                if(angle > 0 && angle < 180 && heading.getMagnitude() < 5) {
-                    // Roughly:  right = motors[right]*headed.magnitude)
-                    baseVehicle.applyTorque(-Math.PI/4);
-                }
-                else if(angle < 0 && angle > -180 && heading.getMagnitude() < 5) {
-                    // Roughly:  right = motors[left]*headed.magnitude)
-                    baseVehicle.applyTorque(Math.PI/4);
-                }
-            }
-
-            // -- Right now ignore other objects, although this allows for obstacle avoidance in the future.
-            // And, fun fact, dyn4j already allows rays to be blocked by other objects which is pretty cool.
-        }
-        // System.out.println("I made a decision");
         return result;
     }
 
@@ -244,11 +161,7 @@ public class Vehicle extends SimulationBody {
 
         Vector2 start = baseVehicle.getTransform().getTransformed(new Vector2(sensor_x, sensor_y));
 
-        // array of values to "sweep" across -- hand jammed to get a reasonable sweep that doesn't eat too much processing time
-        double[] sweepValues = {0.0, 0.0001, 0.0010, 0.0020, 0.0040, 0.0060, 0.0080, 0.0100, 0.0110, 0.0120, 0.0140, 0.0160, 0.0180,
-        0.0200, 0.0220, 0.240, 0.260, 0.280, 0.300, 0.320, 0.340, 0.360, 0.380, 0.400, 0.420, 0.440, 0.460, 0.480, 0.500,
-        0.0520, 0.0540, 0.560, 0.580, 0.600, 0.620, 0.640, 0.660, 0.680, 0.700, 0.720, 0.740, 0.760, 0.780, 0.800, 0.820,
-        0.0840, 0.0860, 0.880, 0.900, 0.920, 0.940, 0.960, 0.980, 1.00};
+
 
         double x = 0.0;
         double y = 0.01;

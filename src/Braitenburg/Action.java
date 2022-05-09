@@ -1,5 +1,15 @@
 package Braitenburg;
 
+/**
+ * The action includes all of the vehicles actuators.
+ *
+ * Action components: LeftWheelVelocity, RightWheelVelocity, Grab
+ *
+ * NOTE: Any additions to this require the 4 behaviorFramework
+ * fusion arbiters to be updated (ActivationFusion, CommandFusion,
+ * PriorityFusion, and UtilityFusion)
+ *
+ */
 public class Action {
     private double leftWheelVelocity; // {-1..1}
     private double rightWheelVelocity; // {-1..1}

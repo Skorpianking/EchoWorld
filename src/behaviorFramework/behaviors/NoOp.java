@@ -7,7 +7,7 @@ import Braitenburg.State;
 
 /**
  * This is a do nothing sample behavior.  It will always vote to stop the
- * motion of the vehicle.
+ * motion of the vehicle.d
  *
  */
  

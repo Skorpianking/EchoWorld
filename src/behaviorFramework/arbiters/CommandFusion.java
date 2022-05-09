@@ -12,12 +12,9 @@ import java.util.Collection;
  * 
  * The strength of each contributing (non-zero) sub-action is scaled
  * the contributing actions weight: (i.e. velocity += velocity[i] * w[i])
- * 
- * The new action is given the highest overall utility value.
- * The AllStop command is meaningless and is ignored.
- * The Scan command is issued regardless.
- * 
- * @author Brian Woolley - for use by AFIT/ENG
+ *
+ * Action components: LeftWheelVelocity, RightWheelVelocity, Grab
+ *
  */
 public class CommandFusion extends ArbitrationUnit {
 
@@ -39,59 +36,41 @@ public class CommandFusion extends ArbitrationUnit {
 		
 		double maxVote = 0.0;
 		
-		double velocity = 0.0;
-		double turnRate = 0.0;
-		double gunTurnRate = 0.0;
-		double firePower = 0.0;
-		double radarTurn = 0.0;
+		double leftWheel = 0.0;
+		double rightWheel = 0.0;
+		boolean grab = false;
 
-		double uVelocity 	= 0.0;
-		double uTurnRate	= 0.0;
-		double uGunTurn 	= 0.0;
-		double uFirePower	= 0.0;
-		double uRadarTurn 	= 0.0;
-/*
+		double uLeftWheel 	= 0.0;
+		double uRightWheel	= 0.0;
+		double uGrab 	= 0.0;
+
 		for(Action a : actionSet) {
 			double utility =  a.getVote() * w.get(actionIndex);
 			if (a.getVote() > maxVote) maxVote = a.getVote();
 
-			if (a.isVelocitySet())
+			if (a.getLeftWheelVelocity() != 0.0)
 			{
-				velocity += a.getVelocity() * utility;
-				uVelocity += utility;
+				leftWheel += a.getLeftWheelVelocity() * utility;
+				uLeftWheel += utility;
 			}
-			if (a.isTurnRateSet())
+			if (a.getRightWheelVelocity() != 0.0)
 			{
-				turnRate += a.getTurnRate() * utility;
-				uTurnRate += utility;
+				rightWheel += a.getRightWheelVelocity() * utility;
+				uRightWheel += utility;
 			}
-			if (a.isGunRotationSet())
+			if (a.isGrab())
 			{
-				gunTurnRate += a.getGunRotation() * utility;
-				uGunTurn += utility;
+				grab = true;
+				uGrab += utility;
 			}
-			if (a.isFirePowerSet())
-			{
-				firePower += a.getFirePower() * utility;
-				uFirePower += utility;
-			}
-			if (a.isRadarRotationSet())
-			{
-				radarTurn += a.getRadarRotation() * utility;
-				uRadarTurn += utility;			
-			}
-			if (a.isScanSet())
-				action.scan();
 			actionIndex++;
 		}
 		
 		action.setVote(maxVote);
-		action.setVelocity(velocity/uVelocity);
-		action.setTurnRate(turnRate/uTurnRate);
-		action.setGunRotation(gunTurnRate/uGunTurn);
-		action.setFireGun(firePower/uFirePower);
-		action.setRadarRotation(radarTurn/uRadarTurn);
-	*/
+		action.setLeftWheelVelocity(leftWheel/uLeftWheel);
+		action.setRightWheelVelocity(rightWheel/uRightWheel);
+		action.setGrab(grab);
+
 		return action;
 	}
 }
