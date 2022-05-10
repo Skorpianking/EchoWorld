@@ -1,14 +1,19 @@
 package Ants;
 
+import Ants.Behaviors.GoHome;
+import Ants.Behaviors.GotoResource;
+import Braitenburg.Action;
+import Braitenburg.SensedObject;
+import Braitenburg.State;
+import Sample.behaviors.AvoidObstacle;
+import behaviorFramework.ArbitrationUnit;
+import behaviorFramework.CompositeBehavior;
+import behaviorFramework.arbiters.HighestActivation;
+import behaviorFramework.arbiters.HighestPriority;
+import behaviorFramework.behaviors.Wander;
 import framework.SimulationBody;
-import framework.SimulationFrame;
-import org.dyn4j.dynamics.BodyFixture;
-import org.dyn4j.geometry.Geometry;
-import org.dyn4j.geometry.Interval;
-import org.dyn4j.geometry.MassType;
-import org.dyn4j.geometry.Vector2;
+import org.dyn4j.geometry.*;
 import org.dyn4j.world.World;
-
 import java.awt.*;
 import java.util.*;
 
@@ -17,40 +22,33 @@ public class Ant extends SimulationBody {
     String id;
     ArrayList<Resource> reservoir = new ArrayList<>();
 
-    // Boid-ish vectors to help with new movement
-    Vector2 position;      // position of Agent_Ant in 2d space
-    Vector2 velocity;      // velocity of Agent_Ant (2D vector)
-    Vector2 acceleration;    // acceleration of Agent_Ant (2D vector)
-    boolean headedHome = false;
+    // UBF assist, I can also envision this helping with Echo behaviors
+    private State state = new EchoAgentState();
+    private behaviorFramework.Action action = new behaviorFramework.Action();
+    CompositeBehavior behaviorTree;
 
     // Extra variables to track the ants
     private boolean alive = true;
-    private int lifespan = 1000000;
-    private double x_pos;
-    private double y_pos;
-    private Vector2 home; // where the colony "resides" in the space.
-    float maxspeed = 5;    // default speed for an Ant
-    float maxforce = 0.05f;    // steering force for the Ant
-
-    //  Separation and alignment variables
-    float sepDist = 10f;
-    float alignDist = 10f;
+    private int lifespan = 2000;
+    private Vector2 home; // where the ant's home is
 
     // Actual ant "body" for the world to paint
     private SimulationBody basicAnt;
+    private Vector2 leftWheelLocation = new Vector2(-0.5, -0.5); // holdovers from vehicle class, right now
+    private Vector2 rightWheelLocation = new Vector2( 0.5, -0.5); // I don't want to rehash the physics to turn the ant
 
     // All taken from the cue basicAnt class template
     // 2.25 in diameter = 0.028575 m radius
-    final double ballRadius = 0.028575;
+    final double ballRadius = 0.25; //0.1; //0.028575;
     // 0.126 oz/in^3 = 217.97925 kg/m^3
     final double ballDensity = 217.97925;
     final double ballFriction = 0.00;
     final double ballRestitution = 0.9;
 
-    private double MAX_VELOCITY = 5; // arbitrary right now
-    private int SENSOR_RANGE = 5; // how far an ant can see
+    private double MAX_VELOCITY = 1; // arbitrary right now
+    private int SENSOR_RANGE = 10; // how far an ant can see
     private int MAX_TORQUE = 1; // how fast we can turn
-    private int TOLERANCE = 2; // how far "off" the target can be, allows us to home in on a target
+    private double GRAB_RANGE = 1; // how far "off" the target can be, allows us to home in on a target
 
     // World the ant lives in
     World<SimulationBody> myWorld;
@@ -60,7 +58,7 @@ public class Ant extends SimulationBody {
         basicAnt = new SimulationBody(new Color(255, 255, 255));
         basicAnt.addFixture(Geometry.createCircle(ballRadius), ballDensity, ballFriction, ballRestitution);
         basicAnt.translate(-0.25, 0.0);
-        basicAnt.setLinearVelocity(2.0, 0.0);
+        this.setRandomVelocity(); // set a random initial velocity
         basicAnt.setLinearDamping(0.3);
         basicAnt.setAngularDamping(0.8);
         basicAnt.setMass(MassType.NORMAL);
@@ -68,16 +66,21 @@ public class Ant extends SimulationBody {
 
         int max = 15;
         int min = -15;
-        x_pos = Math.floor(Math.random()*(max-min+1)+min);
-        y_pos = Math.floor(Math.random()*(max-min+1)+min);
+        double x_pos = Math.floor(Math.random()*(max-min+1)+min); // done just for code clarity
+        double y_pos = Math.floor(Math.random()*(max-min+1)+min);
         basicAnt.translate(x_pos,y_pos);
         id = new String(basicAnt.getWorldCenter().toString()); // hopefully this makes their names random enough for now
 
-        Random rand = new Random();
-        home = new Vector2(-4,0); // center of the screen for now.
-        position = home;
-        velocity = new Vector2(-1*rand.nextInt(1),-1*rand.nextInt(1));
-        acceleration = new Vector2(0,0);
+        home = new Vector2(-5,5); // center of the screen for now.
+
+        // Instantiate behaviorTree
+        ArbitrationUnit arbiter = new HighestPriority();
+        behaviorTree = new CompositeBehavior();
+        behaviorTree.setArbitrationUnit(arbiter);
+        behaviorTree.add(new GoHome()); // <-- parameter to get home before death needs to be tuned
+        behaviorTree.add(new GotoResource());
+        behaviorTree.add(new AvoidObstacle());
+        behaviorTree.add(new Wander());
     }
 
     /**
@@ -87,305 +90,188 @@ public class Ant extends SimulationBody {
     public Ant(Ant copy) {
         this.myWorld = copy.myWorld;
         this.basicAnt = copy.basicAnt;
-        this.x_pos = copy.x_pos;
-        this.y_pos = copy.y_pos;
         this.id = copy.id;
         this.home = copy.home;
+        this.state = copy.state;
+        this.action = copy.action;
+        this.behaviorTree = copy.behaviorTree;
+        this.alive = copy.alive;
+        this.lifespan = copy.lifespan;
         this.myWorld.addBody(this.basicAnt);
-        this.position = copy.position;
-        this.velocity = copy.velocity;
-        this.acceleration = copy.acceleration;
     }
 
     /**
-     * Decision-making process for an ant - look around, do I see food? do I see another ant? etc.
-     * @param resources
-     */
-    public void decide(ArrayList<Ant> allAgent_Ants, ArrayList<Resource> resources) {
-        if(!headedHome) {
-            check(allAgent_Ants);  // sep/target selection function
-            update(resources); // update position
-            returnHome(); // see if it is necessary to return home
-        }
-        else {
-            headHome(allAgent_Ants); // maintain separation from other Agent_Ants
-            update(resources); // update position
-            checkHome(); // is the Agent_Ant home?
-        }
-        borders(); // check the borders
-        decLife(); // always burn 1 energy per time step
-
-        //  I think this is where we want to take the vectors and apply them to the linear and angular portions
-        //  of the agent sim body.
-        basicAnt.setLinearVelocity(velocity.add(basicAnt.getLinearVelocity()));
-
-        double angle;
-        Vector2 headed = new Vector2(basicAnt.getWorldCenter(), home);
-        angle = headed.getAngleBetween(basicAnt.getLinearVelocity()); // radians
-        angle = angle * 180 / Math.PI; // degrees
-        if(angle > 0 && angle < 180 && headed.getMagnitude() < 5) {
-            // Roughly:  right = motors[right]*headed.magnitude)
-            basicAnt.applyTorque(-Math.PI/4);
-        }
-        else if(angle < 0 && angle > -180 && headed.getMagnitude() < 5) {
-            // Roughly:  right = motors[left]*headed.magnitude)
-            basicAnt.applyTorque(Math.PI / 4);
-        }
-    }
-
-    /**
-     * Checks if Agent_Ant reached home
-     */
-    private void checkHome() {
-        if( ((position.x > home.x - TOLERANCE) && position.x < home.x + TOLERANCE) &&
-                (position.y > home.y - TOLERANCE && position.y < home.y + TOLERANCE) ) {
-           // Add code for resource drop off here
-        }
-    }
-
-    /**
-     * Steers ant towards home
-     */
-    private void headHome(ArrayList<Ant> allAgent_Ants) {
-        Vector2 sep = separate(allAgent_Ants);    // creates a 2D vector to keep ants from smashing into one another (we are modeling UAVs)
-        sep = sep.multiply(1.5);
-        Vector2 go = seek(home);          // head home
-        go = go.multiply(1.5);
-        applyForceMine(sep);                  // apply separation vector.
-        applyForceMine(go);
-    } // end headHome()
-
-    /**
-     * Checks to see if an Agent_Ant needs to head home to refuel
-     */
-    private void returnHome() {
-        // Distance = speed * time
-        double d = velocity.getMagnitude() * this.lifespan; // how far the Agent_Ant can travel
-        if(!headedHome && d <= position.distance(home) + 100) { // added in a 100 buffer to make sure they can reach home
-            headedHome = true;
-        }
-        else if(reservoir.size() > 0) {
-            headedHome = true; // return home with the resource
-        }
-    } // end returnHome()
-
-    /**
-     * Main function for an Ant.  It maintains sep from other Ants while moving towards its target
      *
-     * @param allAgent_Ants
      */
-    private void check(ArrayList<Ant> allAgent_Ants) {
-        Vector2 sep = separate(allAgent_Ants);    // separation vector
-        applyForceMine(sep);          // apply separation vector
-    } // end check()
-
-    /**
-     * Calculates a new position that heads towards the target passed in.
-     *
-     * @param target
-     * @return
-     */
-    Vector2 seek(Vector2 target) {
-        Vector2 desired = target.difference(position); // A vector pointing from the position to the target
-        desired.normalize();
-        desired.multiply(maxspeed); // scale to maxspeed
-        // Steering = Desired minus Velocity
-        Vector2 steer = desired.difference(velocity); //new Vector2(desired,velocity); //Vector2.sub(desired,velocity);
-        steer.multiply(1/maxforce);  // Limit to maximum steering force
-
-        /**
-         * TODO:  ok, we need to make sure we continuosly update the position vector.
-         * We also need to apply these forces to the ants linear velocity,
-         * and, in all likelihood, its torque.
-         */
-        return steer;
+    public boolean sense() {
+        state.tick();
+        state.setVelocity(basicAnt.getLinearVelocity()); // LinearVelocity captures heading and speed
+        return true;
     }
 
     /**
-     * Method checks for nearby basicBoids and steers away
-     * @param allAgent_Ants
-     * @return
+     * Must be overloaded.
+     * Called before render to show action in the current time step.
+     * Current action is no op
      */
-    Vector2 separate (ArrayList<Ant> allAgent_Ants) {
-        Vector2 steer = new Vector2(0, 0);
-        int count = 0;
-        // For every boid in the system, check if it's too close
-        for (Ant other : allAgent_Ants) {
-            double d = position.distance(other.position); //new Vector2(position,other.position).getMagnitude();
-            // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
-            if ((d > 0) && (d < sepDist)) {
-                // Calculate vector pointing away from neighbor
-                Vector2 diff = position.difference(other.position); //new Vector2(position,other.position);
-                diff.normalize();
-                diff.divide(d);        // Weight by distance
-                steer.add(diff);
-                count++;            // Keep track of how many
-            }
-        } // end for
-        // Average -- divide by how many
-        if (count > 0) {
-            steer.divide((float)count);
-        }
-        // As long as the vector is greater than 0
-        if (steer.getMagnitude() > 0) {
-            steer.setMagnitude(maxspeed);
-            steer = steer.difference(velocity); // steer - velocity; //steer.sub(velocity); <-- hopefully this
-            steer.multiply(1/maxforce); // this is a hack to limit the vector
-        }
-        return steer;
-    } // end separation()
-
-
-    /**
-     * Add's force vector to current acceleration vector.
-     *
-     * @param force
-     */
-    private void applyForceMine(Vector2 force) {
-        acceleration.add(force);
+    public Action decideAction() {
+        action.clear();
+        // Get an action from the behaviorTree
+        action = behaviorTree.genAction(state);
+        System.out.println(action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
+        return action;
     }
+
+
     /**
-     * Update the Agent_Ant's current velocity and position.
+     *  Applies the action to the vehicle. Calculates the torque and force from the left and right wheel velocity
+     *  requests and then clamps them into a performance range.
+     *
+     * @param a Action being applied to the vehicle
      */
-    void update(ArrayList<Resource> resources) {
-        // Update velocity
-        velocity = velocity.add(acceleration);
-        // Limit speed
-        velocity.normalize();
-        velocity.multiply(maxspeed);
-        position.add(velocity);
-        // Reset acceleration to 0 each cycle
-        acceleration = new Vector2(0,0);
+    public void act(Action a) {
+        double left = a.getLeftWheelVelocity();
+        double right = a.getRightWheelVelocity();
 
-        // Collect resource if within range
-        double bestDist = Double.MAX_VALUE;
-        Resource toGet = null;
-        for(Resource res : resources) {
-            double distance = res.location.distance(position);
-            if (distance <= SENSOR_RANGE) {
-                if (distance <= 0.5 && distance < bestDist) {
-                    bestDist = distance;
-                    toGet = res;
-                }
-            }
-        }
-        if(toGet != null) {
-            reservoir.add(toGet); // should be the closest resource to pick up
-            velocity = velocity.add(seek(toGet.location));
-        }
-        for(Resource iOwn : reservoir) {
-            resources.remove(iOwn); // remove from global resource list
-        }
-        if(reservoir.size() > 0) { // agent should live longer because it has a resource
-            this.incLife();
-        }
+        state.setLeftWheelVelocity(left);
+        state.setRightWheelVelocity(right);
 
-        // making sure the ant knows where it is
-        x_pos = position.x;
-        y_pos = position.y;
+        // Calculate Torque
+        Vector2 applyLeft = new Vector2(0.0, 1.0);
+        applyLeft.multiply(left);
+        Vector2 applyRight = new Vector2(0.0,1.0);
+        applyRight.multiply(right);
+        double torqueL = leftWheelLocation.cross(applyLeft);
+        double torqueR = rightWheelLocation.cross(applyRight);
 
-    } // end update()
+//        System.out.println("Left Torque: " + torqueL + " Right Torque: " + torqueR);
 
+        // Apply torque to basicAnt
+        double baseTorque = torqueL + torqueR;
+        basicAnt.applyTorque(baseTorque);
 
-    /**
-     * This builds off of the typical boids application where we feed in a vector the ant should head towards.
-     * This is also where we can begin having smarter agents who will only travel towards the closest food as
-     * long as it is there.
-     * @param target
-     */
-    /**
-    public void seek(Vector2 target) {
+        // Constrain the vehicle to prevent spinning out of control
+        // Apply the forces in the direction the basicAnt is facing
+        Vector2 baseNormal = basicAnt.getTransform().getTransformedR(new Vector2(0.0,1.0));
+        baseNormal.multiply(left+right);
+//        System.out.println(baseNormal);
+        basicAnt.setLinearVelocity(baseNormal);
 
-        // Let's head towards it -- right now this will cause conflicts as it will head towards
-        // the last food processed if it sees more than one.  Could add a little overhead and
-        // have it head to the nearest if we wanted to (just add that as a todo), may also want
-        // to limit how much the ant can intake at a time.  But, for now, winner takes all!
-        Vector2 distance = new Vector2(home,basicAnt.getWorldCenter());
-        double angle;
-        angle = distance.getAngleBetween(basicAnt.getLinearVelocity()); // radians
-        angle = angle * 180 / Math.PI; // degrees
-        if(angle > TOLERANCE) {
-            basicAnt.applyTorque(0.5*distance.getMagnitude());
-        }
-        else if(angle < -TOLERANCE) {
-            basicAnt.applyTorque(-0.5*distance.getMagnitude());
-        }
-        basicAnt.setLinearVelocity(distance.add(basicAnt.getLinearVelocity()));
-
-        Vector2 normal1 = this.basicAnt.getTransform().getTransformedR(new Vector2(0.0, 1.0));
-        normal1.multiply(MAX_VELOCITY); // add to our position
-        basicAnt.applyForce(normal1);
-
-        // make sure the linear velocity is already in the direction of the tank front
-        Vector2 normal = this.basicAnt.getTransform().getTransformedR(new Vector2(0.0, 1.0));
-        double defl = basicAnt.getLinearVelocity().dot(normal);
+        // Get the linear velocity in the direction of the basicAnt's front
+        Vector2 clamp = this.basicAnt.getTransform().getTransformedR(new Vector2(0.0, 1.0));
+        double defl = basicAnt.getLinearVelocity().dot(clamp);
 
         // clamp the velocity
-        defl = Interval.clamp(defl, 0.5, MAX_VELOCITY);
-        basicAnt.setLinearVelocity(normal.multiply(defl));
+        defl = Interval.clamp(defl, 0.0, MAX_VELOCITY);
+        basicAnt.setLinearVelocity(baseNormal.multiply(defl));
 
         // clamp the angular velocity
         double av = basicAnt.getAngularVelocity();
         av = Interval.clamp(av, -MAX_TORQUE, MAX_TORQUE);
         basicAnt.setAngularVelocity(av);
+    }
 
-        // Borrowed from my boid code
-        Vector2 desired = new Vector2(target,basicAnt.getWorldCenter()); // A vector pointing from the position to the target
-        desired.normalize();
-        desired.multiply(MAX_VELOCITY);         // Scale to maximum speed
+    /**
+     * Set the color of the vehicle
+     *
+     * @param c Color
+     */
+    public void setColor(Color c) {
+        basicAnt.setColor(c);
+    }
 
-        // Steering = Desired minus Velocity
-        Vector2 steer = new Vector2(desired,this.getLinearVelocity()); //   Vector2.sub(desired,velocity);
-        Vector2 normal = this.basicAnt.getTransform().getTransformedR(new Vector2(0.0, 1.0));
-        double defl = basicAnt.getLinearVelocity().dot(normal);
+    /**
+     * Decision-making process for an ant - look around, do I see food? do I see another ant? etc.
+     * This is called by the AntWorld simulation loop, so if you want to add functionality, this
+     * is the spot.
+     *
+     * @param resources
+     */
+    public void decide(ArrayList<Ant> allAgent_Ants, ArrayList<Resource> resources) {
+        // Step 1:  Sense
+        updateLife();
+        updateResources(resources);
+        updateAnts(allAgent_Ants);
+        // Step 2:  Decide
+        decideAction();
+        // Step 3:  Act
+        act(action);
+    }
 
-        // clamp the velocity
-        defl = Interval.clamp(defl, 0.5, MAX_VELOCITY);
-        basicAnt.setLinearVelocity(normal.multiply(defl));
+    private void updateLife() {
+        if(lifespan <= 100*basicAnt.getWorldCenter().distance(home)) {
+            Vector2 heading = new Vector2(basicAnt.getWorldCenter(), home);
+            double angle = heading.getAngleBetween(basicAnt.getLinearVelocity()); // radians
+            double distance = basicAnt.getWorldCenter().distance(home); //
+            SensedObject obj = new SensedObject(heading, angle, distance, "Home", home);
+            state.addSensedObject(obj);
+        }
+    }
 
-        // update the internal x and y to make things easier
-        x_pos = this.basicAnt.getWorldCenter().x;
-        y_pos = this.basicAnt.getWorldCenter().y;
+    /**
+     * Adds sensed ants to the sensed object list
+     * @param allAgent_ants
+     */
+    private void updateAnts(ArrayList<Ant> allAgent_ants) {
+        for(Ant antObj : allAgent_ants) {
+            Vector2 heading = new Vector2(basicAnt.getWorldCenter(), antObj.basicAnt.getWorldCenter());
+            double angle = heading.getAngleBetween(basicAnt.getLinearVelocity()); // radians
+            double distance = basicAnt.getWorldCenter().distance(antObj.basicAnt.getWorldCenter()); //
+            if(distance <= SENSOR_RANGE && this.id != antObj.id) { // ignore oneself
+                String type = "Ant";
+                SensedObject obj = new SensedObject(heading, angle, distance, type, antObj.basicAnt.getWorldCenter());
+                state.addSensedObject(obj);
+            }
+        }
+    }
 
-        //steer.limit(maxforce);  // Limit to maximum steering force
-        //return steer;
-    }*/
+    /**
+     * Adds sensed resources to the sensed object list
+     * @param resources
+     */
+    private void updateResources(ArrayList<Resource> resources) {
+        double distance = Double.POSITIVE_INFINITY;
+        SensedObject obj = new SensedObject(new Vector2(0,0), 0, 0, "empty", new Vector2(0,0));
+        Resource found = new Resource();
+
+        // Find the closest resource and head towards it
+        for(Resource resObj : resources) {
+            Vector2 heading = new Vector2(basicAnt.getWorldCenter(), resObj.location);
+            double angle = heading.getAngleBetween(basicAnt.getLinearVelocity()); // radians
+            double tDist = basicAnt.getWorldCenter().distance(resObj.location); //
+            if(tDist < distance && tDist <= SENSOR_RANGE) {
+                String type = "Resource";
+                distance = tDist;
+                obj = new SensedObject(heading, angle, distance, type, resObj.location);
+                found = resObj;
+            }
+        }
+        if(!obj.getType().equals("empty")) {
+            // Before we add this object, we have to see if it's within "grabbing" range
+            if(obj.getDistance() < GRAB_RANGE) {
+                // Add to the ant's reservoir
+                reservoir.add(found);
+                resources.remove(found); // remove from the resource array -- unsure if this is working 100%
+                System.out.println("Removed resource");
+            }
+            else
+                state.addSensedObject(obj);
+        }
+    }
+
+    /**
+     * Sets the basicAnts linear velocity to a random vector
+     */
+    private void setRandomVelocity() {
+        Random rand = new Random();
+        int max = 2;
+        int min = -2;
+        basicAnt.setLinearVelocity(rand.nextInt((max - min) + 1) + min,rand.nextInt((max - min) + 1) + min);
+    }
 
     public void render(Graphics2D g, double scale) {
         super.render(g, scale, Color.CYAN);
-        //if(reservoir.size() > 0 || lifespan < 10) { // head home
-        //    seek(home);
-        //}
-        //else if(reservoir.size() > 0) {
-        //    seek(reservoir.get(0).location); // head to the resource
-       // }
-       // else {
-        //    seek(randomHeading()); // Move in a random direction, much like an ant would
-       // }
     }
-
-    private Vector2 randomHeading() {
-        return new Vector2(1,1);
-    }
-
-    private void borders() {
-        int minX = 0;
-        int maxX = 10;
-        int minY = 0;
-        int maxY = 10;
-
-       // System.out.println("before: " + this.id + " x: " + this.x_pos + " y: "+ this.y_pos); //+ " x':" + this.basicAnt.getWorldCenter().x + " y':" + this.basicAnt.getWorldCenter().y);
-
-        if ((this.basicAnt.getWorldCenter().x < minX) || (this.basicAnt.getWorldCenter().x > maxX)) {
-            x_pos = -1*x_pos;
-            this.basicAnt.getWorldCenter().set(x_pos,y_pos);
-        }
-        if ((this.basicAnt.getWorldCenter().y < minY) || (this.basicAnt.getWorldCenter().y > maxY)) {
-            y_pos = -1*y_pos;
-            this.basicAnt.getWorldCenter().set(x_pos,-1*y_pos);
-        }
-        //System.out.println(this.id + " x: " + this.x_pos + " y: "+ this.y_pos); //+ " x':" + this.basicAnt.getWorldCenter().x + " y':" + this.basicAnt.getWorldCenter().y);
-    } // end borders()
 
     public boolean isAlive() {
         return alive;
@@ -444,26 +330,3 @@ public class Ant extends SimulationBody {
     }
 }
 
-/**
- * // Slow, especially for a lot of ants, but it's what we will run with for now
- *         double bestDist = Double.MAX_VALUE;
- *         Resource toGet = null;
- *         for(Resource res : resources) {
- *             Vector2 distance = new Vector2(res.location, basicAnt.getWorldCenter());
- *             if (distance.getMagnitude() <= SENSOR_RANGE) {
- *                 if (distance.getMagnitude() <= 0.5 && distance.getMagnitude() < bestDist) {
- *                     bestDist = distance.getMagnitude();
- *                     toGet = res;
- *                 }
- *             }
- *         }
- *         if(toGet != null) {
- *             reservoir.add(toGet); // should be the closest resource to pick up
- *         }
- *         for(Resource iOwn : reservoir) {
- *             resources.remove(iOwn); // remove from global resource list
- *         }
- *         if(reservoir.size() > 0) { // agent should live longer because it has a resource
- *             this.incLife();
- *         }
- */

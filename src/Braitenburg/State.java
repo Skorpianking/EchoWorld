@@ -9,13 +9,11 @@ import java.util.List;
  * State object for vehicle's memory
  */
 public class State {
-
     private ArrayList<SensedObject> sensedObjects = new ArrayList<SensedObject>();
     private Vector2 velocity = new Vector2();
     private double leftWheelVelocity;
     private double rightWheelVelocity;
     private boolean holding;
-
 
     /**
      * Each clock tick, clear the ray cast detected objects.

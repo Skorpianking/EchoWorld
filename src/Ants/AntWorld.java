@@ -2,6 +2,7 @@ package Ants;
 
 import framework.SimulationBody;
 import framework.SimulationFrame;
+import org.dyn4j.collision.Bounds;
 import org.dyn4j.geometry.Geometry;
 import org.dyn4j.geometry.MassType;
 import org.dyn4j.geometry.Vector2;
@@ -28,8 +29,8 @@ public class AntWorld extends SimulationFrame {
     public ArrayList<Resource> resources = new ArrayList<Resource>();
 
     // Init variables, also used for testing
-    int numAnts = 100;
-    int numResources = 100;
+    int numAnts = 5;
+    int numResources = 10;
     int scale;
 
     /**
@@ -248,8 +249,7 @@ public class AntWorld extends SimulationFrame {
      */
     protected void render(Graphics2D g, double elapsedTime) {
         double r = 4.0;
-
-        // Now move vehicles
+        // Now move ants
         for(SimulationBody v : antColonies) {
             if((((Ant)v).isAlive())) {
                 ((Ant) v).decide(antColonies, resources);
