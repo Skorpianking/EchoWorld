@@ -45,6 +45,11 @@ public class Resource {
         this.location = location;
     }
 
+    public Resource(Resource res) {
+        this.type = res.type;
+        this.location = res.location;
+    }
+
     /**
      * Returns a random 2d vector
      * @return

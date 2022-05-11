@@ -11,6 +11,7 @@ import behaviorFramework.CompositeBehavior;
 import behaviorFramework.arbiters.HighestActivation;
 import behaviorFramework.arbiters.HighestPriority;
 import behaviorFramework.behaviors.Wander;
+import com.sun.deploy.util.StringUtils;
 import framework.SimulationBody;
 import org.dyn4j.geometry.*;
 import org.dyn4j.world.World;
@@ -20,6 +21,7 @@ import java.util.*;
 public class Ant extends SimulationBody {
     // Echo parameters -- will be extended over time
     String id;
+    String tag; // this is the Echo tag variable described by Holland
     ArrayList<Resource> reservoir = new ArrayList<>();
 
     // UBF assist, I can also envision this helping with Echo behaviors
@@ -55,7 +57,8 @@ public class Ant extends SimulationBody {
 
     public Ant(World<SimulationBody> world) {
         myWorld = world;
-        basicAnt = new SimulationBody(new Color(255, 255, 255));
+        basicAnt = new SimulationBody(new Color(255, 255, 255)); // leaving this in, ideally i'd like child ants to be a combination of parent colors
+        basicAnt.setColor(Color.CYAN);
         basicAnt.addFixture(Geometry.createCircle(ballRadius), ballDensity, ballFriction, ballRestitution);
         basicAnt.translate(-0.25, 0.0);
         this.setRandomVelocity(); // set a random initial velocity
@@ -81,6 +84,8 @@ public class Ant extends SimulationBody {
         behaviorTree.add(new GotoResource());
         behaviorTree.add(new AvoidObstacle());
         behaviorTree.add(new Wander());
+
+        setInitialTag(); // set the ant's tag
     }
 
     /**
@@ -98,6 +103,8 @@ public class Ant extends SimulationBody {
         this.alive = copy.alive;
         this.lifespan = copy.lifespan;
         this.myWorld.addBody(this.basicAnt);
+        this.tag = copy.tag;
+        this.reservoir = copy.reservoir;
     }
 
     /**
@@ -181,6 +188,61 @@ public class Ant extends SimulationBody {
     }
 
     /**
+     * Assigns a random tag to the ant -- right now, it is very, very non-random
+     */
+    private void setInitialTag() {
+        this.tag = "AABBCC";
+    }
+
+    /**
+     * Determines if the ant can replicate -- based on resources in the reservoir and its tag.  Items in its tag
+     * must each be present in the reservoir for it to replicate.  For this iteraion of ants, this is asexual reproduction.
+     * @return
+     */
+    public boolean replicate() {
+        // Doing this the naive way first
+        int countA = 0;
+        int countB = 0;
+        int countC = 0;
+        int countD = 0;
+
+        // Count occurrences in the ant's tag, remember, this will later be fairly unique to sets of ants
+        long tagCountA = this.tag.chars().filter(ch -> ch == 'A').count();
+        long tagCountB = this.tag.chars().filter(ch -> ch == 'B').count();
+        long tagCountC = this.tag.chars().filter(ch -> ch == 'C').count();
+        long tagCountD = this.tag.chars().filter(ch -> ch == 'D').count();
+
+        ArrayList<Resource> toBurn = new ArrayList<Resource>(); // save resources to burn here
+        for(Resource res: reservoir) {
+            if(res.type.equals("A")) {
+                countA++;
+                toBurn.add(res);
+            }
+            if(res.type.equals("B")) {
+                countB++;
+                toBurn.add(res);
+            }
+            if(res.type.equals("C")) {
+                countC++;
+                toBurn.add(res);
+            }
+            if(res.type.equals("D")) {
+                countD++;
+                toBurn.add(res);
+            }
+        }
+        // Now we can see if the ant can replicate
+        if(countA >= tagCountA && countB >= tagCountB && countC >= tagCountC && countD >= tagCountD) {
+            // Agent can replicate -- burn the resources
+            for(Resource remove : toBurn) {
+                reservoir.remove(remove);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Decision-making process for an ant - look around, do I see food? do I see another ant? etc.
      * This is called by the AntWorld simulation loop, so if you want to add functionality, this
      * is the spot.
@@ -250,9 +312,8 @@ public class Ant extends SimulationBody {
             // Before we add this object, we have to see if it's within "grabbing" range
             if(obj.getDistance() < GRAB_RANGE) {
                 // Add to the ant's reservoir
-                reservoir.add(found);
+                reservoir.add(new Resource(found));
                 resources.remove(found); // remove from the resource array -- unsure if this is working 100%
-                System.out.println("Removed resource");
             }
             else
                 state.addSensedObject(obj);

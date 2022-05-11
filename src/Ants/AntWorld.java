@@ -14,6 +14,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferStrategy;
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * Beginning of an echo-based version of ant-like agents.  I'm going to start with a simple shape, e.g. a circle,
@@ -29,7 +30,7 @@ public class AntWorld extends SimulationFrame {
     public ArrayList<Resource> resources = new ArrayList<Resource>();
 
     // Init variables, also used for testing
-    int numAnts = 5;
+    int numAnts = 1;
     int numResources = 10;
     int scale;
 
@@ -120,7 +121,7 @@ public class AntWorld extends SimulationFrame {
         polygon.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
         polygon.translate(new Vector2(-2.0, 0));
         polygon.setMass(MassType.INFINITE);
-        polygon.setUserData(new String("UNKNOWN"));
+        polygon.setUserData(new String("Obstacle"));
         this.world.addBody(polygon);
     }
 
@@ -217,13 +218,25 @@ public class AntWorld extends SimulationFrame {
             // that I haven't been able to avoid.
             this.world.removeAllBodies();
             addWorldObjects(scale); // add objects back in because we erase everything
+            int newAnts = 0;
             for(SimulationBody alive: antColonies) {
                 Ant temp = new Ant((Ant)alive);
+                if(temp.replicate()) { // If this ant can replicate, it will
+                    // Ideally we would like to replicate from a parent ant versus just adding randos to the world
+                    // One could, if so inclined, take stock of the entire population, saving those that are
+                    // more fit and letting them breed to create the next generation of ants.
+                    newAnts++; // adding after this loop to avoid concurrency issues
+                }
+                this.world.addBody(temp);
+            }
+            for(int i =0; i < newAnts; i++) {
+                Ant temp = new Ant(this.world);
+                temp.setColor(Color.RED); // make them stand out for now
+                antColonies.add(temp);
                 this.world.addBody(temp);
             }
             this.world.update(elapsedTime);
         } else if (this.step.isActive()) {
-            System.out.println("inside else");
             this.world.step(1);
             this.stepNumber++;
             this.step.setActive(false);
@@ -268,6 +281,7 @@ public class AntWorld extends SimulationFrame {
                     r,
                     r));
         }
+        addResources(); // adds resources to the world with a small probability
 
         // Paint resources as dots on the screen
         for(Resource res : resources) {
@@ -280,6 +294,19 @@ public class AntWorld extends SimulationFrame {
                     r));
         }
         super.render(g, elapsedTime);
+    }
+
+    /**
+     * Adds up to 10 random resources to the scenario at each time step.  Resources are added to random locations.
+     */
+    private void addResources() {
+        Random rand = new Random();
+        for(int i = 0; i < 10; i++) {
+            int prob = rand.nextInt(100);
+            if (prob < 2) {
+                resources.add(new Resource());
+            }
+        }
     }
 
     /**
