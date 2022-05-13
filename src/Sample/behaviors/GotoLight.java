@@ -30,14 +30,24 @@ public class GotoLight extends Behavior {
             angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
 
             if (obj.getType().equals("Light")) {
-                if (angle > 0 && angle < 75 ) { // Light on right
+                if (angle > 0 && angle < 75 && obj.getSide() == "Right") { // Light on right
                     action.setRightWheelVelocity(1.0-((angle*Math.PI)/180));
                     action.setLeftWheelVelocity(1.0);
                     action.setVote(1);
                     lastSeenCounter = 5;
-                } else if (angle < 0 && angle > -75 ) { // Light on left
+                } else if (angle < 0 && angle > -75 && obj.getSide() == "Left") { // Light on left
                     action.setRightWheelVelocity(1.0);
                     action.setLeftWheelVelocity(1.0+((angle*Math.PI)/180));
+                    action.setVote(1);
+                    lastSeenCounter = 5;
+                } else if ( angle > 0 && obj.getSide() == "Left" ) { // Middle Left
+                    action.setRightWheelVelocity(0.9 + ((angle*Math.PI)/180));
+                    action.setLeftWheelVelocity(0.9);
+                    action.setVote(1);
+                    lastSeenCounter = 5;
+                } else if ( angle < 0 && obj.getSide() == "Right" ) { // Middle Right
+                    action.setRightWheelVelocity(0.9 + ((angle*Math.PI)/180));
+                    action.setLeftWheelVelocity(0.9);
                     action.setVote(1);
                     lastSeenCounter = 5;
                 }

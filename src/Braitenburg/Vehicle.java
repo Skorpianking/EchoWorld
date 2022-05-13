@@ -23,21 +23,25 @@ public class Vehicle extends SimulationBody {
     // Basic vehicle build
     private SimulationBody baseVehicle;
 
-    private Vector2 leftWheelLocation = new Vector2(-0.5, -0.5);
-    private Vector2 rightWheelLocation = new Vector2( 0.5, -0.5);
+    private final Vector2 leftWheelLocation = new Vector2(-0.5, -0.5);
+    private final Vector2 rightWheelLocation = new Vector2( 0.5, -0.5);
 
-    private double MAX_VELOCITY = 2; // arbitrary right now
-    private int MAX_TORQUE = 1; // how fast we can turn
-    private int SENSOR_RANGE = 20; // how far the line casts go
-    private int TOLERANCE = 0; // how far "off" the target can be, allows us to home in on a target
+    private final double MAX_VELOCITY = 2; // arbitrary right now
+    private final int MAX_TORQUE = 1; // how fast we can turn
+    private final int SENSOR_RANGE = 20; // how far the line casts go
+    private final int TOLERANCE = 0; // how far "off" the target can be, allows us to home in on a target
 
     private State state;
 
     // array of values to "sweep" across -- hand jammed to get a reasonable sweep that doesn't eat too much processing time
-    double[] sweepValues = {0.0, 0.0001, 0.0010, 0.0020, 0.0040, 0.0060, 0.0080, 0.0100, 0.0110, 0.0120, 0.0140, 0.0160, 0.0180,
-            0.0200, 0.0220, 0.240, 0.260, 0.280, 0.300, 0.320, 0.340, 0.360, 0.380, 0.400, 0.420, 0.440, 0.460, 0.480, 0.500,
-            0.0520, 0.0540, 0.560, 0.580, 0.600, 0.620, 0.640, 0.660, 0.680, 0.700, 0.720, 0.740, 0.760, 0.780, 0.800, 0.820,
-            0.0840, 0.0860, 0.880, 0.900, 0.920, 0.940, 0.960, 0.980, 1.00};
+    double[] sweepValues = {
+            -0.0872, -0.0654, -0.0436, -0.0348, -0.0261, -0.0174, -0.0087, 0.0000, 0.0001,
+             0.0010,  0.0020,  0.0040,  0.0060,  0.0080,  0.0100,  0.0110,  0.0120, 0.0140, 0.0160,
+             0.0180,  0.0200,  0.0220,  0.2400,  0.2600,  0.2800,  0.3000,  0.3200, 0.3400, 0.3600,
+             0.3800,  0.4000,  0.4200,  0.4400,  0.4600,  0.4800,  0.5000,  0.0520, 0.0540, 0.5600,
+             0.5800,  0.6000,  0.6200,  0.6400,  0.6600,  0.6800,  0.7000,  0.7200, 0.7400, 0.7600};
+            // Added 7: -10. -7.5, -5, -4, -3, -2, -1
+            // Cut 12:  , 0.780, 0.800, 0.820, 0.0840, 0.0860, 0.880, 0.900, 0.920, 0.940, 0.960, 0.980, 1.00};
 
     // Creates the world
     protected World<SimulationBody> myWorld;
@@ -161,8 +165,6 @@ public class Vehicle extends SimulationBody {
 
         Vector2 start = baseVehicle.getTransform().getTransformed(new Vector2(sensor_x, sensor_y));
 
-
-
         double x = 0.0;
         double y = 0.01;
         SensedObject obj;
@@ -191,7 +193,12 @@ public class Vehicle extends SimulationBody {
                     }
                 }
 
-                obj = new SensedObject(heading, angle, distance, type, result.getRaycast().getPoint());
+                String side = "Left";
+                if (sensor_x > 0.0) {
+                    side = "Right";
+                }
+
+                obj = new SensedObject(heading, angle, distance, type, side, result.getRaycast().getPoint());
                 state.addSensedObject(obj);
             }
         }
@@ -272,6 +279,7 @@ public class Vehicle extends SimulationBody {
     public void setColor(Color c) {
         baseVehicle.setColor(c);
     }
+
 }
 
 

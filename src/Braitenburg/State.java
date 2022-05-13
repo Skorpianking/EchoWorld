@@ -14,6 +14,12 @@ public class State {
     private double leftWheelVelocity;
     private double rightWheelVelocity;
     private boolean holding;
+    private double leftLightStrength;
+    private double rightLightStrength;
+
+    public void State() {
+        leftLightStrength = rightLightStrength = 0.0;
+    }
 
     /**
      * Each clock tick, clear the ray cast detected objects.
@@ -65,5 +71,40 @@ public class State {
 
     public boolean isHolding() {
         return holding;
+    }
+
+    public void setLeftLightStrength(double leftLightStrength) {
+        this.leftLightStrength = leftLightStrength;
+    }
+
+    public double getLeftLightStrength() {
+        return leftLightStrength;
+    }
+
+    public void setRightLightStrength(double rightLightStrength) {
+        this.rightLightStrength = rightLightStrength;
+    }
+
+    public double getRightLightStrength() {
+        return rightLightStrength;
+    }
+
+    /**
+     * Convert 'Light' SensedObjects into a left and right light
+     * sensor strength
+     */
+    public void updateLightStrengths() {
+        double angle;
+        double length = 20; // This is the same as SENSOR_RANGE in the Vehicle class
+
+        for (SensedObject obj : sensedObjects) {
+            angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
+
+            if (angle > 0 && obj.getType() == "Light") { // Obstacle on right
+                rightLightStrength = length - obj.getDistance();
+            } else if (angle < 0 && obj.getType() == "Light") { // Obstacle on left
+                leftLightStrength = length - obj.getDistance();
+            }
+        }
     }
 }

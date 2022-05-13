@@ -265,7 +265,7 @@ public class Ant extends SimulationBody {
             Vector2 heading = new Vector2(basicAnt.getWorldCenter(), home);
             double angle = heading.getAngleBetween(basicAnt.getLinearVelocity()); // radians
             double distance = basicAnt.getWorldCenter().distance(home); //
-            SensedObject obj = new SensedObject(heading, angle, distance, "Home", home);
+            SensedObject obj = new SensedObject(heading, angle, distance, "Home", "None", home);
             state.addSensedObject(obj);
         }
     }
@@ -281,7 +281,7 @@ public class Ant extends SimulationBody {
             double distance = basicAnt.getWorldCenter().distance(antObj.basicAnt.getWorldCenter()); //
             if(distance <= SENSOR_RANGE && this.id != antObj.id) { // ignore oneself
                 String type = "Ant";
-                SensedObject obj = new SensedObject(heading, angle, distance, type, antObj.basicAnt.getWorldCenter());
+                SensedObject obj = new SensedObject(heading, angle, distance, type, "None", antObj.basicAnt.getWorldCenter());
                 state.addSensedObject(obj);
             }
         }
@@ -293,7 +293,7 @@ public class Ant extends SimulationBody {
      */
     private void updateResources(ArrayList<Resource> resources) {
         double distance = Double.POSITIVE_INFINITY;
-        SensedObject obj = new SensedObject(new Vector2(0,0), 0, 0, "empty", new Vector2(0,0));
+        SensedObject obj = new SensedObject(new Vector2(0,0), 0, 0, "empty", "empty", new Vector2(0,0));
         Resource found = new Resource();
 
         // Find the closest resource and head towards it
@@ -304,7 +304,7 @@ public class Ant extends SimulationBody {
             if(tDist < distance && tDist <= SENSOR_RANGE) {
                 String type = "Resource";
                 distance = tDist;
-                obj = new SensedObject(heading, angle, distance, type, resObj.location);
+                obj = new SensedObject(heading, angle, distance, type, "empty", resObj.location);
                 found = resObj;
             }
         }

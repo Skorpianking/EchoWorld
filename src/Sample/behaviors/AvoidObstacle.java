@@ -18,8 +18,8 @@ import java.util.Random;
  */
 public class AvoidObstacle extends Behavior {
 
-    private int DISTANCE_LIMIT = 3;
-    private int ANGLE_LIMIT = 75;
+    private final int DISTANCE_LIMIT = 3;
+    private final int ANGLE_LIMIT = 75;
     // Vote = 1
     // Motor outs are 0.7 and 0.05
 
@@ -37,11 +37,11 @@ public class AvoidObstacle extends Behavior {
             angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
             heading = state.getVelocity().getDirection();
 
-            if (angle > 0 && angle < ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on right
+            if (obj.getSide() == "Right" && angle > 0 && angle < ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on right
                 action.setRightWheelVelocity(0.7);
                 action.setLeftWheelVelocity(0.05);
                 action.setVote(1);
-            } else if (angle < 0 && angle > -ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on left
+            } else if (obj.getSide() == "Left" && angle < 0 && angle > -ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on left
                 action.setRightWheelVelocity(0.05);
                 action.setLeftWheelVelocity(0.7);
                 action.setVote(1);
