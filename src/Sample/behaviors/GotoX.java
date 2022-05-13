@@ -5,7 +5,6 @@ import behaviorFramework.Action;
 import behaviorFramework.Behavior;
 
 import Braitenburg.State;
-import org.dyn4j.geometry.Vector2;
 
 import java.util.List;
 
@@ -16,8 +15,9 @@ public class GotoX extends Behavior {
 
 
     // Vote = 1
-    // Angle limit = 75 deg
-    // motor outputs are 1 and 1 - angle in radians
+    // Angle limit = 90 deg
+    // motor outputs are 0.9 and 0.9 - angle in radians
+    // Keeps track of last time seen and moves toward it for 5 ticks
 
     public GotoX(String target) {
         super();
@@ -33,47 +33,50 @@ public class GotoX extends Behavior {
         action.name = "Goto" + target;
 
         double angle = 0;
-        Vector2 heading;
         lastSeenCounter--;
+        double bestAngle = 360;
+        SensedObject bestObj = null;
+
         for (SensedObject obj : sensedObjects) {
             angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
 
+            // Locate the target return that is closest to the centerline of the vehicle
             if (obj.getType().equals(target)) {
-                if (angle > 0 && angle < 75 && obj.getSide() == "Right") { // Light on right
-                    action.setRightWheelVelocity(1.0-((angle*Math.PI)/180));
-                    action.setLeftWheelVelocity(1.0);
-                    action.setVote(1);
-                    lastSeenCounter = 5;
-                } else if (angle < 0 && angle > -75 && obj.getSide() == "Left") { // Light on left
-                    action.setRightWheelVelocity(1.0);
-                    action.setLeftWheelVelocity(1.0+((angle*Math.PI)/180));
-                    action.setVote(1);
-                    lastSeenCounter = 5;
-                } else if ( angle > 0 && obj.getSide() == "Left" ) { // Middle Left
-                    action.setRightWheelVelocity(0.9 + ((angle*Math.PI)/180));
-                    action.setLeftWheelVelocity(0.9);
-                    action.setVote(1);
-                    lastSeenCounter = 5;
-                } else if ( angle < 0 && obj.getSide() == "Right" ) { // Middle Right
-                    action.setRightWheelVelocity(0.9 + ((angle*Math.PI)/180));
-                    action.setLeftWheelVelocity(0.9);
-                    action.setVote(1);
-                    lastSeenCounter = 5;
-                }
-                lastSeenAngle = angle;
+                if (Math.abs(angle) < Math.abs(bestAngle))
+                    bestAngle = angle;
+                bestObj = obj;
             }
         }
 
-        // We don't see the light now, but we had seen it recently.
+        if (bestObj != null) {
+            if (bestAngle > 0  && bestObj.getSide() == "Right") { // Light on Right
+                action.setRightWheelVelocity(0.9 - Math.abs(bestObj.getAngle()));
+                action.setLeftWheelVelocity(0.9);
+            } else if (bestAngle < 0  && bestObj.getSide() == "Left") { // Light on Left
+                action.setRightWheelVelocity(0.9);
+                action.setLeftWheelVelocity(0.9 - Math.abs(bestObj.getAngle()));
+            } else if ( bestAngle > 0 && bestObj.getSide() == "Left" ) { // Middle Left
+                action.setRightWheelVelocity(0.9);
+                action.setLeftWheelVelocity(0.9 - Math.abs(bestObj.getAngle()) / 3);
+            } else if ( bestAngle < 0 && bestObj.getSide() == "Right" ) { // Middle Right
+                action.setRightWheelVelocity(0.9 - Math.abs(bestObj.getAngle()) / 3);
+                action.setLeftWheelVelocity(0.9);
+            }
+            action.setVote(1);
+            lastSeenCounter = 5;
+            lastSeenAngle = bestAngle;
+        }
+
+        // We don't see the light now, but we saw it recently.
         if (lastSeenCounter > 0 && action.getVote() == 0) {
             angle = lastSeenAngle;
-            if (angle > 0 && angle < 75 ) { // Light on right
-                action.setRightWheelVelocity(1.0-((angle*Math.PI)/180));
-                action.setLeftWheelVelocity(1.0);
+            if (angle > 0) { // Light on Right
+                action.setRightWheelVelocity(0.9-Math.abs(((angle*Math.PI)/180)));
+                action.setLeftWheelVelocity(0.9);
                 action.setVote(1);
-            } else if (angle < 0 && angle > -75 ) { // Light on left
-                action.setRightWheelVelocity(1.0);
-                action.setLeftWheelVelocity(1.0+((angle*Math.PI)/180));
+            } else if (angle < 0) { // Light on Left
+                action.setRightWheelVelocity(0.9);
+                action.setLeftWheelVelocity(0.9-Math.abs(((angle*Math.PI)/180)));
                 action.setVote(1);
             }
         }

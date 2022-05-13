@@ -19,6 +19,8 @@ public class Braitenberg extends SimulationFrame {
     private static final long serialVersionUID = -8518496222422955267L;
     public ArrayList<SimulationBody> myVehicles = new ArrayList<>();
 
+    private final boolean DRAW_VEHICLE_DATA = true;
+
     /**
      * Constructor.
      */
@@ -111,14 +113,11 @@ public class Braitenberg extends SimulationFrame {
      */
     protected void render(Graphics2D g, double elapsedTime) {
         super.render(g, elapsedTime);
-        for(SimulationBody v : myVehicles) {
-            ((Vehicle)v).render(g,20);
+        if (DRAW_VEHICLE_DATA) {
+            for (SimulationBody v : myVehicles) {
+                ((Vehicle) v).render(g, 20);
+            }
         }
-        // Now move vehicles
-/*        for(SimulationBody v : myVehicles) {
-            ((Vehicle)v).sense(); // call to sense the world.
-            ((Vehicle)v).decideAction(); // must cast it so we can call the decideAction function.
-        }*/
     }
 
     /**

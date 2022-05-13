@@ -10,12 +10,17 @@ import java.util.List;
  */
 public class State {
     private ArrayList<SensedObject> sensedObjects = new ArrayList<SensedObject>();
+    private double heading;
     private Vector2 velocity = new Vector2();
+    private double angularVelocity;
     private double leftWheelVelocity;
     private double rightWheelVelocity;
     private boolean holding;
+
     private double leftLightStrength;
     private double rightLightStrength;
+    private int lightDecayLeft;
+    private int lightDecayRight;
 
     public void State() {
         leftLightStrength = rightLightStrength = 0.0;
@@ -89,22 +94,47 @@ public class State {
         return rightLightStrength;
     }
 
+    public double getAngularVelocity() {
+        return angularVelocity;
+    }
+
+    public void setAngularVelocity(double angularVelocity) {
+        this.angularVelocity = angularVelocity;
+    }
+
+    public double getHeading() {
+        return heading;
+    }
+
+    public void setHeading(double heading) {
+        this.heading = heading;
+    }
+
     /**
+     *
      * Convert 'Light' SensedObjects into a left and right light
      * sensor strength
      */
     public void updateLightStrengths() {
-        double angle;
         double length = 20; // This is the same as SENSOR_RANGE in the Vehicle class
 
-        for (SensedObject obj : sensedObjects) {
-            angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
+        if (lightDecayLeft <= 0)
+            leftLightStrength = 0.0;
+        if (lightDecayRight <= 0)
+            rightLightStrength = 0.0;
 
-            if (angle > 0 && obj.getType() == "Light") { // Obstacle on right
+        lightDecayLeft--;
+        lightDecayRight--;
+        for (SensedObject obj : sensedObjects) {
+            if (obj.getSide() == "Right" && obj.getType() == "Light") { // Obstacle on right
                 rightLightStrength = length - obj.getDistance();
-            } else if (angle < 0 && obj.getType() == "Light") { // Obstacle on left
+                lightDecayRight = 5;
+            } else if (obj.getSide() == "Left" && obj.getType() == "Light") { // Obstacle on left
                 leftLightStrength = length - obj.getDistance();
+                lightDecayLeft = 5;
             }
         }
     }
+
+
 }

@@ -27,16 +27,18 @@ public class Vehicle extends SimulationBody {
     private final Vector2 rightWheelLocation = new Vector2( 0.5, -0.5);
 
     private final double MAX_VELOCITY = 2; // arbitrary right now
-    private final int MAX_TORQUE = 1; // how fast we can turn
+    private final double MAX_ANGULAR_VELOCITY = 1; // how fast we can turn
     private final int SENSOR_RANGE = 20; // how far the line casts go
-    private final int TOLERANCE = 0; // how far "off" the target can be, allows us to home in on a target
+    private final double ANGULAR_DAMPENING = 0.1;
+
+    private final double K_p = 10;   //Proportional Control Constant
 
     private State state;
 
     // array of values to "sweep" across -- hand jammed to get a reasonable sweep that doesn't eat too much processing time
-    // -15 to 120 degrees in steps of 5 degrees
+    // -10 to 120 degrees in steps of 5 degrees (added +/- 7.5, +/- 2.5
     double[] sweepValues = {
-            -0.1745, -0.0873, 0.0000, 0.0873, 0.1745, 0.2618, 0.3491, 0.4363, 0.5236, 0.6109,
+            -0.1745, -0.1309, -0.0873, -0.4363, 0.0000, 0.4363, 0.0873, 0.1309, 0.1745, 0.2618, 0.3491, 0.4363, 0.5236, 0.6109,
              0.6981,  0.7854, 0.8727, 0.9599, 1.0472, 1.1344, 1.2217, 1.3090, 1.3962, 1.4833,
              1.5707,  1.6580, 1.7453, 1.8325, 1.9198, 2.0071, 2.0944};
 
@@ -54,6 +56,7 @@ public class Vehicle extends SimulationBody {
         baseVehicle.addFixture(Geometry.createRectangle(1.0, 1.5));
         baseVehicle.addFixture(Geometry.createCircle(0.35));
         baseVehicle.setMass(MassType.NORMAL);
+        baseVehicle.setAngularDamping(ANGULAR_DAMPENING);
         myWorld.addBody(baseVehicle);
 
         // -- grabbers
@@ -129,11 +132,16 @@ public class Vehicle extends SimulationBody {
      */
     public boolean sense() {
         state.tick();
-        // Following code block draws Rays out from each sensor and stores data into objectsDetected
+
+        state.setHeading(convertTransformToHeading());
+
+        // Following code block draws Rays out from each sensor and stores returns in state
         rayCasting(-0.50, 0.8, 0); // left sensor
         rayCasting(0.50, 0.8, 1); // right sensor
 
         state.setVelocity(baseVehicle.getLinearVelocity()); // LinearVelocity captures heading and speed
+        state.setAngularVelocity(baseVehicle.getAngularVelocity());
+        state.updateLightStrengths();
 
         return true;
     }
@@ -161,30 +169,19 @@ public class Vehicle extends SimulationBody {
         final double length = SENSOR_RANGE;
 
         Vector2 start = baseVehicle.getTransform().getTransformed(new Vector2(sensor_x, sensor_y));
-
-        double x = 0.0;
-        double y = 0.00001; //0.01
         SensedObject obj;
+
         for(double i : sweepValues) { //sweepValues) {
-            // +- i is determined by directionality... so, we will add that as a temp variable until I discuss
-            // some of these choices with Bert.
-            double j = i;
-            if(sensor_dir < 1) {
-                j = i * -1;
-            }
-            if (sensor_dir == 1) {
+            if (sensor_dir == 1) { // Right side, reverse the table.
                 i = i * -1;
             }
-            Vector2 direction = baseVehicle.getTransform().getTransformedR(new Vector2(x + j, y - i));
-            //Ray ray = new Ray(start, direction);
-
-            Ray ray = new Ray(start,(i + baseVehicle.getLinearVelocity().getDirection()));
+            Ray ray = new Ray(start,(i + state.getHeading())); //baseVehicle.getLinearVelocity().getDirection()));
 
             List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.raycast(ray, length, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
             for (RaycastResult<SimulationBody, BodyFixture> result : results) {
                 // Get the direction between the center of the vehicle and the impact point
                 Vector2 heading = new Vector2(baseVehicle.getWorldCenter(), result.getRaycast().getPoint());
-                double angle = heading.getAngleBetween(baseVehicle.getLinearVelocity()); // radians
+                double angle = heading.getAngleBetween(state.getHeading()); // baseVehicle.getLinearVelocity()); // radians
                 double distance = result.getRaycast().getDistance();
                 String type = "UNKNOWN";
                 if (result.getBody().getUserData() != null) { // If not set, just make Unknown
@@ -261,20 +258,23 @@ public class Vehicle extends SimulationBody {
         applyRight.multiply(right);
         double torqueL = leftWheelLocation.cross(applyLeft);
         double torqueR = rightWheelLocation.cross(applyRight);
-
-//        System.out.println("Left Torque: " + torqueL + " Right Torque: " + torqueR);
-
-        // Apply torque to baseVehicle
         double baseTorque = torqueL + torqueR;
-        baseVehicle.applyTorque(baseTorque);
 
-        // Constrain the vehicle to prevent spinning out of control
+        // Proportional Controller
+        double error = baseTorque - baseVehicle.getAngularVelocity(); // SetPoint - ProcessVariable (e(t) = r(t)-y(t))
+        double u = K_p * error; // Control variable
+
+        // Apply Torque
+        baseVehicle.applyTorque(u);
+
+        // System.out.println("Current: " + baseVehicle.getAngularVelocity() + "; Applied: " + u + "; Target: " + baseTorque);
+
         // Apply the forces in the direction the baseVehicle is facing
         Vector2 baseNormal = baseVehicle.getTransform().getTransformedR(new Vector2(0.0,1.0));
         baseNormal.multiply(left+right);
-//        System.out.println(baseNormal);
         baseVehicle.setLinearVelocity(baseNormal);
 
+        // Constrain the vehicle to prevent spinning out of control
         // Get the linear velocity in the direction of the baseVehicle's front
         Vector2 clamp = this.baseVehicle.getTransform().getTransformedR(new Vector2(0.0, 1.0));
         double defl = baseVehicle.getLinearVelocity().dot(clamp);
@@ -285,7 +285,7 @@ public class Vehicle extends SimulationBody {
 
         // clamp the angular velocity
         double av = baseVehicle.getAngularVelocity();
-        av = Interval.clamp(av, -MAX_TORQUE, MAX_TORQUE);
+        av = Interval.clamp(av, -MAX_ANGULAR_VELOCITY, MAX_ANGULAR_VELOCITY);
         baseVehicle.setAngularVelocity(av);
     }
 
@@ -298,6 +298,36 @@ public class Vehicle extends SimulationBody {
         baseVehicle.setColor(c);
     }
 
+    /**
+     * Converts the baseVehicle's Transform matrix (cos and sin) into a
+     * vehicle heading.
+     * Matches the return from baseVehicle.getLinearVelocity.getDirection()
+     * 0 = x, counter-clockwise +0 to PI, clockwise -0 to PI
+     *
+     * @return vehicle heading
+     */
+    public double convertTransformToHeading() {
+        double sin = baseVehicle.getTransform().getSint();
+        int ssign = (0>sin)?-1:1;
+        double cos = baseVehicle.getTransform().getCost();
+        int csign = (0>cos)?-1:1;
+
+        double asin = Math.asin(sin);
+        double acos = Math.acos(cos);
+        double dir = Math.PI/2.0;
+
+        if (csign == 1 && ssign == -1) { // Quadrant I
+            dir = (Math.PI/2.0) - acos;
+        } else if (csign == 1 && ssign == 1) { // Quadrant II
+            dir = acos + (Math.PI/2.0);
+        } else if (csign == -1 && ssign == -1) { //Quadrant IV
+            dir = (Math.PI/2.0) - acos;
+        } else if (csign == -1 && ssign == 1) { // Quadrant IV
+            dir = -(Math.PI/2.0)-asin;
+        }
+
+        return dir;
+    }
 }
 
 

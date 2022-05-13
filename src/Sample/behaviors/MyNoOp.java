@@ -21,10 +21,11 @@ public class MyNoOp extends Behavior {
         assert (state != null);
 
         Action action = new Action();
+        action.name = "MyNoOp";
 
         // This is a do nothing behavior...what did you expect!
-        action.setLeftWheelVelocity(0);
-        action.setRightWheelVelocity(0);
+        action.setLeftWheelVelocity(0.0);
+        action.setRightWheelVelocity(0.0);
 
         // But if you want, you can still get and put things in your State for later
         // Don't forget the import ^^^
