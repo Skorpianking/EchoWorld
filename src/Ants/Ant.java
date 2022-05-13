@@ -11,7 +11,7 @@ import behaviorFramework.CompositeBehavior;
 import behaviorFramework.arbiters.HighestActivation;
 import behaviorFramework.arbiters.HighestPriority;
 import behaviorFramework.behaviors.Wander;
-import Sample.behaviors.GotoX;
+import Sample.behaviors.GotoXX;
 import com.sun.deploy.util.StringUtils;
 import framework.SimulationBody;
 import org.dyn4j.geometry.*;
@@ -82,7 +82,7 @@ public class Ant extends SimulationBody {
         behaviorTree = new CompositeBehavior();
         behaviorTree.setArbitrationUnit(arbiter);
         behaviorTree.add(new GoHome()); // <-- parameter to get home before death needs to be tuned
-        behaviorTree.add(new GotoX("Resource"));
+        behaviorTree.add(new GotoXX("Resource"));
         behaviorTree.add(new AvoidObstacle());
         behaviorTree.add(new Wander());
 

@@ -36,6 +36,8 @@ public class GotoXX extends Behavior {
         double bestAngle = 360;
         SensedObject bestObj = null;
 
+        double maxVelocity = 0.9;
+
         for (SensedObject obj : sensedObjects) {
             angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
 
@@ -48,12 +50,15 @@ public class GotoXX extends Behavior {
         }
 
         if (bestObj != null) {
+            if (bestObj.getDistance() <= 3.0)
+                maxVelocity = maxVelocity * (bestObj.getDistance() / 3.0);
+
             if (bestAngle > 0  ) { // Light on Right
-                action.setRightWheelVelocity(0.9 - Math.abs(bestObj.getAngle()));
-                action.setLeftWheelVelocity(0.9);
+                action.setRightWheelVelocity(maxVelocity - Math.abs(bestObj.getAngle()));
+                action.setLeftWheelVelocity(maxVelocity);
             } else if (bestAngle < 0  ) { // Light on Left
-                action.setRightWheelVelocity(0.9);
-                action.setLeftWheelVelocity(0.9 - Math.abs(bestObj.getAngle()));
+                action.setRightWheelVelocity(maxVelocity);
+                action.setLeftWheelVelocity(maxVelocity - Math.abs(bestObj.getAngle()));
             }
             action.setVote(1);
             lastSeenCounter = 5;
