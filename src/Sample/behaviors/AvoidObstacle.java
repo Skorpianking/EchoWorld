@@ -32,10 +32,8 @@ public class AvoidObstacle extends Behavior {
         action.name = new String("AvoidObstacle");
 
         double angle = 0;
-        double heading = 0;
         for (SensedObject obj : sensedObjects) {
             angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
-            heading = state.getVelocity().getDirection();
 
             if (obj.getSide() == "Right" && angle > 0 && angle < ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on right
                 action.setRightWheelVelocity(0.7);
