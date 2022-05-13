@@ -4,6 +4,7 @@ import Braitenburg.Action;
 import Braitenburg.Vehicle;
 import Sample.behaviors.AvoidObstacle;
 import Sample.behaviors.GotoX;
+import Sample.behaviors.GotoXX;
 import Sample.behaviors.Love;
 import Sample.behaviors.MyNoOp;
 import behaviorFramework.ArbitrationUnit;
@@ -39,7 +40,7 @@ public class MyVehicle extends Vehicle {
         behaviorTree = new CompositeBehavior();
 
         behaviorTree.setArbitrationUnit(arbiter);
-        behaviorTree.add(new GotoX("Light"));
+        behaviorTree.add(new GotoXX("Light"));
         //behaviorTree.add(new Love());
         behaviorTree.add(new AvoidObstacle());
         behaviorTree.add(new Wander());
