@@ -111,6 +111,9 @@ public class Braitenberg extends SimulationFrame {
      */
     protected void render(Graphics2D g, double elapsedTime) {
         super.render(g, elapsedTime);
+        for(SimulationBody v : myVehicles) {
+            ((Vehicle)v).render(g,20);
+        }
         // Now move vehicles
 /*        for(SimulationBody v : myVehicles) {
             ((Vehicle)v).sense(); // call to sense the world.
