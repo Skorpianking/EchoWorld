@@ -40,8 +40,8 @@ public class MyVehicle extends Vehicle {
         behaviorTree = new CompositeBehavior();
 
         behaviorTree.setArbitrationUnit(arbiter);
-        behaviorTree.add(new GotoXX("Light"));
-        //behaviorTree.add(new Love());
+        //behaviorTree.add(new GotoXX("Light"));
+        behaviorTree.add(new Love());
         behaviorTree.add(new AvoidObstacle());
         behaviorTree.add(new Wander());
         behaviorTree.add(new MyNoOp());

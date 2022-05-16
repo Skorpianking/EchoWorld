@@ -14,7 +14,6 @@ public class Love extends Behavior {
         assert (state != null);
 
         Action action = new Action();
-        List<SensedObject> sensedObjects = state.getSensedObjects();
 
         action.name = "Love";
 
@@ -22,9 +21,13 @@ public class Love extends Behavior {
         double right = state.getRightLightStrength();
 
         if (left > 0.0 || right > 0.0) {
-            if (left > 0.0 && right > 0.0) { // Light is in the Middle
-                action.setLeftWheelVelocity(0.75);
-                action.setRightWheelVelocity(0.75);
+            double maintainDistance = Math.min(left, right);
+            if (left > 0.0 && right > 0.0 && maintainDistance < 18.0) { // Light is in the Middle
+                action.setLeftWheelVelocity(0.75*maintainDistance);
+                action.setRightWheelVelocity(0.75*maintainDistance);
+            } else if (left > 0.0 && right > 0.0 && maintainDistance >= 18.0) { // Light is in front of us
+                action.setLeftWheelVelocity(0.0);
+                action.setRightWheelVelocity(0.0);
             } else if (left > 0.0) { // Light is on the Left
                 action.setLeftWheelVelocity(-0.5);
                 action.setRightWheelVelocity(0.5);
