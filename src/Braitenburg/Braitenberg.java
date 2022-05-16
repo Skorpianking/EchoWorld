@@ -11,6 +11,9 @@ import org.dyn4j.world.World;
 import org.dyn4j.world.listener.StepListener;
 
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -19,6 +22,8 @@ public class Braitenberg extends SimulationFrame {
     private static final long serialVersionUID = -8518496222422955267L;
     public ArrayList<SimulationBody> myVehicles = new ArrayList<>();
 
+    private SimulationBody Light;
+
     private final boolean DRAW_VEHICLE_DATA = true;
 
     /**
@@ -26,6 +31,11 @@ public class Braitenberg extends SimulationFrame {
      */
     public Braitenberg() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         super("Vehicles", 20);
+
+        KeyListener listener = new CustomKeyListener();
+        this.addKeyListener(listener);
+        this.canvas.addKeyListener(listener);
+
         Vehicle test = (Vehicle) Class.forName(new String("Sample.MyVehicle")).newInstance();
         System.out.println("Classname:" + test.getClass().getName());
         test.initialize(this.world);
@@ -79,22 +89,24 @@ public class Braitenberg extends SimulationFrame {
         this.world.addBody(bottom);
 
         // Light (a polygon)
-        SimulationBody newLight = new SimulationBody();
-        newLight.setColor(Color.yellow);
-        newLight.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
-        newLight.translate(new Vector2(-8.0-scale*.5, -5-scale*.5));
-        newLight.setMass(MassType.INFINITE);
-        newLight.setUserData(new String("Light"));
-        this.world.addBody(newLight);
+        Light = new SimulationBody();
+        Light.setColor(Color.yellow);
+        Light.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
+        Light.translate(new Vector2(8.0+scale*0.5, 5+scale*0.5));
+        Light.setMass(MassType.NORMAL);
+        Light.setUserData(new String("Light"));
+        this.world.addBody(Light);
 
         // Extra light
-        SimulationBody extraLight = new SimulationBody();
+/*        SimulationBody extraLight = new SimulationBody();
         extraLight.setColor(Color.yellow);
         extraLight.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
-        extraLight.translate(new Vector2(8.0+scale*.5, 5+scale*0.5));
+        extraLight.translate(new Vector2(-8.0-scale*.5, -5-scale*0.5));
         extraLight.setMass(MassType.INFINITE);
         extraLight.setUserData(new String("Light"));
         this.world.addBody(extraLight);
+
+ */
 
         // Obstacle
         SimulationBody polygon = new SimulationBody();
@@ -166,6 +178,38 @@ public class Braitenberg extends SimulationFrame {
 
         public void setUpdateRate(int rate) {
             UPDATE_RATE = rate;
+        }
+    }
+
+    /**
+     * Keyboard input to move the Light around.
+     */
+    private class CustomKeyListener extends KeyAdapter {
+        @Override
+        public void keyPressed(KeyEvent e) {
+            Vector2 up_down = new Vector2(0.0, 1.0);
+            Vector2 left_right = new Vector2(1.0, 0.0);
+            switch (e.getKeyCode()) {
+                case KeyEvent.VK_W:
+                    up_down = up_down.multiply(3);
+                    Light.applyForce(up_down);
+                    break;
+                case KeyEvent.VK_S:
+                    up_down = up_down.multiply(-3);
+                    Light.applyForce(up_down);
+                    break;
+                case KeyEvent.VK_A:
+                    left_right = left_right.multiply(-3);
+                    Light.applyForce(left_right);
+                    break;
+                case KeyEvent.VK_D:
+                    left_right = left_right.multiply(3);
+                    Light.applyForce(left_right);
+                    break;
+                case KeyEvent.VK_X:
+                    Light.setLinearVelocity(0.0, 0.0);
+                    break;
+            }
         }
     }
 }

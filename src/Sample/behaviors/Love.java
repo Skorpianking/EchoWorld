@@ -14,7 +14,6 @@ public class Love extends Behavior {
         assert (state != null);
 
         Action action = new Action();
-
         action.name = "Love";
 
         double left = state.getLeftLightStrength();
