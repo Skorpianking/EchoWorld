@@ -8,18 +8,25 @@ import Braitenburg.State;
 import java.util.Random;
 
 /**
- * Returns an action that has the robot wander.
+ * <p>Returns an action that has the robot wander.<br>
  * Action returned is always go forward and randomly
  * sampled via a Gaussian around the last velocity
- * to limit large velocity changes.
- *
+ * to limit large velocity changes.</p>
  */
-
 public class Wander extends Behavior {
-    private double ST_DEV = 0.2;
+    private final double ST_DEV = 0.2; // Size of the normal distribution
 
     // Vote = 1
 
+    /**
+     * <p>Returns an action that is randomly sampled around the current
+     * velocity.</p>
+     *
+     * <p>Vote = 1</p>
+     *
+     * @param state State uses stored past velocities
+     * @return a random action
+     */
     public Action genAction(State state) {
         assert (state != null);
 

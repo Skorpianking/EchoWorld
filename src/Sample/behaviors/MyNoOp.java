@@ -11,12 +11,20 @@ import Sample.MyState; // If you want to use your state in a behavior, you need
 /**
  * This is a do nothing sample behavior.  It will always vote to stop the
  * motion of the vehicle.
- *
+ * <p>
  * This also shows how to load and store memory into your own state object
  *
  */
 
 public class MyNoOp extends Behavior {
+
+    /**
+     * Does nothing but places a value into the Sample vehicles
+     * state memory.
+     *
+     * @param state MyState an extension of State
+     * @return an empty action
+     */
     public Action genAction(State state) {
         assert (state != null);
 

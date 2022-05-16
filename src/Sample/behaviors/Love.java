@@ -1,15 +1,28 @@
 package Sample.behaviors;
 
-import Braitenburg.SensedObject;
 import behaviorFramework.Action;
 import behaviorFramework.Behavior;
 
 import Braitenburg.State;
 
-import java.util.List;
-
+/**
+ * Braitenberg's Love behavior
+ *
+ * <p>Approach the light and try and stay 2 distance units from it.</p>
+ *
+ */
 public class Love extends Behavior {
 
+    /**
+     * <p>If the light is on the left or right, turns toward the light.<br>
+     * If the light is in the middle, move toward it until within
+     * 2 distance units.</p>
+     *
+     * <p>Vote = 1 if light is seen 0 otherwise</p>
+     *
+     * @param state a Braitenberg.State object
+     * @return action
+     */
     public Action genAction(State state) {
         assert (state != null);
 
