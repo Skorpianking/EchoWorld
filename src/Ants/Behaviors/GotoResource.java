@@ -34,7 +34,7 @@ public class GotoResource extends Behavior {
                 } else if (angle < 0 && angle > -75) { // Light on left
                     action.setRightWheelVelocity(1.0);
                     action.setLeftWheelVelocity(1.0 + ((angle * Math.PI) / 180));
-                    action.setVote(2);
+                    action.setVote(1);
                 }
             }
         }

@@ -6,12 +6,15 @@ import Braitenburg.Action;
 import Braitenburg.SensedObject;
 import Braitenburg.State;
 import Sample.behaviors.AvoidObstacle;
+import Sample.behaviors.GotoXX;
 import behaviorFramework.ArbitrationUnit;
 import behaviorFramework.CompositeBehavior;
+import behaviorFramework.arbiters.ActivationFusion;
 import behaviorFramework.arbiters.HighestActivation;
 import behaviorFramework.arbiters.HighestPriority;
+import behaviorFramework.arbiters.SimplePriority;
 import behaviorFramework.behaviors.Wander;
-import Sample.behaviors.GotoXX;
+import Sample.behaviors.GotoX;
 import com.sun.deploy.util.StringUtils;
 import framework.SimulationBody;
 import org.dyn4j.geometry.*;
@@ -23,6 +26,10 @@ public class Ant extends SimulationBody {
     // Echo parameters -- will be extended over time
     String id;
     String tag; // this is the Echo tag variable described by Holland
+    String offenseTag;
+    String defenseTag;
+    String matingTag;
+
     ArrayList<Resource> reservoir = new ArrayList<>();
 
     // UBF assist, I can also envision this helping with Echo behaviors
@@ -48,8 +55,14 @@ public class Ant extends SimulationBody {
     final double ballFriction = 0.00;
     final double ballRestitution = 0.9;
 
-    private double MAX_VELOCITY = 1; // arbitrary right now
-    private int SENSOR_RANGE = 10; // how far an ant can see
+    // Straight from vehicle
+    private double MAX_VELOCITY = 2; // arbitrary right now
+    private final double MAX_ANGULAR_VELOCITY = 1; // how fast we can turn
+    private final double ANGULAR_DAMPENING = 0.1;
+    private final double K_p = 10;   //Proportional Control Constant
+
+
+    private int SENSOR_RANGE = 2; // how far an ant can see
     private int MAX_TORQUE = 1; // how fast we can turn
     private double GRAB_RANGE = 1; // how far "off" the target can be, allows us to home in on a target
 
@@ -73,20 +86,33 @@ public class Ant extends SimulationBody {
         double x_pos = Math.floor(Math.random()*(max-min+1)+min); // done just for code clarity
         double y_pos = Math.floor(Math.random()*(max-min+1)+min);
         basicAnt.translate(x_pos,y_pos);
-        id = new String(basicAnt.getWorldCenter().toString()); // hopefully this makes their names random enough for now
 
-        home = new Vector2(-5,5); // center of the screen for now.
+        home = new Vector2(-15,15); // center of the screen for now.
+        //            g.fillRect((int)(point.x*scale-r*05),(int)(point.y*scale-r*.05),3,3);
 
         // Instantiate behaviorTree
-        ArbitrationUnit arbiter = new HighestPriority();
+        ArrayList<Double> weights = new ArrayList<>();
+        setWeights(weights);
+        ArbitrationUnit arbiter = new HighestPriority(weights);
         behaviorTree = new CompositeBehavior();
         behaviorTree.setArbitrationUnit(arbiter);
-        behaviorTree.add(new GoHome()); // <-- parameter to get home before death needs to be tuned
-        behaviorTree.add(new GotoXX("Resource"));
-        behaviorTree.add(new AvoidObstacle());
         behaviorTree.add(new Wander());
-
+        //behaviorTree.add(new GoHome()); // <-- parameter to get home before death needs to be tuned
+        behaviorTree.add(new GotoXX("Home"));
+        behaviorTree.add(new GotoXX("Resource"));
         setInitialTag(); // set the ant's tag
+        id = this.matingTag+" "+basicAnt.getWorldCenter().toString(); // hopefully this makes their names random enough for now
+
+    }
+
+    /**
+     * Set the weights for each action:  wander, goHome, GotoXX
+     * @param weights
+     */
+    private void setWeights(ArrayList<Double> weights) {
+        weights.add(0,1.0);
+        weights.add(1,3.0);
+        weights.add(2, 2.0);
     }
 
     /**
@@ -105,6 +131,9 @@ public class Ant extends SimulationBody {
         this.lifespan = copy.lifespan;
         this.myWorld.addBody(this.basicAnt);
         this.tag = copy.tag;
+        this.offenseTag = copy.offenseTag;
+        this.defenseTag = copy.defenseTag;
+        this.matingTag = copy.matingTag;
         this.reservoir = copy.reservoir;
     }
 
@@ -124,9 +153,7 @@ public class Ant extends SimulationBody {
      */
     public Action decideAction() {
         action.clear();
-        // Get an action from the behaviorTree
-        action = behaviorTree.genAction(state);
-        System.out.println(action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
+        action = behaviorTree.genAction(state); // get an action from the behavior tree
         return action;
     }
 
@@ -151,32 +178,21 @@ public class Ant extends SimulationBody {
         applyRight.multiply(right);
         double torqueL = leftWheelLocation.cross(applyLeft);
         double torqueR = rightWheelLocation.cross(applyRight);
-
-//        System.out.println("Left Torque: " + torqueL + " Right Torque: " + torqueR);
-
-        // Apply torque to basicAnt
         double baseTorque = torqueL + torqueR;
-        basicAnt.applyTorque(baseTorque);
 
-        // Constrain the vehicle to prevent spinning out of control
-        // Apply the forces in the direction the basicAnt is facing
-        Vector2 baseNormal = basicAnt.getTransform().getTransformedR(new Vector2(0.0,1.0));
+        // Proportional Controller
+        double error = baseTorque - this.basicAnt.getAngularVelocity(); // SetPoint - ProcessVariable (e(t) = r(t)-y(t))
+        double u = K_p * error; // Control variable
+
+        // Apply Torque
+        this.basicAnt.applyTorque(u);
+
+        // System.out.println("Current: " + baseVehicle.getAngularVelocity() + "; Applied: " + u + "; Target: " + baseTorque);
+
+        // Apply the forces in the direction the baseVehicle is facing
+        Vector2 baseNormal = this.basicAnt.getTransform().getTransformedR(new Vector2(0.0,1.0));
         baseNormal.multiply(left+right);
-//        System.out.println(baseNormal);
-        basicAnt.setLinearVelocity(baseNormal);
-
-        // Get the linear velocity in the direction of the basicAnt's front
-        Vector2 clamp = this.basicAnt.getTransform().getTransformedR(new Vector2(0.0, 1.0));
-        double defl = basicAnt.getLinearVelocity().dot(clamp);
-
-        // clamp the velocity
-        defl = Interval.clamp(defl, 0.0, MAX_VELOCITY);
-        basicAnt.setLinearVelocity(baseNormal.multiply(defl));
-
-        // clamp the angular velocity
-        double av = basicAnt.getAngularVelocity();
-        av = Interval.clamp(av, -MAX_TORQUE, MAX_TORQUE);
-        basicAnt.setAngularVelocity(av);
+        this.basicAnt.setLinearVelocity(baseNormal);
     }
 
     /**
@@ -189,10 +205,26 @@ public class Ant extends SimulationBody {
     }
 
     /**
-     * Assigns a random tag to the ant -- right now, it is very, very non-random
+     * Assigns a random tag to the ant -- later we can add a tag length, for now they will be of length six,
+     * with potential values: A, B, C, D
      */
     private void setInitialTag() {
-        this.tag = "AABBCC";
+        //this.tag = "";
+        this.matingTag = ""; // for now, the ants are asexual
+        this.offenseTag = "";
+        this.defenseTag = "";
+        ArrayList<Character> characters = new ArrayList<>();
+        characters.add('A');
+        characters.add('B');
+        characters.add('C');
+        characters.add('D');
+
+        for(int i = 0; i < 6; i++) {
+            this.matingTag += characters.get(new Random().nextInt(4));
+            this.offenseTag += characters.get(new Random().nextInt(4));
+            this.defenseTag += characters.get(new Random().nextInt(4));
+        }
+        //System.out.println("Hello! My name is: " + this.tag);
     }
 
     /**
@@ -208,10 +240,10 @@ public class Ant extends SimulationBody {
         int countD = 0;
 
         // Count occurrences in the ant's tag, remember, this will later be fairly unique to sets of ants
-        long tagCountA = this.tag.chars().filter(ch -> ch == 'A').count();
-        long tagCountB = this.tag.chars().filter(ch -> ch == 'B').count();
-        long tagCountC = this.tag.chars().filter(ch -> ch == 'C').count();
-        long tagCountD = this.tag.chars().filter(ch -> ch == 'D').count();
+        long tagCountA = this.matingTag.chars().filter(ch -> ch == 'A').count();
+        long tagCountB = this.matingTag.chars().filter(ch -> ch == 'B').count();
+        long tagCountC = this.matingTag.chars().filter(ch -> ch == 'C').count();
+        long tagCountD = this.matingTag.chars().filter(ch -> ch == 'D').count();
 
         ArrayList<Resource> toBurn = new ArrayList<Resource>(); // save resources to burn here
         for(Resource res: reservoir) {
@@ -253,6 +285,7 @@ public class Ant extends SimulationBody {
     public void decide(ArrayList<Ant> allAgent_Ants, ArrayList<Resource> resources) {
         // Step 1:  Sense
         updateLife();
+        updateHome();
         updateResources(resources);
         updateAnts(allAgent_Ants);
         // Step 2:  Decide
@@ -261,6 +294,23 @@ public class Ant extends SimulationBody {
         act(action);
     }
 
+    /**
+     * Determines if the ant is "home." If so, it's lifespan is extended. -- This will change in the future.
+     */
+    private void updateHome() {
+        double dist = this.basicAnt.getWorldCenter().distance(home);
+        if(dist < 2) {
+            //System.out.println("Dist from home: " + dist + " WC: " + this.basicAnt.getWorldCenter());
+            lifespan = 2000;
+            setRandomVelocity(); // send it back into the world
+            this.basicAnt.setColor(Color.CYAN);
+        }
+    }
+
+    /**
+     * Establishes if the ant has to go home due to a low lifespan (low energy).  Later this will probably extend
+     * to dropping off resources at home for other ants to use.
+     */
     private void updateLife() {
         if(lifespan <= 100*basicAnt.getWorldCenter().distance(home)) {
             Vector2 heading = new Vector2(basicAnt.getWorldCenter(), home);
@@ -273,6 +323,9 @@ public class Ant extends SimulationBody {
 
     /**
      * Adds sensed ants to the sensed object list
+     *
+     * May not need to add this to the sense object list as we can have this behavior trump other actions?
+     *
      * @param allAgent_ants
      */
     private void updateAnts(ArrayList<Ant> allAgent_ants) {
@@ -284,6 +337,24 @@ public class Ant extends SimulationBody {
                 String type = "Ant";
                 SensedObject obj = new SensedObject(heading, angle, distance, type, "None", antObj.basicAnt.getWorldCenter());
                 state.addSensedObject(obj);
+                //System.out.println("I see an ant: " + antObj.id);
+
+                // Ok, ok, we see an ant.  Let's see what interactions we get for right now
+                EchoAntCatFly model = new EchoAntCatFly();
+                double maybeIWin = model.likelyWinner(this.offenseTag,antObj.defenseTag);
+                double maybeYouWin = model.likelyWinner(antObj.offenseTag, this.defenseTag);
+                //System.out.println("Fight Values: " + maybeIWin + " " + this.offenseTag + " " +  maybeYouWin + antObj.defenseTag);
+                //System.out.println("Fight Values: " + maybeIWin + " " + this.defenseTag + " " +  maybeYouWin + antObj.offenseTag);
+
+                if(maybeIWin > maybeYouWin) {
+                    System.out.println("Likely to win the fight");
+                }
+                else if(maybeIWin == maybeYouWin) {
+                    System.out.println("Likely to tie");
+                }
+                else {
+                    System.out.println("Try to run");
+                }
             }
         }
     }
@@ -351,6 +422,11 @@ public class Ant extends SimulationBody {
         this.lifespan = lifespan;
     }
 
+    public void setHome(Vector2 home) {
+        this.home = home;
+    }
+
+
     /**
      * Decrements the agent's lifespan by one.
      */
@@ -363,6 +439,14 @@ public class Ant extends SimulationBody {
 
     public void incLife() {
         this.lifespan++;
+    }
+
+    public SimulationBody getBasicAnt() {
+        return basicAnt;
+    }
+
+    public void setBasicAnt(SimulationBody basicAnt) {
+        this.basicAnt = basicAnt;
     }
 
     /**

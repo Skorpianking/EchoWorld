@@ -30,9 +30,9 @@ public class AntWorld extends SimulationFrame {
     public ArrayList<Resource> resources = new ArrayList<Resource>();
 
     // Init variables, also used for testing
-    int numAnts = 1;
+    int numAnts = 2;
     int numResources = 10;
-    int scale;
+    int scale = 20;
 
     /**
      * Constructor.
@@ -67,52 +67,55 @@ public class AntWorld extends SimulationFrame {
     private void addWorldObjects(int scale) {
         // add bounding shapes to the world, these are the walls
         SimulationBody right = new SimulationBody();
+        SimulationBody left = new SimulationBody();
+        SimulationBody bottom = new SimulationBody();
+        SimulationBody top = new SimulationBody();
+
         right.setColor(Color.black);
-        right.addFixture(Geometry.createRectangle(0.2, 40+scale));
+        right.addFixture(Geometry.createRectangle(0.2, 40 + scale));
         right.setMass(MassType.INFINITE);
-        right.translate(16.65+scale*1.16, 7);
-        right.setUserData(new String("Obstacle"));
+        right.translate(16.65 + scale * 1.16, 7);
+        right.setUserData("Obstacle");
         this.world.addBody(right);
 
-        SimulationBody left = new SimulationBody();
         left.setColor(Color.black);
-        left.addFixture(Geometry.createRectangle(0.2, 40+scale));
+        left.addFixture(Geometry.createRectangle(0.2, 40 + scale));
         left.setMass(MassType.INFINITE);
-        left.translate(-16.65-scale*1.16, 7);
-        left.setUserData(new String("Obstacle"));
+        left.translate(-16.65 - scale * 1.16, 7);
+        left.setUserData("Obstacle");
         this.world.addBody(left);
 
-        SimulationBody top = new SimulationBody();
         top.setColor(Color.black);
-        top.addFixture(Geometry.createRectangle(40+scale*2, 0.2));
+        top.addFixture(Geometry.createRectangle(40 + scale * 2, 0.2));
         top.setMass(MassType.INFINITE);
-        top.translate(0, 8.25+scale*0.58);
-        top.setUserData(new String("Obstacle"));
+        top.translate(0, 8.25 + scale * 0.58);
+        top.setUserData("Obstacle");
         this.world.addBody(top);
 
-        SimulationBody bottom = new SimulationBody();
         bottom.setColor(Color.black);
-        bottom.addFixture(Geometry.createRectangle(40+scale*2, 0.2));
+        bottom.addFixture(Geometry.createRectangle(40 + scale * 2, 0.2));
         bottom.setMass(MassType.INFINITE);
-        bottom.translate(0, -8.25-scale*0.58);
-        bottom.setUserData(new String("Obstacle"));
+        bottom.translate(0, -8.25 - scale * 0.58);
+        bottom.setUserData("Obstacle");
         this.world.addBody(bottom);
+
 
         // Light (a polygon)
         SimulationBody newLight = new SimulationBody();
         newLight.setColor(Color.yellow);
         newLight.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
-        newLight.translate(new Vector2(-8.0-scale*.5, -5-scale*.5));
+        newLight.translate(new Vector2(-8.0 - scale * .5, -5 - scale * .5));
         newLight.setMass(MassType.INFINITE);
+        newLight.setUserData("Light");
         this.world.addBody(newLight);
 
         // Extra light
         SimulationBody extraLight = new SimulationBody();
         extraLight.setColor(Color.yellow);
         extraLight.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
-        extraLight.translate(new Vector2(8.0+scale*.5, 5+scale*0.5));
+        extraLight.translate(new Vector2(8.0 + scale * .5, 5 + scale * 0.5));
         extraLight.setMass(MassType.INFINITE);
-        extraLight.setUserData(new String("Light"));
+        extraLight.setUserData("Light");
         this.world.addBody(extraLight);
 
         // Obstacle
@@ -121,7 +124,7 @@ public class AntWorld extends SimulationFrame {
         polygon.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
         polygon.translate(new Vector2(-2.0, 0));
         polygon.setMass(MassType.INFINITE);
-        polygon.setUserData(new String("Obstacle"));
+        polygon.setUserData("Light");
         this.world.addBody(polygon);
     }
 
@@ -218,24 +221,34 @@ public class AntWorld extends SimulationFrame {
             // that I haven't been able to avoid.
             this.world.removeAllBodies();
             addWorldObjects(scale); // add objects back in because we erase everything
-            int newAnts = 0;
+
+            ArrayList<SimulationBody> newAnts = new ArrayList<SimulationBody>();
+
             for(SimulationBody alive: antColonies) {
                 Ant temp = new Ant((Ant)alive);
                 if(temp.replicate()) { // If this ant can replicate, it will
                     // Ideally we would like to replicate from a parent ant versus just adding randos to the world
                     // One could, if so inclined, take stock of the entire population, saving those that are
                     // more fit and letting them breed to create the next generation of ants.
-                    newAnts++; // adding after this loop to avoid concurrency issues
+                    // Alright, to add more words here, we are going to replicate new ants at the location of
+                    // the parent ant, give it the same tag, but not the resources.
+                    Ant newA = new Ant(this.world);
+                    newA.translate(temp.getHome().x*scale-0.2,temp.getHome().y*scale-0.2);
+                    //newA.getBasicAnt().translate(temp.getHome().x*scale-0.2,temp.getHome().y*scale-0.2);
+                    newA.id = newA.id + "_" + elapsedTime;
+                    System.out.println("Hello! My name is: " + newA.id);
+                    newA.reservoir = new ArrayList<>(); // resets the reservoir
+                    newAnts.add(newA); // adding after this loop to avoid concurrency issues
                 }
                 this.world.addBody(temp);
             }
-            for(int i =0; i < newAnts; i++) {
-                Ant temp = new Ant(this.world);
-                temp.setColor(Color.RED); // make them stand out for now
-                antColonies.add(temp);
-                this.world.addBody(temp);
+
+            for(SimulationBody temp: newAnts) {
+                antColonies.add((Ant)temp);
+                //this.world.addBody(temp);
             }
             this.world.update(elapsedTime);
+
         } else if (this.step.isActive()) {
             this.world.step(1);
             this.stepNumber++;
@@ -255,6 +268,13 @@ public class AntWorld extends SimulationFrame {
         // Sync the display on some systems.
         // (on Linux, this fixes event queue problems)
         Toolkit.getDefaultToolkit().sync();
+
+        this.stepNumber++;
+        this.step.setActive(false);
+        world.step(1); // either of these calls works, documentation says they do "act" differently, but at this point
+        // I cannot tell a difference in ant behavior, so I will just call the step function to ensure we are executing just
+        // one time step of updates.  This call does resolve the agent collision problem -- agents now collide correctly.
+        //world.update(1);
     }
 
     /* (non-Javadoc)
@@ -275,11 +295,7 @@ public class AntWorld extends SimulationFrame {
             // Testing area, paint their home
             Vector2 homePoint = ((Ant)v).getHome();
             g.setColor(Color.red);
-            g.fill(new Ellipse2D.Double(
-                    homePoint.x * scale - r * 0.5,
-                    homePoint.y * scale - r * 0.5,
-                    r,
-                    r));
+            g.fillRect((int)(homePoint.x*scale-r*0.5),(int)(homePoint.y*scale-r*0.5),3,3);
         }
         addResources(); // adds resources to the world with a small probability
 
@@ -287,11 +303,12 @@ public class AntWorld extends SimulationFrame {
         for(Resource res : resources) {
             Vector2 point = res.location;
             g.setColor(Color.GREEN);
-            g.fill(new Ellipse2D.Double(
-                    point.x * scale - r * 0.5,
-                    point.y * scale - r * 0.5,
-                    r,
-                    r));
+            //g.fill(new Ellipse2D.Double(
+            //        point.x * scale - r * 0.5,
+            //        point.y * scale - r * 0.5,
+            //        r,
+            //       r));
+            g.fillRect((int)(point.x*scale-r*05),(int)(point.y*scale-r*.05),3,3);
         }
         super.render(g, elapsedTime);
     }

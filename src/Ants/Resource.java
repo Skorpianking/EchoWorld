@@ -55,8 +55,8 @@ public class Resource {
      * @return
      */
     private Vector2 randomLocation() {
-        int max = 15;
-        int min = -15;
+        int max = 20;
+        int min = -25;
         Math.floor(Math.random()*(max-min+1)+min);
         return(new Vector2(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min)));
     }
