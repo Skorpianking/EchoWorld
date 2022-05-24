@@ -57,10 +57,12 @@ public class MyVehicle extends Vehicle {
         setColor(new Color(160,0,255));
 
         // Instantiate behaviorTree
-        ArbitrationUnit arbiter = new SimplePriority();
         behaviorTree = new CompositeBehavior();
 
+        // Set arbiter
+        ArbitrationUnit arbiter = new SimplePriority();
         behaviorTree.setArbitrationUnit(arbiter);
+        // Add behaviors
         //behaviorTree.add(new GotoXX("Light"));
         behaviorTree.add(new Love());
         behaviorTree.add(new AvoidObstacle());

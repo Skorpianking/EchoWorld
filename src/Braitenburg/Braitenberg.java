@@ -36,7 +36,7 @@ public class Braitenberg extends SimulationFrame {
         this.addKeyListener(listener);
         this.canvas.addKeyListener(listener);
 
-        Vehicle test = (Vehicle) Class.forName(new String("Sample.MyVehicle")).newInstance();
+        Vehicle test = (Vehicle) Class.forName(new String("Sample.JSONVehicle")).newInstance();
         System.out.println("Classname:" + test.getClass().getName());
         test.initialize(this.world);
         myVehicles.add(test);
