@@ -13,6 +13,10 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferStrategy;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -33,6 +37,13 @@ public class AntWorld extends SimulationFrame {
     int numAnts = 2;
     int numResources = 10;
     int scale = 20;
+    int generation = 0; // helps track when ants were added to the world
+
+    // Vars for writing to a file
+    String directory = System.getProperty("user.dir");
+    String filename = directory + File.separator + "random_echo_ant_test_" + 0 + ".csv";
+    PrintWriter outputStream = null; // file writer
+
 
     /**
      * Constructor.
@@ -46,6 +57,7 @@ public class AntWorld extends SimulationFrame {
         // Add ants here
         for(int i = 0; i < numAnts; i++) {
             Ant testAnt = new Ant(world);
+            testAnt.setGeneration(0);
             world.addBody(testAnt);
             antColonies.add(testAnt);
         }
@@ -54,6 +66,16 @@ public class AntWorld extends SimulationFrame {
         for(int i = 0; i < numResources; i++) {
             Resource res = new Resource();
             resources.add(res);
+        }
+
+        try {
+            String tacticalAgents = filename;
+            outputStream = new PrintWriter( new FileOutputStream(tacticalAgents, true));
+            outputStream.write("timestep,id,offense,defense,mating,generation,life,death\n"); // writes header to csv file
+        }
+        catch (FileNotFoundException e){
+            System.out.println("Error opening the file: " + filename);
+            System.exit(0);
         }
     }
 
@@ -151,6 +173,9 @@ public class AntWorld extends SimulationFrame {
                         Thread.sleep(5);
                     } catch (InterruptedException e) {}
                 }
+                // I think I can close file here
+                outputStream.flush();
+                outputStream.close();
             }
         };
         // set the game loop thread to a daemon thread so that
@@ -182,6 +207,17 @@ public class AntWorld extends SimulationFrame {
     }
 
     private void gameLoop() {
+        try {
+            writeToFile(); // Before we do anything, we will write out all the ants to a file
+        }
+        catch (Exception e) {
+            System.out.println("Being sloppy with exception handling");
+            outputStream.flush();
+            outputStream.close();
+            System.exit(0); // end the sim
+        }
+        generation++; // increment our generation counter
+
         // get the graphics object to render to
         Graphics2D g = (Graphics2D)this.canvas.getBufferStrategy().getDrawGraphics();
 
@@ -237,6 +273,7 @@ public class AntWorld extends SimulationFrame {
                     //newA.getBasicAnt().translate(temp.getHome().x*scale-0.2,temp.getHome().y*scale-0.2);
                     newA.id = newA.id + "_" + elapsedTime;
                     System.out.println("Hello! My name is: " + newA.id);
+                    newA.setGeneration(generation);
                     newA.reservoir = new ArrayList<>(); // resets the reservoir
                     newAnts.add(newA); // adding after this loop to avoid concurrency issues
                 }
@@ -245,7 +282,6 @@ public class AntWorld extends SimulationFrame {
 
             for(SimulationBody temp: newAnts) {
                 antColonies.add((Ant)temp);
-                //this.world.addBody(temp);
             }
             this.world.update(elapsedTime);
 
@@ -271,10 +307,22 @@ public class AntWorld extends SimulationFrame {
 
         this.stepNumber++;
         this.step.setActive(false);
-        world.step(1); // either of these calls works, documentation says they do "act" differently, but at this point
-        // I cannot tell a difference in ant behavior, so I will just call the step function to ensure we are executing just
-        // one time step of updates.  This call does resolve the agent collision problem -- agents now collide correctly.
-        //world.update(1);
+        world.step(1);
+    }
+
+    private void writeToFile() {
+        for(SimulationBody v : antColonies) {
+            Ant temp = (Ant)v;
+            if(temp.isAlive()) {
+                //"id,offense,defense,mating,generation,life,death
+                outputStream.write(generation + ","+ temp.id + "," + temp.offenseTag + "," + temp.defenseTag + "," + temp.matingTag + "," +
+                        temp.getGeneration() + "," + temp.getLife() + "," + "0" + "\n");
+            }
+            else {
+                outputStream.write(generation + "," + temp.id + "," + temp.offenseTag + "," + temp.defenseTag + "," + temp.matingTag + "," +
+                        temp.getGeneration() + "," + temp.getLife() + "," + generation + "\n");
+            }
+        }
     }
 
     /* (non-Javadoc)
@@ -295,7 +343,7 @@ public class AntWorld extends SimulationFrame {
             // Testing area, paint their home
             Vector2 homePoint = ((Ant)v).getHome();
             g.setColor(Color.red);
-            g.fillRect((int)(homePoint.x*scale-r*0.5),(int)(homePoint.y*scale-r*0.5),3,3);
+            g.fillRect((int)(homePoint.x*scale-r*0.5),(int)(homePoint.y*scale-r*0.5),5,5);
         }
         addResources(); // adds resources to the world with a small probability
 
@@ -303,11 +351,6 @@ public class AntWorld extends SimulationFrame {
         for(Resource res : resources) {
             Vector2 point = res.location;
             g.setColor(Color.GREEN);
-            //g.fill(new Ellipse2D.Double(
-            //        point.x * scale - r * 0.5,
-            //        point.y * scale - r * 0.5,
-            //        r,
-            //       r));
             g.fillRect((int)(point.x*scale-r*05),(int)(point.y*scale-r*.05),3,3);
         }
         super.render(g, elapsedTime);

@@ -13,6 +13,7 @@ import behaviorFramework.arbiters.ActivationFusion;
 import behaviorFramework.arbiters.HighestActivation;
 import behaviorFramework.arbiters.HighestPriority;
 import behaviorFramework.arbiters.SimplePriority;
+import behaviorFramework.behaviors.NoOp;
 import behaviorFramework.behaviors.Wander;
 import Sample.behaviors.GotoX;
 import com.sun.deploy.util.StringUtils;
@@ -20,6 +21,7 @@ import framework.SimulationBody;
 import org.dyn4j.geometry.*;
 import org.dyn4j.world.World;
 import java.awt.*;
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class Ant extends SimulationBody {
@@ -29,6 +31,13 @@ public class Ant extends SimulationBody {
     String offenseTag;
     String defenseTag;
     String matingTag;
+
+    // Parameter for seeing how long the ant lived, they can recharge at home.  More successful ants should live longer
+    // Generation = timestep it was introduced into the population
+    // Death generation - if we desire it - can be calculate as generation + life when dead
+    private int life = 0;
+    private int generation = 0;
+    private int death = 0;
 
     ArrayList<Resource> reservoir = new ArrayList<>();
 
@@ -87,7 +96,7 @@ public class Ant extends SimulationBody {
         double y_pos = Math.floor(Math.random()*(max-min+1)+min);
         basicAnt.translate(x_pos,y_pos);
 
-        home = new Vector2(-15,15); // center of the screen for now.
+        home = new Vector2(-15,0); // center of the screen for now.
         //            g.fillRect((int)(point.x*scale-r*05),(int)(point.y*scale-r*.05),3,3);
 
         // Instantiate behaviorTree
@@ -101,7 +110,7 @@ public class Ant extends SimulationBody {
         behaviorTree.add(new GotoXX("Home"));
         behaviorTree.add(new GotoXX("Resource"));
         setInitialTag(); // set the ant's tag
-        id = this.matingTag+" "+basicAnt.getWorldCenter().toString(); // hopefully this makes their names random enough for now
+        id = this.matingTag; //+" "+basicAnt.getWorldCenter().toString(); // hopefully this makes their names random enough for now
 
     }
 
@@ -135,6 +144,9 @@ public class Ant extends SimulationBody {
         this.defenseTag = copy.defenseTag;
         this.matingTag = copy.matingTag;
         this.reservoir = copy.reservoir;
+        this.generation = copy.generation;
+        this.life = copy.life;
+        this.death = copy.death;
     }
 
     /**
@@ -283,13 +295,17 @@ public class Ant extends SimulationBody {
      * @param resources
      */
     public void decide(ArrayList<Ant> allAgent_Ants, ArrayList<Resource> resources) {
-        // Step 1:  Sense
-        updateLife();
-        updateHome();
-        updateResources(resources);
-        updateAnts(allAgent_Ants);
-        // Step 2:  Decide
-        decideAction();
+        action.clear();
+        if(this.alive) { // as we have introduced interaction, dead ants could get processed inside the game loop
+            // Step 1:  Sense
+            life++;
+            updateLife();
+            updateHome();
+            updateResources(resources);
+            updateAnts(allAgent_Ants);
+            // Step 2:  Decide
+            decideAction();
+        }
         // Step 3:  Act
         act(action);
     }
@@ -346,17 +362,40 @@ public class Ant extends SimulationBody {
                 //System.out.println("Fight Values: " + maybeIWin + " " + this.offenseTag + " " +  maybeYouWin + antObj.defenseTag);
                 //System.out.println("Fight Values: " + maybeIWin + " " + this.defenseTag + " " +  maybeYouWin + antObj.offenseTag);
 
+                // According to the Smith and Bedau paper, the likelihood of fleeing is equal to the probability
+                // of the agent losing a fight to another agent.  If it is the agent's turn, which it should be,
+                // and the agent decides to flee, then we will need to give the agent an opportunity to move away
+                // from the enemy.  This should also override anything else the agent wants to do.  For now, we will handle
+                // this via the UBF structure again.  We will only add ants that we want to flee from.  Otherwise, if it
+                // is the ants turn it should eat the other ant.  This will set the other ant to dead and we will transfer
+                // resources. -- todo:  look at hidden order as I think this is proportional may also just follow S & B paper
                 if(maybeIWin > maybeYouWin) {
                     System.out.println("Likely to win the fight");
+                    double prob = new Random().nextDouble();
+                    if(prob <= maybeIWin) {
+                        antObj.alive = false; // the other ant is killed
+                        cleanUp(antObj); // take the ant's resources
+                        System.out.println("Momma! I just killed an ant...");
+                    }
                 }
-                else if(maybeIWin == maybeYouWin) {
-                    System.out.println("Likely to tie");
-                }
-                else {
-                    System.out.println("Try to run");
+                else if(maybeIWin != maybeYouWin) {
+                    System.out.println("You better run!");  // todo this should probably result in a fleeing action, GOTOXX anywhere but here
+                    double prob = new Random().nextDouble();
+                    if(prob >= maybeYouWin) { // we don't succeed
+                        this.alive = false;
+                        antObj.cleanUp(this);
+                        System.out.println("Failed to flee.");
+                    }
                 }
             }
         }
+    }
+
+    private void cleanUp(Ant otherAnt) {
+        for(Resource res : otherAnt.reservoir) {
+            this.reservoir.add(res);
+        }
+        otherAnt.reservoir = new ArrayList<>(); // empty the reservoir of the other ant
     }
 
     /**
@@ -447,6 +486,26 @@ public class Ant extends SimulationBody {
 
     public void setBasicAnt(SimulationBody basicAnt) {
         this.basicAnt = basicAnt;
+    }
+
+    public int getGeneration() {
+        return generation;
+    }
+
+    public void setGeneration(int generation) {
+        this.generation = generation;
+    }
+
+    public int getLife() {
+        return life;
+    }
+
+    public int getDeath() {
+        return death;
+    }
+
+    public void setDeath(int death) {
+        this.death = death;
     }
 
     /**
