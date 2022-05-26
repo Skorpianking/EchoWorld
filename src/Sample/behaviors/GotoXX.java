@@ -5,6 +5,7 @@ import Braitenburg.State;
 import behaviorFramework.Action;
 import behaviorFramework.Behavior;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,6 +31,18 @@ public class GotoXX extends Behavior {
     public GotoXX(String target) {
         super();
         this.target = target;
+    }
+
+    public GotoXX() { super(); }
+
+    /**
+     * Set Goto's target parameter.
+     *
+     * @param params a single String that is the target type's label
+     */
+    public void setParameters(ArrayList<String> params) {
+        super.setParameters(params);
+        this.target = params.get(0);
     }
 
     /**

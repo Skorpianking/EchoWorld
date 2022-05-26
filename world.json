@@ -1,0 +1,15 @@
+{
+  "scan_lines": true,
+  "vehicles": [
+    {
+      "name": "Marie",
+      "position": [5,5]
+    }
+  ],
+  "lights": [
+    {
+      "position": [18,15],
+      "key_bind": "1"
+    }
+  ]
+}

@@ -15,16 +15,21 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
-import java.util.Random;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Braitenberg extends SimulationFrame {
     /** The serial version id */
     private static final long serialVersionUID = -8518496222422955267L;
     public ArrayList<SimulationBody> myVehicles = new ArrayList<>();
+    private Map<Integer, SimulationBody> keyBoundItemList;
+    private SimulationBody keyBoundItem = null;
+
 
     private SimulationBody Light;
 
-    private final boolean DRAW_VEHICLE_DATA = true;
+    private boolean drawScanLines = true;   // right now going to fall through and
+                                            // let each vehicle be set to draw or not.
 
     /**
      * Constructor.
@@ -35,12 +40,26 @@ public class Braitenberg extends SimulationFrame {
         KeyListener listener = new CustomKeyListener();
         this.addKeyListener(listener);
         this.canvas.addKeyListener(listener);
+        String vehicleName = "vehicle";
 
-        Vehicle test = (Vehicle) Class.forName(new String("Sample.JSONVehicle")).newInstance();
-        System.out.println("Classname:" + test.getClass().getName());
-        test.initialize(this.world);
-        myVehicles.add(test);
-        this.world.addBody(test);
+        try {
+            // If the vehicle is a named class try and load the class
+            Vehicle test = (Vehicle) Class.forName(new String(vehicleName)).newInstance();
+            System.out.println("Classname:" + test.getClass().getName());
+            test.initialize(this.world);
+            test.setDrawScanLines(true);
+            myVehicles.add(test);
+            this.world.addBody(test);
+        } catch (Exception e) {
+            // The name is likely a filename. Create a JSONVehicle and load the json file
+            vehicleName = vehicleName + ".json";
+            JSONVehicle test = new JSONVehicle();
+            test.initialize(this.world, vehicleName);
+            test.setDrawScanLines(true);
+            myVehicles.add(test);
+            this.world.addBody(test);
+        }
+
 //        for(int i = 0; i < 1; i++) {
             // Add my new vehicle class
 //            test = new Vehicle();
@@ -88,6 +107,7 @@ public class Braitenberg extends SimulationFrame {
         bottom.setUserData(new String("Obstacle"));
         this.world.addBody(bottom);
 
+
         // Light (a polygon)
         Light = new SimulationBody();
         Light.setColor(Color.yellow);
@@ -96,25 +116,19 @@ public class Braitenberg extends SimulationFrame {
         Light.setMass(MassType.NORMAL);
         Light.setUserData(new String("Light"));
         this.world.addBody(Light);
+        keyBoundItemList = new HashMap<Integer, SimulationBody>();
+        keyBoundItemList.put(1,Light);
 
-        // Extra light
-/*        SimulationBody extraLight = new SimulationBody();
-        extraLight.setColor(Color.yellow);
-        extraLight.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
-        extraLight.translate(new Vector2(-8.0-scale*.5, -5-scale*0.5));
-        extraLight.setMass(MassType.INFINITE);
-        extraLight.setUserData(new String("Light"));
-        this.world.addBody(extraLight);
-
- */
-
+/*
         // Obstacle
         SimulationBody polygon = new SimulationBody();
         polygon.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
         polygon.translate(new Vector2(-2.0, 0));
         polygon.setMass(MassType.INFINITE);
         this.world.addBody(polygon);
+*/
 
+        // Custom listener for the simulation update loop
         CustomStepListener listen = new CustomStepListener();
         listen.setUpdateRate(3);
         this.world.addStepListener(listen);
@@ -125,7 +139,7 @@ public class Braitenberg extends SimulationFrame {
      */
     protected void render(Graphics2D g, double elapsedTime) {
         super.render(g, elapsedTime);
-        if (DRAW_VEHICLE_DATA) {
+        if (drawScanLines) {
             for (SimulationBody v : myVehicles) {
                 ((Vehicle) v).render(g, 20);
             }
@@ -146,7 +160,9 @@ public class Braitenberg extends SimulationFrame {
     }
 
 
-
+    /**
+     *
+     */
     private class CustomStepListener implements StepListener {
         private int UPDATE_RATE = 3;
         private int updateCounter = 0;
@@ -162,7 +178,7 @@ public class Braitenberg extends SimulationFrame {
                 Action act = ((Vehicle)v).decideAction(); // must cast it so we can call the decideAction function.
                 ((Vehicle)v).act(act);
             }
-        }
+            }
 
         @Override
         public void updatePerformed(TimeStep timeStep, PhysicsWorld physicsWorld) {
@@ -192,22 +208,42 @@ public class Braitenberg extends SimulationFrame {
             switch (e.getKeyCode()) {
                 case KeyEvent.VK_W:
                     up_down = up_down.multiply(3);
-                    Light.applyForce(up_down);
+                    if (keyBoundItem != null)
+                        keyBoundItem.applyForce(up_down);
                     break;
                 case KeyEvent.VK_S:
                     up_down = up_down.multiply(-3);
-                    Light.applyForce(up_down);
+                    if (keyBoundItem != null)
+                        keyBoundItem.applyForce(up_down);
                     break;
                 case KeyEvent.VK_A:
                     left_right = left_right.multiply(-3);
-                    Light.applyForce(left_right);
+                    if (keyBoundItem != null)
+                        keyBoundItem.applyForce(left_right);
                     break;
                 case KeyEvent.VK_D:
                     left_right = left_right.multiply(3);
-                    Light.applyForce(left_right);
+                    if (keyBoundItem != null)
+                        keyBoundItem.applyForce(left_right);
                     break;
                 case KeyEvent.VK_X:
-                    Light.setLinearVelocity(0.0, 0.0);
+                    if (keyBoundItem != null)
+                        keyBoundItem.setLinearVelocity(0.0, 0.0);
+                    break;
+                case KeyEvent.VK_1:
+                    keyBoundItem = keyBoundItemList.get(1);
+                    break;
+                case KeyEvent.VK_2:
+                    keyBoundItem = keyBoundItemList.get(2);
+                    break;
+                case KeyEvent.VK_3:
+                    keyBoundItem = keyBoundItemList.get(3);
+                    break;
+                case KeyEvent.VK_4:
+                    keyBoundItem = keyBoundItemList.get(4);
+                    break;
+                case KeyEvent.VK_5:
+                    keyBoundItem = keyBoundItemList.get(5);
                     break;
             }
         }

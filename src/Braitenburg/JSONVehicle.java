@@ -1,4 +1,4 @@
-package Sample;
+package Braitenburg;
 
 import Braitenburg.Action;
 import Braitenburg.State;
@@ -36,17 +36,20 @@ public class JSONVehicle extends Vehicle {
     }
 
     /**
-     * <p>The intialization method contains the construction of the behavior tree
-     * that will be executed on each call.</p>
+     * <p>The intialization method receives a filename to a JSON instantiated
+     * behavior tree. The file is loaded and the behaviors dynamically loaded
+     * for execution. the construction of the behavior tree
+     *
+     * JSONVehicle does not include a mechanism to allow for a unique State.
      *
      * @param myWorld the simulation world passed to Vehicle to maintain connection
      */
-    public void initialize(World<SimulationBody> myWorld) {
+    public void initialize(World<SimulationBody> myWorld, String filename) {
         super.initialize(myWorld, state);
         JsonObject deserialize = null;
 
         // Read in the vehicle's JSON file
-        try (FileReader fileReader = new FileReader(("vehicle.json"))) {
+        try (FileReader fileReader = new FileReader((filename))) {
             deserialize = (JsonObject) Jsoner.deserialize(fileReader);
         } catch (Exception e) {
             System.out.println("FAIL:" + e);
@@ -76,8 +79,7 @@ public class JSONVehicle extends Vehicle {
     /**
      * Every vehicle senses the world
      *
-     * If you want to preprocess sensor data in some way, you
-     * would call those methods and classes here.
+     * JSONVehicle doesn't have a way to include an extended state.
      *
      * @return true
      */
@@ -163,9 +165,7 @@ public class JSONVehicle extends Vehicle {
                 ArrayList<String> parameters;
                 try {
                     parameters = (ArrayList) jsonBehavior.get("parameters");
-                    // TODO: There currently isn't anything to receive the parameters
-                    //behavior.setJSONParameters(parameters);
-
+                    behavior.setParameters(parameters);
                 } catch (Exception e) {
                 }
             }
@@ -173,7 +173,11 @@ public class JSONVehicle extends Vehicle {
         return tree;
     }
 
-    public void treeToJSON() {
-        // TODO
+    /**
+     *  Stub for future writing of the behavior tree into a JSON file.
+     *
+     * @param filename
+     */
+    public void treeToJSON(String filename) {
     }
 }

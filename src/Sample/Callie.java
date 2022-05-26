@@ -16,6 +16,8 @@ import framework.SimulationBody;
 import org.dyn4j.world.World;
 
 import java.awt.*;
+import java.util.ArrayList;
+
 
 /**
  * <p>A Sample Behavior Framework Vehicle</p>
@@ -24,7 +26,7 @@ import java.awt.*;
  * <p>Making changes focuses on modifying the initialization method with a new
  * behavior tree.</p>
  */
-public class MyVehicle extends Vehicle {
+public class Callie extends Vehicle {
     /**
      * Using our own State object to store our vehicles personal data
      */
@@ -36,7 +38,7 @@ public class MyVehicle extends Vehicle {
      */
     CompositeBehavior behaviorTree;
 
-    public MyVehicle() {
+    public Callie() {
         state = new MyState();
     }
 
@@ -54,7 +56,7 @@ public class MyVehicle extends Vehicle {
      */
     public void initialize(World<SimulationBody> myWorld) {
         super.initialize(myWorld, state);
-        setColor(new Color(160,0,255));
+        setColor(new Color(316,50,85));
 
         // Instantiate behaviorTree
         behaviorTree = new CompositeBehavior();
@@ -62,7 +64,13 @@ public class MyVehicle extends Vehicle {
         // Set arbiter
         ArbitrationUnit arbiter = new SimplePriority();
         behaviorTree.setArbitrationUnit(arbiter);
+
         // Add behaviors
+        //GotoXX gotox = new GotoXX();
+        //ArrayList<String> params = new ArrayList<String>() { { add("Light");}};
+        //gotox.setParameters(params);
+        //behaviorTree.add(gotox);
+        // OR:
         //behaviorTree.add(new GotoXX("Light"));
         behaviorTree.add(new Love());
         behaviorTree.add(new AvoidObstacle());

@@ -14,9 +14,6 @@ import java.util.List;
 /**
  * Basic vehicle class.
  *
- * David King
- * Started:  8 Apr 2022
- * Last Update:  20 Apr
  */
 
 public class Vehicle extends SimulationBody {
@@ -44,6 +41,8 @@ public class Vehicle extends SimulationBody {
 
     // Creates the world
     protected World<SimulationBody> myWorld;
+
+    private boolean drawScanLines = false;
 
     public Vehicle() {
     }
@@ -122,13 +121,13 @@ public class Vehicle extends SimulationBody {
     }
 
     public void initialize(World<SimulationBody> myWorld, State s) {
-       // baseVehicle.setMass(new Mass(baseVehicle.getWorldCenter(),0.5,0.5)); // work in progress
         bulkInit(myWorld);
         state = s;
     }
 
     /**
-     *
+     * Converts sensor data into percepts stored in state. <br>
+     * Overload to add additional sensor parsing.
      */
     public boolean sense() {
         state.tick();
@@ -147,9 +146,8 @@ public class Vehicle extends SimulationBody {
     }
 
     /**
-     * Must be overloaded.
-     * Called before render to show action in the current time step.
-     * Current action is no op
+     * Must be overloaded. Current action is no op.<br>
+     * Called before render to get action for the current time step.<br>
      */
     public Action decideAction() { //Graphics2D g) {
         Action result = new Action();
@@ -159,7 +157,7 @@ public class Vehicle extends SimulationBody {
 
     /**
      * Called from render.  Must provide it the coordinates of the specific sensor you want to ray cast
-     * from. -- still very much a work in progress.
+     * from.
      *
      * @param sensor_x
      * @param sensor_y
@@ -203,16 +201,24 @@ public class Vehicle extends SimulationBody {
         }
     }
 
+    /**
+     * Override the render loop to allow for drawing additional information.
+     * In this case, the sensor scan lines.
+     *
+     * @param g the graphics object to render to
+     * @param scale the scaling factor
+     */
     @Override
     public void render(Graphics2D g, double scale) {
         super.render(g, scale);
 
-        // draw the sensor intersections
-        final double r = 4.0;
-        final double rayScale = 20;//48; // <-- this has to match the world scale, otherwise you get wonky results
-        int x, y;
-        List<SensedObject> sensedObjects = state.getSensedObjects();
-        for (SensedObject obj : sensedObjects) {
+        if (drawScanLines) {
+            // draw the sensor intersections
+            final double r = 4.0;
+            final double rayScale = 20;//48; // <-- this has to match the world scale, otherwise you get wonky results
+            int x, y;
+            List<SensedObject> sensedObjects = state.getSensedObjects();
+            for (SensedObject obj : sensedObjects) {
                 Vector2 point = obj.getHit(); //result.getRaycast().getPoint();
                 g.setColor(Color.GREEN);
                 g.fill(new Ellipse2D.Double(
@@ -222,19 +228,20 @@ public class Vehicle extends SimulationBody {
                         r));
 
                 if (obj.getSide() == "Left") {
-                  Vector2 v = baseVehicle.getTransform().getTransformed(new Vector2(-0.5, 0.8));
-                  x = (int)(v.x * rayScale);
-                  y = (int)(v.y * rayScale);
-                  g.setColor(Color.ORANGE);
-                  g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
+                    Vector2 v = baseVehicle.getTransform().getTransformed(new Vector2(-0.5, 0.8));
+                    x = (int) (v.x * rayScale);
+                    y = (int) (v.y * rayScale);
+                    g.setColor(Color.ORANGE);
+                    g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
                 }
                 if (obj.getSide() == "Right") {
                     Vector2 v = baseVehicle.getTransform().getTransformed(new Vector2(0.5, 0.8));
-                    x = (int)(v.x * rayScale);
-                    y = (int)(v.y * rayScale);
+                    x = (int) (v.x * rayScale);
+                    y = (int) (v.y * rayScale);
                     g.setColor(Color.MAGENTA);
                     g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
                 }
+            }
         }
     }
 
@@ -300,8 +307,8 @@ public class Vehicle extends SimulationBody {
 
     /**
      * Converts the baseVehicle's Transform matrix (cos and sin) into a
-     * vehicle heading.
-     * Matches the return from baseVehicle.getLinearVelocity.getDirection()
+     * vehicle heading. <br>
+     * Matches the return from baseVehicle.getLinearVelocity.getDirection()<br>
      * 0 = x, counter-clockwise +0 to PI, clockwise -0 to PI
      *
      * @return vehicle heading
@@ -328,6 +335,12 @@ public class Vehicle extends SimulationBody {
 
         return dir;
     }
+
+    /**
+     * Turn on sensor scan line drawing for visual debugging purposes.
+     * @param val
+     */
+    void setDrawScanLines(boolean val) {drawScanLines = val;}
 }
 
 

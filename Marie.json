@@ -1,6 +1,6 @@
 {
 	"vehicleName": "Test",
-	"color": [160, 0, 255],
+	"color": [188, 236, 51],
 	"behaviorTree": [
 		{
 			"name": "behaviorFramework.arbiters.SimplePriority",
@@ -18,7 +18,7 @@
 					"arbiter": false
 				},
 				{
-					"name": "Sample.behaviors.MyNoOp",
+					"name": "behaviorFramework.behaviors.NoOp",
 					"arbiter": false,
 					"parameters": ["6", "10.3", "a string"]
 				}
