@@ -146,14 +146,12 @@ public class Braitenberg extends SimulationFrame {
                 Vehicle vehicle = (Vehicle) Class.forName(new String(vehicleName)).newInstance();
                 System.out.println("Classname:" + vehicle.getClass().getName());
                 vehicle.initialize(this.world);
-                vehicle.setUserData(vehicleName);
                 insertVehicle(vehicle, item);
             } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
                 // The name is likely a filename. Create a JSONVehicle and load the json file
-                String fileName = vehicleName + ".json";
+                String fileName = "data\\" + vehicleName + ".json";
                 JSONVehicle vehicle = new JSONVehicle();
                 vehicle.initialize(this.world, fileName);
-                vehicle.setUserData(vehicleName);
                 insertVehicle(vehicle, item);
             }
         }
@@ -248,7 +246,7 @@ public class Braitenberg extends SimulationFrame {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        String filename = new String("world.json");
+        String filename = new String("data//world.json");
 
         // Read in the JSON world file
         try (FileReader fileReader = new FileReader((filename))) {
