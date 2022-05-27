@@ -56,7 +56,8 @@ public class Callie extends Vehicle {
      */
     public void initialize(World<SimulationBody> myWorld) {
         super.initialize(myWorld, state);
-        setColor(new Color(316,50,85));
+        setColor(new Color(206,81,156));
+        setUserData(getClass().getName());
 
         // Instantiate behaviorTree
         behaviorTree = new CompositeBehavior();
@@ -107,7 +108,7 @@ public class Callie extends Vehicle {
         // Get an action from the behaviorTree
         action = behaviorTree.genAction(state);
 
-        System.out.println(action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
+        System.out.println(getClass().getName() + ": " + action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
 
         return action;
     }

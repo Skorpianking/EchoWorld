@@ -108,11 +108,6 @@ public class Vehicle extends SimulationBody {
         WeldJoint<SimulationBody> rw = new WeldJoint<>(baseVehicle, rightWheel, rightWheelLocation);
         this.myWorld.addJoint(rw);
 */
-        //Random rand = new Random();
-        int max = 15;
-        int min = -15;
-        baseVehicle.translate(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min));
-        baseVehicle.setUserData("Vehicle");
     }
 
     public void initialize(World<SimulationBody> myWorld) {
@@ -303,6 +298,10 @@ public class Vehicle extends SimulationBody {
      */
     public void setColor(Color c) {
         baseVehicle.setColor(c);
+    }
+
+    public void setLocation(double x, double y) {
+        baseVehicle.translate(x,y);
     }
 
     /**

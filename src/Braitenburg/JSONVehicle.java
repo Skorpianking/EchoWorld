@@ -52,13 +52,15 @@ public class JSONVehicle extends Vehicle {
         try (FileReader fileReader = new FileReader((filename))) {
             deserialize = (JsonObject) Jsoner.deserialize(fileReader);
         } catch (Exception e) {
-            System.out.println("FAIL:" + e);
+            System.out.println("FAILED to Load:" + filename +"/n" + e);
+            System.exit(0);
         }
 
         System.out.println(deserialize);
 
         // Get vehicle name
         name = (String)deserialize.get("vehicleName");
+        setUserData(name);
 
         // Get vehicle color
         try {
@@ -101,7 +103,7 @@ public class JSONVehicle extends Vehicle {
         // Get an action from the behaviorTree
         action = behaviorTree.genAction(state);
 
-        System.out.println(action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
+        System.out.println(name + ": " + action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
 
         return action;
     }
@@ -166,7 +168,7 @@ public class JSONVehicle extends Vehicle {
                 try {
                     parameters = (ArrayList) jsonBehavior.get("parameters");
                     behavior.setParameters(parameters);
-                } catch (Exception e) {
+                } catch (Exception e) { // Fall through, parameters are optional
                 }
             }
         }

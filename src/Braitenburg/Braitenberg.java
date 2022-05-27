@@ -2,6 +2,8 @@ package Braitenburg;
 
 /* Profiler: -XX:+UnlockCommercialFeatures -agentlib:hprof=cpu=samples,interval=10 */
 
+import com.github.cliftonlabs.json_simple.JsonObject;
+import com.github.cliftonlabs.json_simple.Jsoner;
 import framework.SimulationBody;
 import framework.SimulationFrame;
 import org.dyn4j.dynamics.TimeStep;
@@ -14,6 +16,8 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.FileReader;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,12 +25,13 @@ import java.util.Map;
 public class Braitenberg extends SimulationFrame {
     /** The serial version id */
     private static final long serialVersionUID = -8518496222422955267L;
-    public ArrayList<SimulationBody> myVehicles = new ArrayList<>();
+
+    private static JsonObject worldJSON;
+
+    public ArrayList<SimulationBody> myVehicles;
+
     private Map<Integer, SimulationBody> keyBoundItemList;
     private SimulationBody keyBoundItem = null;
-
-
-    private SimulationBody Light;
 
     private boolean drawScanLines = true;   // right now going to fall through and
                                             // let each vehicle be set to draw or not.
@@ -34,91 +39,124 @@ public class Braitenberg extends SimulationFrame {
     /**
      * Constructor.
      */
-    public Braitenberg() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        super("Vehicles", 20);
+    public Braitenberg(int scale) {
+        super("Vehicles", scale); // At the end of construction calls initializeWorld()
 
+        // Custom listener for the simulation update loop
+        CustomStepListener listen = new CustomStepListener();
+        listen.setUpdateRate(3);
+        this.world.addStepListener(listen);
+
+        // Custom key listener for user interactions
         KeyListener listener = new CustomKeyListener();
         this.addKeyListener(listener);
         this.canvas.addKeyListener(listener);
-        String vehicleName = "vehicle";
-
-        try {
-            // If the vehicle is a named class try and load the class
-            Vehicle test = (Vehicle) Class.forName(new String(vehicleName)).newInstance();
-            System.out.println("Classname:" + test.getClass().getName());
-            test.initialize(this.world);
-            test.setDrawScanLines(true);
-            myVehicles.add(test);
-            this.world.addBody(test);
-        } catch (Exception e) {
-            // The name is likely a filename. Create a JSONVehicle and load the json file
-            vehicleName = vehicleName + ".json";
-            JSONVehicle test = new JSONVehicle();
-            test.initialize(this.world, vehicleName);
-            test.setDrawScanLines(true);
-            myVehicles.add(test);
-            this.world.addBody(test);
-        }
-
-//        for(int i = 0; i < 1; i++) {
-            // Add my new vehicle class
-//            test = new Vehicle();
-//            test.initialize(this.world);
-//            myVehicles.add(test);
-//            this.world.addBody(test);
-//        }
     }
+
 
     @Override
     protected void initializeWorld() {
         this.world.setGravity(World.ZERO_GRAVITY);
-        int scale = 20; // this doesn't appear to be something you can pull from the world at this point.
+        keyBoundItemList = new HashMap<Integer, SimulationBody>();
+        myVehicles = new ArrayList<SimulationBody>();
+
+        //int scale = 10; // this doesn't appear to be something you can pull from the world at this point.
+         // scale is associated with camera, pixels per meter
+         // Frame is hard coded in the framework to 800x1600. this means for a scale of 20, it should be a 40x80 world
+         // With the origin at the center, it becomes:  -20..20, -40..40
+         // so canvas.width & canvas.height / camera.scale
 
         // add bounding shapes to the world, these are the walls
         SimulationBody right = new SimulationBody();
         right.setColor(Color.black);
-        right.addFixture(Geometry.createRectangle(0.2, 40+scale));
+        right.addFixture(Geometry.createRectangle(0.2, canvas.getHeight() / camera.scale));
         right.setMass(MassType.INFINITE);
-        right.translate(16.65+scale*1.16, 7);
+        right.translate((canvas.getWidth()/ (2* camera.scale)) - 0.1, 0);
         right.setUserData(new String("Obstacle"));
         this.world.addBody(right);
 
         SimulationBody left = new SimulationBody();
         left.setColor(Color.black);
-        left.addFixture(Geometry.createRectangle(0.2, 40+scale));
+        left.addFixture(Geometry.createRectangle(0.2, canvas.getHeight() / camera.scale));
         left.setMass(MassType.INFINITE);
-        left.translate(-16.65-scale*1.16, 7);
+        left.translate(-(canvas.getWidth()/ (2* camera.scale)) + 0.1, 0);
         left.setUserData(new String("Obstacle"));
         this.world.addBody(left);
 
         SimulationBody top = new SimulationBody();
         top.setColor(Color.black);
-        top.addFixture(Geometry.createRectangle(40+scale*2, 0.2));
+        top.addFixture(Geometry.createRectangle(canvas.getWidth() / camera.scale, 0.2));
         top.setMass(MassType.INFINITE);
-        top.translate(0, 8.25+scale*0.58);
+        top.translate(0, (canvas.getHeight()/(2*camera.scale)) - 0.1);
         top.setUserData(new String("Obstacle"));
         this.world.addBody(top);
 
         SimulationBody bottom = new SimulationBody();
         bottom.setColor(Color.black);
-        bottom.addFixture(Geometry.createRectangle(40+scale*2, 0.2));
+        bottom.addFixture(Geometry.createRectangle(canvas.getWidth() / camera.scale, 0.2));
         bottom.setMass(MassType.INFINITE);
-        bottom.translate(0, -8.25-scale*0.58);
+        bottom.translate(0, -(canvas.getHeight()/(2*camera.scale)) + 0.1);
         bottom.setUserData(new String("Obstacle"));
         this.world.addBody(bottom);
 
+        // Add Lights (polygons)
+        ArrayList<BigDecimal> position;
+        double x = 0.0;
+        double y = 0.0;
+        ArrayList<JsonObject> lights = (ArrayList<JsonObject>)worldJSON.get("lights");
+        for (JsonObject item: lights) {
+            try {
+                position = (ArrayList<BigDecimal>) (item.get("position"));
+                x = position.get(0).doubleValue();
+                y = position.get(1).doubleValue();
+            } catch (Exception e) {
+                System.out.println("Lights must have a position [x, y]!");
+                System.exit(0);
+            }
 
-        // Light (a polygon)
-        Light = new SimulationBody();
-        Light.setColor(Color.yellow);
-        Light.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
-        Light.translate(new Vector2(8.0+scale*0.5, 5+scale*0.5));
-        Light.setMass(MassType.NORMAL);
-        Light.setUserData(new String("Light"));
-        this.world.addBody(Light);
-        keyBoundItemList = new HashMap<Integer, SimulationBody>();
-        keyBoundItemList.put(1,Light);
+            SimulationBody Light = new SimulationBody();
+            Light.setColor(Color.yellow);
+            Light.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
+            Light.translate(new Vector2(x, y));
+            Light.setMass(MassType.NORMAL);
+            Light.setUserData(new String("Light"));
+            this.world.addBody(Light);
+            try {
+                BigDecimal key = (BigDecimal)item.get("bound_key");
+                if (key.intValue() >= 1 && key.intValue() <=5) {
+                    keyBoundItemList.put(key.intValue(), Light);
+                }
+            } catch (Exception e) { // Fall through, it is optional to have a key binding for a light
+            }
+        }
 
+        // Add Vehicles
+        ArrayList<JsonObject> vehicles = (ArrayList<JsonObject>)worldJSON.get("vehicles");
+        String vehicleName = null;
+        for (JsonObject item: vehicles) {
+            try {
+                vehicleName = (String) item.get("name");
+            } catch (Exception e) {
+                System.out.println("Vehicles must have a name!");
+                System.exit(0);
+            }
+
+            try {
+                // If the vehicle is a named class try and load the class
+                Vehicle vehicle = (Vehicle) Class.forName(new String(vehicleName)).newInstance();
+                System.out.println("Classname:" + vehicle.getClass().getName());
+                vehicle.initialize(this.world);
+                insertVehicle(vehicle, item);
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                // The name is likely a filename. Create a JSONVehicle and load the json file
+                vehicleName = vehicleName + ".json";
+                JSONVehicle vehicle = new JSONVehicle();
+                vehicle.initialize(this.world, vehicleName);
+                insertVehicle(vehicle, item);
+            }
+        }
+
+        // Add Obstacles (rectangles)
 /*
         // Obstacle
         SimulationBody polygon = new SimulationBody();
@@ -127,11 +165,36 @@ public class Braitenberg extends SimulationFrame {
         polygon.setMass(MassType.INFINITE);
         this.world.addBody(polygon);
 */
+    }
 
-        // Custom listener for the simulation update loop
-        CustomStepListener listen = new CustomStepListener();
-        listen.setUpdateRate(3);
-        this.world.addStepListener(listen);
+    /**
+     *
+     * @param vehicle
+     * @param item
+     */
+    private void insertVehicle(Vehicle vehicle, JsonObject item) {
+        try {
+            String scanLines = (String)item.get("draw_scan_lines");
+            if (scanLines.equals("true"))
+                vehicle.setDrawScanLines(true);
+            else
+                vehicle.setDrawScanLines(false);
+        } catch (Exception e) { // drawing scan lines is not set default to false
+            vehicle.setDrawScanLines(false);
+        }
+
+        try {
+            ArrayList<BigDecimal> position = (ArrayList<BigDecimal>) (item.get("position"));
+            double x = position.get(0).doubleValue();
+            double y = position.get(1).doubleValue();
+            vehicle.setLocation(x, y);
+        } catch (Exception e) { // Position will be random if not given
+            int max = (int)(canvas.getHeight()/ (2* camera.scale) - 2);
+            int min = (int)-(canvas.getHeight()/ (2* camera.scale) + 2);
+            vehicle.setLocation(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min));
+        }
+        myVehicles.add(vehicle);
+        this.world.addBody(vehicle);
     }
 
     /* (non-Javadoc)
@@ -151,14 +214,26 @@ public class Braitenberg extends SimulationFrame {
      * @param args command line arguments
      */
     public static void main(String[] args) {
+        String filename = new String("world.json");
+
+        // Read in the JSON world file
+        try (FileReader fileReader = new FileReader((filename))) {
+            worldJSON = (JsonObject) Jsoner.deserialize(fileReader);
+        } catch (Exception e) {
+            System.out.println("FAILED to Load:" + filename +"/n" + e);
+            System.exit(0);
+        }
+
+        // Get world scale factor (pixels per meter)
+        BigDecimal scale = (BigDecimal)worldJSON.get("pixels_per_meter");
+
         try {
-            Braitenberg simulation = new Braitenberg();
+            Braitenberg simulation = new Braitenberg(scale.intValue());
             simulation.run();
         } catch(Exception e) {
-            System.out.println("FAIL:" + e);
+            System.out.println("FAILURE in Main():" + e);
         }
     }
-
 
     /**
      *
