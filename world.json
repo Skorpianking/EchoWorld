@@ -4,11 +4,11 @@
     {
       "name": "Sample.Callie",
       "position": [-5,-5],
-      "draw_scan_lines": "true"
+      "draw_scan_lines": "false"
     },{
       "name": "Marie",
       "position": [5,5],
-      "draw_scan_lines": "true"
+      "draw_scan_lines": "false"
     }
   ],
   "lights": [

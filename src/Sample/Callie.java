@@ -39,6 +39,7 @@ public class Callie extends Vehicle {
     CompositeBehavior behaviorTree;
 
     public Callie() {
+        super();
         state = new MyState();
     }
 

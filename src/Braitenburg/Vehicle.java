@@ -17,8 +17,6 @@ import java.util.List;
  */
 
 public class Vehicle extends SimulationBody {
-    // Basic vehicle build
-    private SimulationBody baseVehicle;
 
     private final Vector2 leftWheelLocation = new Vector2(-0.5, -0.5);
     private final Vector2 rightWheelLocation = new Vector2( 0.5, -0.5);
@@ -28,7 +26,7 @@ public class Vehicle extends SimulationBody {
     private final int SENSOR_RANGE = 20; // how far the line casts go
     private final double ANGULAR_DAMPENING = 0.1;
 
-    private final double K_p = 10;   //Proportional Control Constant
+    private final double K_p = 10;   // PID: Proportional Control Constant
 
     private State state;
 
@@ -51,12 +49,10 @@ public class Vehicle extends SimulationBody {
         this.myWorld = myWorld;
 
         // Create our vehicle
-        baseVehicle = new SimulationBody();
-        baseVehicle.addFixture(Geometry.createRectangle(1.0, 1.5));
-        baseVehicle.addFixture(Geometry.createCircle(0.35));
-        baseVehicle.setMass(MassType.NORMAL);
-        baseVehicle.setAngularDamping(ANGULAR_DAMPENING);
-        myWorld.addBody(baseVehicle);
+        this.addFixture(Geometry.createRectangle(1.0, 1.5));
+        this.addFixture(Geometry.createCircle(0.35));
+        this.setMass(MassType.NORMAL);
+        this.setAngularDamping(ANGULAR_DAMPENING);
 
         // -- grabbers
         Convex leftGrabber = Geometry.createRectangle(.1, .2);
@@ -78,13 +74,13 @@ public class Vehicle extends SimulationBody {
         rightWheel.translate(rightWheelLocation);
 
         // add to the vehicle -- note: these are like the portholes on a '57 chevy, they are just for looks
-        baseVehicle.addFixture(leftGrabber);
-        baseVehicle.addFixture(rightGrabber);
-        baseVehicle.addFixture(leftSensor);
-        baseVehicle.addFixture(rightSensor);
-        baseVehicle.addFixture(leftWheel);
-        baseVehicle.addFixture(rightWheel);
-        baseVehicle.setColor(Color.CYAN);
+        this.addFixture(leftGrabber);
+        this.addFixture(rightGrabber);
+        this.addFixture(leftSensor);
+        this.addFixture(rightSensor);
+        this.addFixture(leftWheel);
+        this.addFixture(rightWheel);
+        this.setColor(Color.CYAN);
 
 /*        // -- "wheels"
         leftWheel = new SimulationBody();
@@ -133,8 +129,8 @@ public class Vehicle extends SimulationBody {
         rayCasting(-0.50, 0.8, 0); // left sensor
         rayCasting(0.50, 0.8, 1); // right sensor
 
-        state.setVelocity(baseVehicle.getLinearVelocity()); // LinearVelocity captures heading and speed
-        state.setAngularVelocity(baseVehicle.getAngularVelocity());
+        state.setVelocity(this.getLinearVelocity()); // LinearVelocity captures heading and speed
+        state.setAngularVelocity(this.getAngularVelocity());
         state.updateLightStrengths();
 
         return true;
@@ -161,7 +157,7 @@ public class Vehicle extends SimulationBody {
     private void rayCasting(double sensor_x, double sensor_y, int sensor_dir) {
         final double length = SENSOR_RANGE;
 
-        Vector2 start = baseVehicle.getTransform().getTransformed(new Vector2(sensor_x, sensor_y));
+        Vector2 start = this.getTransform().getTransformed(new Vector2(sensor_x, sensor_y));
         SensedObject obj;
 
         for(double i : sweepValues) { //sweepValues) {
@@ -173,7 +169,7 @@ public class Vehicle extends SimulationBody {
             List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.raycast(ray, length, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
             for (RaycastResult<SimulationBody, BodyFixture> result : results) {
                 // Get the direction between the center of the vehicle and the impact point
-                Vector2 heading = new Vector2(baseVehicle.getWorldCenter(), result.getRaycast().getPoint());
+                Vector2 heading = new Vector2(this.getWorldCenter(), result.getRaycast().getPoint());
                 double angle = heading.getAngleBetween(state.getHeading()); // baseVehicle.getLinearVelocity()); // radians
                 double distance = result.getRaycast().getDistance();
                 String type = "UNKNOWN";
@@ -210,7 +206,7 @@ public class Vehicle extends SimulationBody {
         if (drawScanLines) {
             // draw the sensor intersections
             final double r = 4.0;
-            final double rayScale = 20;//48; // <-- this has to match the world scale, otherwise you get wonky results
+            final double rayScale = scale; // <-- this has to match the world scale, otherwise you get wonky results
             int x, y;
             List<SensedObject> sensedObjects = state.getSensedObjects();
             for (SensedObject obj : sensedObjects) {
@@ -223,14 +219,14 @@ public class Vehicle extends SimulationBody {
                         r));
 
                 if (obj.getSide() == "Left") {
-                    Vector2 v = baseVehicle.getTransform().getTransformed(new Vector2(-0.5, 0.8));
+                    Vector2 v = this.getTransform().getTransformed(new Vector2(-0.5, 0.8));
                     x = (int) (v.x * rayScale);
                     y = (int) (v.y * rayScale);
                     g.setColor(Color.ORANGE);
                     g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
                 }
                 if (obj.getSide() == "Right") {
-                    Vector2 v = baseVehicle.getTransform().getTransformed(new Vector2(0.5, 0.8));
+                    Vector2 v = this.getTransform().getTransformed(new Vector2(0.5, 0.8));
                     x = (int) (v.x * rayScale);
                     y = (int) (v.y * rayScale);
                     g.setColor(Color.MAGENTA);
@@ -263,45 +259,32 @@ public class Vehicle extends SimulationBody {
         double baseTorque = torqueL + torqueR;
 
         // Proportional Controller
-        double error = baseTorque - baseVehicle.getAngularVelocity(); // SetPoint - ProcessVariable (e(t) = r(t)-y(t))
+        double error = baseTorque - this.getAngularVelocity(); // SetPoint - ProcessVariable (e(t) = r(t)-y(t))
         double u = K_p * error; // Control variable
 
         // Apply Torque
-        baseVehicle.applyTorque(u);
+        this.applyTorque(u);
 
         // System.out.println("Current: " + baseVehicle.getAngularVelocity() + "; Applied: " + u + "; Target: " + baseTorque);
 
         // Apply the forces in the direction the baseVehicle is facing
-        Vector2 baseNormal = baseVehicle.getTransform().getTransformedR(new Vector2(0.0,1.0));
+        Vector2 baseNormal = this.getTransform().getTransformedR(new Vector2(0.0,1.0));
         baseNormal.multiply(left+right);
-        baseVehicle.setLinearVelocity(baseNormal);
+        this.setLinearVelocity(baseNormal);
 
         // Constrain the vehicle to prevent spinning out of control
         // Get the linear velocity in the direction of the baseVehicle's front
-        Vector2 clamp = this.baseVehicle.getTransform().getTransformedR(new Vector2(0.0, 1.0));
-        double defl = baseVehicle.getLinearVelocity().dot(clamp);
+        Vector2 clamp = this.getTransform().getTransformedR(new Vector2(0.0, 1.0));
+        double defl = this.getLinearVelocity().dot(clamp);
 
         // clamp the velocity
         defl = Interval.clamp(defl, 0.0, MAX_VELOCITY);
-        baseVehicle.setLinearVelocity(baseNormal.multiply(defl));
+        this.setLinearVelocity(baseNormal.multiply(defl));
 
         // clamp the angular velocity
-        double av = baseVehicle.getAngularVelocity();
+        double av = this.getAngularVelocity();
         av = Interval.clamp(av, -MAX_ANGULAR_VELOCITY, MAX_ANGULAR_VELOCITY);
-        baseVehicle.setAngularVelocity(av);
-    }
-
-    /**
-     * Set the color of the vehicle
-     *
-     * @param c Color
-     */
-    public void setColor(Color c) {
-        baseVehicle.setColor(c);
-    }
-
-    public void setLocation(double x, double y) {
-        baseVehicle.translate(x,y);
+        this.setAngularVelocity(av);
     }
 
     /**
@@ -313,9 +296,9 @@ public class Vehicle extends SimulationBody {
      * @return vehicle heading
      */
     public double convertTransformToHeading() {
-        double sin = baseVehicle.getTransform().getSint();
+        double sin = this.getTransform().getSint();
         int ssign = (0>sin)?-1:1;
-        double cos = baseVehicle.getTransform().getCost();
+        double cos = this.getTransform().getCost();
         int csign = (0>cos)?-1:1;
 
         double asin = Math.asin(sin);

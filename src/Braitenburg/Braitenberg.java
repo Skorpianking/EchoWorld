@@ -120,7 +120,6 @@ public class Braitenberg extends SimulationFrame {
             Light.translate(new Vector2(x, y));
             Light.setMass(MassType.NORMAL);
             Light.setUserData(new String("Light"));
-            this.world.addBody(Light);
             try {
                 BigDecimal key = (BigDecimal)item.get("bound_key");
                 if (key.intValue() >= 1 && key.intValue() <=5) {
@@ -128,6 +127,7 @@ public class Braitenberg extends SimulationFrame {
                 }
             } catch (Exception e) { // Fall through, it is optional to have a key binding for a light
             }
+            this.world.addBody(Light);
         }
 
         // Add Vehicles
@@ -146,25 +146,58 @@ public class Braitenberg extends SimulationFrame {
                 Vehicle vehicle = (Vehicle) Class.forName(new String(vehicleName)).newInstance();
                 System.out.println("Classname:" + vehicle.getClass().getName());
                 vehicle.initialize(this.world);
+                vehicle.setUserData(vehicleName);
                 insertVehicle(vehicle, item);
             } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
                 // The name is likely a filename. Create a JSONVehicle and load the json file
-                vehicleName = vehicleName + ".json";
+                String fileName = vehicleName + ".json";
                 JSONVehicle vehicle = new JSONVehicle();
-                vehicle.initialize(this.world, vehicleName);
+                vehicle.initialize(this.world, fileName);
+                vehicle.setUserData(vehicleName);
                 insertVehicle(vehicle, item);
             }
         }
 
         // Add Obstacles (rectangles)
-/*
-        // Obstacle
-        SimulationBody polygon = new SimulationBody();
-        polygon.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
-        polygon.translate(new Vector2(-2.0, 0));
-        polygon.setMass(MassType.INFINITE);
-        this.world.addBody(polygon);
-*/
+        try {
+            ArrayList<JsonObject> obstacles = (ArrayList<JsonObject>) worldJSON.get("obstacles");
+            double width = 0.0;
+            double height = 0.0;
+            for (JsonObject item : obstacles) {
+                try {
+                    position = (ArrayList<BigDecimal>) (item.get("position"));
+                    x = position.get(0).doubleValue();
+                    y = position.get(1).doubleValue();
+                } catch (Exception e) {
+                    System.out.println("Obstacles must have a position [x, y]!");
+                    System.exit(0);
+                }
+                try {
+                    position = (ArrayList<BigDecimal>) (item.get("size"));
+                    width = position.get(0).doubleValue();
+                    height = position.get(1).doubleValue();
+                } catch (Exception e) {
+                    System.out.println("Obstacles must have a size [width, height]!");
+                    System.exit(0);
+                }
+
+                SimulationBody Obstacle = new SimulationBody();
+                Obstacle.setColor(Color.black);
+                Obstacle.addFixture(Geometry.createRectangle(width, height));
+                Obstacle.translate(new Vector2(x, y));
+                Obstacle.setUserData(new String("Obstacle"));
+                try {
+                    BigDecimal key = (BigDecimal) item.get("bound_key");
+                    if (key.intValue() >= 1 && key.intValue() <= 5) {
+                        keyBoundItemList.put(key.intValue(), Obstacle);
+                    }
+                    Obstacle.setMass(MassType.NORMAL);
+                } catch (Exception e) { // It is optional to have a key binding for an obstacle.
+                    Obstacle.setMass(MassType.INFINITE); // Default to immovable
+                }
+                this.world.addBody(Obstacle);
+            }
+        } catch (Exception e) {} // Obstacles are optional
     }
 
     /**
@@ -187,15 +220,16 @@ public class Braitenberg extends SimulationFrame {
             ArrayList<BigDecimal> position = (ArrayList<BigDecimal>) (item.get("position"));
             double x = position.get(0).doubleValue();
             double y = position.get(1).doubleValue();
-            vehicle.setLocation(x, y);
+            vehicle.translate(x, y);
         } catch (Exception e) { // Position will be random if not given
             int max = (int)(canvas.getHeight()/ (2* camera.scale) - 2);
             int min = (int)-(canvas.getHeight()/ (2* camera.scale) + 2);
-            vehicle.setLocation(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min));
+            vehicle.translate(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min));
         }
         myVehicles.add(vehicle);
-        this.world.addBody(vehicle);
+        world.addBody(vehicle);
     }
+
 
     /* (non-Javadoc)
      * @see org.dyn4j.samples.SimulationFrame#render(java.awt.Graphics2D, double)
@@ -204,7 +238,7 @@ public class Braitenberg extends SimulationFrame {
         super.render(g, elapsedTime);
         if (drawScanLines) {
             for (SimulationBody v : myVehicles) {
-                ((Vehicle) v).render(g, 20);
+                ((Vehicle) v).render(g, camera.scale);
             }
         }
     }
