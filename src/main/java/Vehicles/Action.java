@@ -1,4 +1,4 @@
-package Braitenburg;
+package Vehicles;
 
 /**
  * The action includes all of the vehicles actuators.

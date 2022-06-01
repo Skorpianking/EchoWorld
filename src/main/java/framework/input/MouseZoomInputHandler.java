@@ -1,8 +1,8 @@
 package framework.input;
 
-import java.awt.Component;
-
 import framework.Camera;
+
+import java.awt.*;
 
 public class MouseZoomInputHandler extends AbstractMouseInputHandler implements InputHandler {
 

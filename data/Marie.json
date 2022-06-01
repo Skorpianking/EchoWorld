@@ -11,7 +11,7 @@
 					"name": "Sample.behaviors.Love"
 				},
 				{
-					"name": "behaviorFramework.behaviors.Wander"
+					"name": "Sample.behaviors.Wander"
 				} ,
 				{
 					"name": "Sample.behaviors.AvoidObstacle",

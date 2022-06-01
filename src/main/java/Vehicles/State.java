@@ -1,4 +1,4 @@
-package Braitenburg;
+package Vehicles;
 
 import org.dyn4j.geometry.Vector2;
 

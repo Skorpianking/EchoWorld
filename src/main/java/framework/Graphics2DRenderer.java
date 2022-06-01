@@ -24,23 +24,12 @@
  */
 package framework;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Arc2D;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Line2D;
-import java.awt.geom.Path2D;
-
-import org.dyn4j.geometry.Capsule;
-import org.dyn4j.geometry.Circle;
-import org.dyn4j.geometry.Ellipse;
-import org.dyn4j.geometry.HalfEllipse;
 import org.dyn4j.geometry.Polygon;
-import org.dyn4j.geometry.Segment;
 import org.dyn4j.geometry.Shape;
-import org.dyn4j.geometry.Slice;
-import org.dyn4j.geometry.Vector2;
+import org.dyn4j.geometry.*;
+
+import java.awt.*;
+import java.awt.geom.*;
 
 /**
  * Graphics2D renderer for dyn4j shape types.

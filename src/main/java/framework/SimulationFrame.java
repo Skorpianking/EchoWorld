@@ -24,28 +24,6 @@
  */
 package framework;
 
-import java.awt.Canvas;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.RenderingHints;
-import java.awt.Toolkit;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Line2D;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferStrategy;
-import java.util.Iterator;
-
-import javax.swing.JFrame;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-
 import framework.input.*;
 import org.dyn4j.collision.AxisAlignedBounds;
 import org.dyn4j.collision.Bounds;
@@ -60,6 +38,19 @@ import org.dyn4j.geometry.Transform;
 import org.dyn4j.geometry.Vector2;
 import org.dyn4j.world.World;
 import org.dyn4j.world.WorldCollisionData;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferStrategy;
+import java.util.Iterator;
 
 /**
  * A simple framework for building samples.
@@ -110,7 +101,7 @@ public abstract class SimulationFrame extends JFrame {
 	private final ToggleStateKeyboardInputHandler renderFixtureRotationRadius;
 	
 	private final ToggleStateKeyboardInputHandler printStepNumber;
-	private final ToggleStateKeyboardInputHandler printSimulation; 
+	private final ToggleStateKeyboardInputHandler printSimulation;
 	
 	/**
 	 * Constructor.

@@ -1,6 +1,7 @@
 package Ants;
 
-import Braitenburg.State;
+import Vehicles.State;
+
 import java.util.ArrayList;
 
 public class EchoAgentState extends State {

@@ -1,6 +1,5 @@
 package Ants;
 
-import Braitenburg.Vehicle;
 import org.dyn4j.geometry.Vector2;
 
 import java.util.Objects;

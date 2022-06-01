@@ -24,9 +24,9 @@
  */
 package framework;
 
-import java.awt.Point;
-
 import org.dyn4j.geometry.Vector2;
+
+import java.awt.*;
 
 /**
  * Stores the zoom and panning state of the camera.

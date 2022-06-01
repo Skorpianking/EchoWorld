@@ -24,27 +24,13 @@
  */
 package framework.input;
 
-import java.text.MessageFormat;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.dyn4j.Epsilon;
 import org.dyn4j.Version;
 import org.dyn4j.collision.AxisAlignedBounds;
 import org.dyn4j.collision.Bounds;
 import org.dyn4j.collision.CategoryFilter;
 import org.dyn4j.collision.Filter;
-import org.dyn4j.collision.broadphase.AABBExpansionMethod;
-import org.dyn4j.collision.broadphase.AABBProducer;
-import org.dyn4j.collision.broadphase.BroadphaseDetector;
-import org.dyn4j.collision.broadphase.BroadphaseFilter;
-import org.dyn4j.collision.broadphase.CollisionItemAABBProducer;
-import org.dyn4j.collision.broadphase.CollisionItemBroadphaseDetector;
-import org.dyn4j.collision.broadphase.CollisionItemBroadphaseFilter;
-import org.dyn4j.collision.broadphase.DynamicAABBTree;
-import org.dyn4j.collision.broadphase.NullAABBExpansionMethod;
-import org.dyn4j.collision.broadphase.Sap;
-import org.dyn4j.collision.broadphase.StaticValueAABBExpansionMethod;
+import org.dyn4j.collision.broadphase.*;
 import org.dyn4j.collision.continuous.ConservativeAdvancement;
 import org.dyn4j.collision.continuous.TimeOfImpactDetector;
 import org.dyn4j.collision.manifold.ClippingManifoldSolver;
@@ -56,32 +42,14 @@ import org.dyn4j.dynamics.Body;
 import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.dynamics.ContinuousDetectionMode;
 import org.dyn4j.dynamics.Settings;
-import org.dyn4j.dynamics.joint.AngleJoint;
-import org.dyn4j.dynamics.joint.DistanceJoint;
-import org.dyn4j.dynamics.joint.FrictionJoint;
-import org.dyn4j.dynamics.joint.Joint;
-import org.dyn4j.dynamics.joint.MotorJoint;
-import org.dyn4j.dynamics.joint.PinJoint;
-import org.dyn4j.dynamics.joint.PrismaticJoint;
-import org.dyn4j.dynamics.joint.PulleyJoint;
-import org.dyn4j.dynamics.joint.RevoluteJoint;
-import org.dyn4j.dynamics.joint.WeldJoint;
-import org.dyn4j.dynamics.joint.WheelJoint;
-import org.dyn4j.geometry.Capsule;
-import org.dyn4j.geometry.Circle;
-import org.dyn4j.geometry.Convex;
-import org.dyn4j.geometry.Ellipse;
-import org.dyn4j.geometry.HalfEllipse;
-import org.dyn4j.geometry.Mass;
-import org.dyn4j.geometry.MassType;
-import org.dyn4j.geometry.Polygon;
-import org.dyn4j.geometry.Rectangle;
-import org.dyn4j.geometry.Segment;
-import org.dyn4j.geometry.Slice;
-import org.dyn4j.geometry.Triangle;
-import org.dyn4j.geometry.Vector2;
+import org.dyn4j.dynamics.joint.*;
+import org.dyn4j.geometry.*;
 import org.dyn4j.resources.Messages;
 import org.dyn4j.world.World;
+
+import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A simple example of how you might serialize the state of a world.
@@ -107,7 +75,6 @@ public class CodeExporter {
 	 * <p>
 	 * Returns a string containing the code for the export.
 	 * @param name the name of the generated class
-	 * @param simulation the simulation to export
 	 * @return String
 	 */
 	public static final String export(String name, World<?> world) {

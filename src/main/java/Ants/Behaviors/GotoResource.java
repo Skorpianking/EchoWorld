@@ -1,10 +1,10 @@
 package Ants.Behaviors;
 
-import Ants.Resource;
-import Braitenburg.SensedObject;
-import Braitenburg.State;
+import Vehicles.SensedObject;
+import Vehicles.State;
 import behaviorFramework.Action;
 import behaviorFramework.Behavior;
+
 import java.util.List;
 
 /**

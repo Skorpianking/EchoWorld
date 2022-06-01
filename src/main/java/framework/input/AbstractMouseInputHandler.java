@@ -1,13 +1,12 @@
 package framework.input;
 
-import java.awt.Component;
-import java.awt.Point;
+import framework.Camera;
+import org.dyn4j.geometry.Vector2;
+
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-
-import org.dyn4j.geometry.Vector2;
-import framework.Camera;
 
 public abstract class AbstractMouseInputHandler extends AbstractInputHandler implements InputHandler {
 	

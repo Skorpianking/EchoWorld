@@ -1,10 +1,9 @@
 package framework.input;
 
-import java.awt.Component;
-import java.awt.Point;
-import java.awt.event.MouseEvent;
-
 import framework.Camera;
+
+import java.awt.*;
+import java.awt.event.MouseEvent;
 
 public class MousePanningInputHandler extends AbstractMouseInputHandler implements InputHandler {
 	private boolean panning;

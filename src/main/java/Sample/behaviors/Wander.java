@@ -1,9 +1,8 @@
-package behaviorFramework.behaviors;
+package Sample.behaviors;
 
+import Vehicles.State;
 import behaviorFramework.Action;
 import behaviorFramework.Behavior;
-
-import Braitenburg.State;
 
 import java.util.Random;
 

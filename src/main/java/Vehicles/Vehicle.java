@@ -1,4 +1,4 @@
-package Braitenburg;
+package Vehicles;
 
 import framework.SimulationBody;
 import org.dyn4j.dynamics.BodyFixture;
@@ -34,8 +34,8 @@ public class Vehicle extends SimulationBody {
     // -10 to 120 degrees in steps of 5 degrees (added +/- 7.5, +/- 2.5
     double[] sweepValues = {
             -0.1745, -0.1309, -0.0873, -0.4363, 0.0000, 0.4363, 0.0873, 0.1309, 0.1745, 0.2618, 0.3491, 0.4363, 0.5236, 0.6109,
-             0.6981,  0.7854, 0.8727, 0.9599, 1.0472, 1.1344, 1.2217, 1.3090, 1.3962, 1.4833,
-             1.5707,  1.6580, 1.7453, 1.8325, 1.9198, 2.0071, 2.0944};
+            0.6981,  0.7854, 0.8727, 0.9599, 1.0472, 1.1344, 1.2217, 1.3090, 1.3962, 1.4833,
+            1.5707,  1.6580, 1.7453, 1.8325, 1.9198, 2.0071, 2.0944};
 
     // Creates the world
     protected World<SimulationBody> myWorld;

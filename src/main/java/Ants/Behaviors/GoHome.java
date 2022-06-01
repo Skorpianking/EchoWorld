@@ -1,13 +1,11 @@
 package Ants.Behaviors;
 
-import Braitenburg.SensedObject;
-import Braitenburg.State;
+import Vehicles.SensedObject;
+import Vehicles.State;
 import behaviorFramework.Action;
 import behaviorFramework.Behavior;
-import org.dyn4j.geometry.Vector2;
 
 import java.util.List;
-import java.util.Vector;
 
 /**
  * Sends the agent to a home vector that needs to be added to the this behavior when created.

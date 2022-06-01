@@ -1,9 +1,9 @@
 package framework.input;
 
-import java.awt.Component;
-
 import framework.SimulationBody;
 import org.dyn4j.world.World;
+
+import java.awt.*;
 
 public class ExportCodeKeyboardInputHandler extends AbstractKeyboardInputHandler {
 	private final World<SimulationBody> world;

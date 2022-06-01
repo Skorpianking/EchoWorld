@@ -1,10 +1,9 @@
 package Sample.behaviors;
 
+import Sample.MyState;
+import Vehicles.State;
 import behaviorFramework.Action;
 import behaviorFramework.Behavior;
-
-import Braitenburg.State;
-import Sample.MyState; // If you want to use your state in a behavior, you need
                        // to include it as an import and also cast state to it
                        // to make calls (see below).
 

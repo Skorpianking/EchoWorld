@@ -1,22 +1,18 @@
 package Sample;
 
-import Braitenburg.Action;
-import Braitenburg.Vehicle;
 import Sample.behaviors.AvoidObstacle;
-import Sample.behaviors.GotoX;
-import Sample.behaviors.GotoXX;
 import Sample.behaviors.Love;
 import Sample.behaviors.MyNoOp;
+import Sample.behaviors.Wander;
+import Vehicles.Action;
+import Vehicles.Vehicle;
 import behaviorFramework.ArbitrationUnit;
 import behaviorFramework.CompositeBehavior;
 import behaviorFramework.arbiters.SimplePriority;
-import behaviorFramework.behaviors.NoOp;
-import behaviorFramework.behaviors.Wander;
 import framework.SimulationBody;
 import org.dyn4j.world.World;
 
 import java.awt.*;
-import java.util.ArrayList;
 
 
 /**

@@ -1,6 +1,6 @@
 package framework.input;
 
-import java.awt.Component;
+import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 

@@ -1,9 +1,8 @@
 package Sample.behaviors;
 
+import Vehicles.State;
 import behaviorFramework.Action;
 import behaviorFramework.Behavior;
-
-import Braitenburg.State;
 
 /**
  * Braitenberg's Love behavior

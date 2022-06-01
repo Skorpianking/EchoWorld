@@ -1,6 +1,6 @@
 package Sample;
 
-import Braitenburg.State;
+import Vehicles.State;
 
 /**
  * <p>This is a sample state object to show how to extend the base state and

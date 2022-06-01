@@ -1,8 +1,8 @@
-package Braitenburg;
+package Vehicles;
 
-import Braitenburg.Action;
-import Braitenburg.State;
-import Braitenburg.Vehicle;
+import Vehicles.Action;
+import Vehicles.State;
+import Vehicles.Vehicle;
 import behaviorFramework.ArbitrationUnit;
 import behaviorFramework.Behavior;
 import behaviorFramework.CompositeBehavior;

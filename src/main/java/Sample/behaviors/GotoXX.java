@@ -1,7 +1,7 @@
 package Sample.behaviors;
 
-import Braitenburg.SensedObject;
-import Braitenburg.State;
+import Vehicles.SensedObject;
+import Vehicles.State;
 import behaviorFramework.Action;
 import behaviorFramework.Behavior;
 

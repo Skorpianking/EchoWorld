@@ -1,10 +1,9 @@
 package Sample.behaviors;
 
-import Braitenburg.SensedObject;
+import Vehicles.SensedObject;
+import Vehicles.State;
 import behaviorFramework.Action;
 import behaviorFramework.Behavior;
-
-import Braitenburg.State;
 
 import java.util.List;
 

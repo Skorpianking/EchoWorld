@@ -8,7 +8,7 @@ package behaviorFramework;
  * 
  * @author Brian Woolley - for use by AFIT/ENG - CSCE623 and CSCE723
  */
-public class Action extends Braitenburg.Action {
+public class Action extends Vehicles.Action {
 
 	public String name;
 

@@ -32,16 +32,16 @@ public class AntWorld extends SimulationFrame {
     public ArrayList<Resource> resources = new ArrayList<Resource>();
 
     // Init variables, also used for testing
-    int numAnts = 100;
+    int numAnts = 2;
     int numResources = 10;
     int scale = 20;
     int generation = 0; // helps track when ants were added to the world
-    int timeSteps = 10000; // how long the simulation will last.  S & B did 10^6, we are doing 10^3 right now
 
     // Vars for writing to a file
     String directory = System.getProperty("user.dir");
-    String filename = directory + File.separator + "random_echo_ant_test_" + 3 + ".csv";
+    String filename = directory + File.separator + "random_echo_ant_test_" + 0 + ".csv";
     PrintWriter outputStream = null; // file writer
+
 
     /**
      * Constructor.
@@ -54,9 +54,9 @@ public class AntWorld extends SimulationFrame {
         this.scale = 20;
         // Add ants here
         for(int i = 0; i < numAnts; i++) {
-            Ant testAnt = new Ant(this.world);
+            Ant testAnt = new Ant(world);
             testAnt.setGeneration(0);
-            this.world.addBody(testAnt);
+            world.addBody(testAnt);
             antColonies.add(testAnt);
         }
 
@@ -69,7 +69,7 @@ public class AntWorld extends SimulationFrame {
         try {
             String tacticalAgents = filename;
             outputStream = new PrintWriter( new FileOutputStream(tacticalAgents, true));
-            outputStream.write("timestep,id,offense,defense,mating,generation,life,death,parent\n"); // writes header to csv file
+            outputStream.write("timestep,id,offense,defense,mating,generation,life,death\n"); // writes header to csv file
         }
         catch (FileNotFoundException e){
             System.out.println("Error opening the file: " + filename);
@@ -163,20 +163,13 @@ public class AntWorld extends SimulationFrame {
                 // perform an infinite loop stopped
                 // render as fast as possible
                 while (!isStopped()) {
-                    if(timeSteps > 0) {
-                        gameLoop();
-                        // you could add a Thread.yield(); or
-                        // Thread.sleep(long) here to give the
-                        // CPU some breathing room
-                        try {
-                            Thread.sleep(5);
-                        } catch (InterruptedException e) {
-                        }
-                        timeSteps--;
-                    }
-                    else {
-                        break; // need to find a cleaner way - this just halts the gui and ants, still need to physically tear it down
-                    }
+                    gameLoop();
+                    // you could add a Thread.yield(); or
+                    // Thread.sleep(long) here to give the
+                    // CPU some breathing room
+                    try {
+                        Thread.sleep(5);
+                    } catch (InterruptedException e) {}
                 }
                 // I think I can close file here
                 outputStream.flush();
@@ -229,8 +222,10 @@ public class AntWorld extends SimulationFrame {
         // by default, set (0, 0) to be the center of the screen with the positive x axis
         // pointing right and the positive y axis pointing up
         this.transform(g);
+
         // reset the view
         this.clear(g);
+
         // get the current time
         long time = System.nanoTime();
         // get the elapsed time from the last iteration
@@ -249,11 +244,22 @@ public class AntWorld extends SimulationFrame {
 
         // update the World
         if (!this.paused.isActive()) {
+            // Now that we've moved all of this into AntWorld, let's see if we can
+            // remove objects without crashing the whole simulation
+            // Remove from the colonies array
+            for(SimulationBody dead: toRemove) {
+                antColonies.remove(dead);
+            }
+            // Right now, this is the only way I could get the remove body to work...
+            // Direct calls to removeBody result in null pointer exceptions in the ConstraintGraph class
+            // that I haven't been able to avoid.
+            this.world.removeAllBodies();
+            addWorldObjects(scale); // add objects back in because we erase everything
 
             ArrayList<SimulationBody> newAnts = new ArrayList<SimulationBody>();
+
             for(SimulationBody alive: antColonies) {
                 Ant temp = new Ant((Ant)alive);
-                //System.out.println(temp.id + " " + temp.getLinearVelocity());
                 if(temp.replicate()) { // If this ant can replicate, it will
                     // Ideally we would like to replicate from a parent ant versus just adding randos to the world
                     // One could, if so inclined, take stock of the entire population, saving those that are
@@ -261,35 +267,20 @@ public class AntWorld extends SimulationFrame {
                     // Alright, to add more words here, we are going to replicate new ants at the location of
                     // the parent ant, give it the same tag, but not the resources.
                     Ant newA = new Ant(this.world);
-                    newA.id = newA.tag; //newA.matingTag+newA.offenseTag+newA.defenseTag;
+                    newA.translate(temp.getHome().x*scale-0.2,temp.getHome().y*scale-0.2);
+                    //newA.getBasicAnt().translate(temp.getHome().x*scale-0.2,temp.getHome().y*scale-0.2);
+                    newA.id = newA.id + "_" + elapsedTime;
                     System.out.println("Hello! My name is: " + newA.id);
-                    newA.setParent(temp.id);
                     newA.setGeneration(generation);
-                    newA.setHome(temp.getHome()); // same home as its parent
-                    newA.setColor(temp.getColor()); // same color as its parent
                     newA.reservoir = new ArrayList<>(); // resets the reservoir
                     newAnts.add(newA); // adding after this loop to avoid concurrency issues
-                    this.world.addBody(newA); // add to the world
                 }
+                this.world.addBody(temp);
             }
-
-            // Now that we've moved all of this into AntWorld, let's see if we can
-            // remove objects without crashing the whole simulation
-            // Remove from the colonies array
-            for(SimulationBody dead: toRemove) {
-                System.out.println("Bring out your dead!" + ((Ant)dead).id);
-                antColonies.remove(dead);
-            }
-            toRemove = new ArrayList<>();
 
             for(SimulationBody temp: newAnts) {
                 antColonies.add((Ant)temp);
             }
-            this.world.removeAllBodies();
-            for(SimulationBody ant : antColonies) {
-                this.world.addBody(ant);
-            }
-            addWorldObjects(scale);
             this.world.update(elapsedTime);
 
         } else if (this.step.isActive()) {
@@ -323,11 +314,11 @@ public class AntWorld extends SimulationFrame {
             if(temp.isAlive()) {
                 //"id,offense,defense,mating,generation,life,death
                 outputStream.write(generation + ","+ temp.id + "," + temp.offenseTag + "," + temp.defenseTag + "," + temp.matingTag + "," +
-                        temp.getGeneration() + "," + temp.getLife() + "," + "0" + "," + temp.parent + "\n");
+                        temp.getGeneration() + "," + temp.getLife() + "," + "0" + "\n");
             }
             else {
                 outputStream.write(generation + "," + temp.id + "," + temp.offenseTag + "," + temp.defenseTag + "," + temp.matingTag + "," +
-                        temp.getGeneration() + "," + temp.getLife() + "," + generation + "," + temp.parent + "\n");
+                        temp.getGeneration() + "," + temp.getLife() + "," + generation + "\n");
             }
         }
     }
@@ -336,8 +327,6 @@ public class AntWorld extends SimulationFrame {
      * @see org.dyn4j.samples.SimulationFrame#render(java.awt.Graphics2D, double)
      */
     protected void render(Graphics2D g, double elapsedTime) {
-        super.render(g, elapsedTime);
-
         double r = 4.0;
         // Now move ants
         for(SimulationBody v : antColonies) {
@@ -351,7 +340,7 @@ public class AntWorld extends SimulationFrame {
             }
             // Testing area, paint their home
             Vector2 homePoint = ((Ant)v).getHome();
-            g.setColor(v.getColor());
+            g.setColor(Color.red);
             g.fillRect((int)(homePoint.x*scale-r*0.5),(int)(homePoint.y*scale-r*0.5),5,5);
         }
         addResources(); // adds resources to the world with a small probability
@@ -362,6 +351,7 @@ public class AntWorld extends SimulationFrame {
             g.setColor(Color.GREEN);
             g.fillRect((int)(point.x*scale-r*05),(int)(point.y*scale-r*.05),3,3);
         }
+        super.render(g, elapsedTime);
     }
 
     /**

@@ -1,6 +1,6 @@
 package behaviorFramework;
 
-import Braitenburg.State;
+import Vehicles.State;
 
 import java.util.ArrayList;
 

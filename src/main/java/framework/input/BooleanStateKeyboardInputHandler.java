@@ -1,6 +1,6 @@
 package framework.input;
 
-import java.awt.Component;
+import java.awt.*;
 
 public class BooleanStateKeyboardInputHandler extends AbstractKeyboardInputHandler {
 

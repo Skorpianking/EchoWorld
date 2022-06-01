@@ -1,8 +1,7 @@
 package behaviorFramework;
 
+import Vehicles.State;
 import behaviorFramework.arbiters.HighestPriority;
-
-import Braitenburg.State;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -1,9 +1,8 @@
 package behaviorFramework.behaviors;
 
+import Vehicles.State;
 import behaviorFramework.Action;
 import behaviorFramework.Behavior;
-
-import Braitenburg.State;
 
 /**
  * This is a do nothing sample behavior.  It will always vote to stop the
