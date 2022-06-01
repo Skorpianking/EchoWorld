@@ -13,8 +13,7 @@ import java.util.List;
  * have either elemental behaviors or other composite behaviors as its
  * child elements. It must have an arbitration unit as a way of selecting
  * the Action that will be passed up the hierarchy.
- * 
- * @author Brian Woolley - for use by AFIT/ENG - CSCE623 and CSCE723
+ *
  */
 public class CompositeBehavior extends Behavior {
 	private List<Behavior> behaviorSet = new ArrayList<Behavior>();

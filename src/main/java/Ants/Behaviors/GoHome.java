@@ -20,7 +20,7 @@ public class GoHome extends Behavior {
 
         List<SensedObject> sensedObjects = state.getSensedObjects();
 
-        double angle = 0;
+        double angle;
         double bestAngle = 360;
         SensedObject bestObj = null;
 

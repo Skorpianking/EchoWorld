@@ -22,7 +22,7 @@ public class State {
     private int lightDecayLeft;
     private int lightDecayRight;
 
-    public void State() {
+    public State() {
         leftLightStrength = rightLightStrength = 0.0;
     }
 
@@ -126,10 +126,10 @@ public class State {
         lightDecayLeft--;
         lightDecayRight--;
         for (SensedObject obj : sensedObjects) {
-            if (obj.getSide() == "Right" && obj.getType() == "Light") { // Obstacle on right
+            if (obj.getSide().equals("Right") && obj.getType().equals("Light")) { // Obstacle on right
                 rightLightStrength = length - obj.getDistance();
                 lightDecayRight = 5;
-            } else if (obj.getSide() == "Left" && obj.getType() == "Light") { // Obstacle on left
+            } else if (obj.getSide().equals("Left") && obj.getType().equals("Light")) { // Obstacle on left
                 leftLightStrength = length - obj.getDistance();
                 lightDecayLeft = 5;
             }

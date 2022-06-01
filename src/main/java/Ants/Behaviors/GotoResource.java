@@ -23,7 +23,7 @@ public class GotoResource extends Behavior {
 
         List<SensedObject> sensedObjects = state.getSensedObjects();
 
-        double angle = 0;
+        double angle;
         for (SensedObject obj : sensedObjects) {
             angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
             if (obj.getType().equals("Resource")) {
