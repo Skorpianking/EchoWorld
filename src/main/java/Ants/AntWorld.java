@@ -36,7 +36,7 @@ public class AntWorld extends SimulationFrame {
     int numResources = 10;
     int scale = 20;
     int generation = 0; // helps track when ants were added to the world
-    int timeSteps = 100; // how long the simulation will last.  S & B did 10^6, we are doing 10^3 right now
+    int timeSteps = 10000; // how long the simulation will last.  S & B did 10^6, we are doing 10^3 right now
 
     // Vars for writing to a file
     String directory = System.getProperty("user.dir");
@@ -249,8 +249,8 @@ public class AntWorld extends SimulationFrame {
         g.setTransform(tx);
 
         // update the World
-        if (!this.paused.isActive()) {
 
+        if (!this.paused.isActive()) {
             ArrayList<SimulationBody> newAnts = new ArrayList<SimulationBody>();
             for(SimulationBody alive: antColonies) {
                 Ant temp = new Ant((Ant)alive);
@@ -278,7 +278,7 @@ public class AntWorld extends SimulationFrame {
             // remove objects without crashing the whole simulation
             // Remove from the colonies array
             for(SimulationBody dead: toRemove) {
-                System.out.println("Bring out your dead!" + ((Ant)dead).id);
+                System.out.println("Bring out your dead! " + ((Ant)dead).id);
                 antColonies.remove(dead);
             }
             toRemove = new ArrayList<>();

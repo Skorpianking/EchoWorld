@@ -26,7 +26,20 @@ public class Ant extends SimulationBody {
     String offenseTag;
     String defenseTag;
     String matingTag;
+    String interActionTag;
+    String tradingTag;
     String parent = "NONE";
+
+    // Conditions
+    // String tradeCondition = ""; -- save for later...
+
+    // Possibly useful metrics to highlight a genome's combat and trade capabilities during its lifetime in the system
+    int numTrades = 0;
+    int numCombats = 0;
+
+    // Genomic length, how long can each tag be -- this is just one more parameter that can affect system behavior
+    // Our original work allowed each tag to be up to 6 characters in length.
+    int genomeLength = 6;
 
     // Parameter for seeing how long the ant lived, they can recharge at home.  More successful ants should live longer
     // Generation = timestep it was introduced into the population
@@ -101,8 +114,8 @@ public class Ant extends SimulationBody {
         behaviorTree.add(new GotoXX("Home"));
         behaviorTree.add(new GotoXX("Resource"));
         setInitialTag(); // set the ant's tag
-        id = matingTag+offenseTag+defenseTag; // combine all the tags eventually
-        tag = matingTag+offenseTag+defenseTag;
+        id = interActionTag+matingTag+offenseTag+defenseTag+tradingTag; // combine all the tags eventually
+        tag = interActionTag+matingTag+offenseTag+defenseTag+tradingTag;
     }
 
     /**
@@ -132,11 +145,15 @@ public class Ant extends SimulationBody {
         this.offenseTag = copy.offenseTag;
         this.defenseTag = copy.defenseTag;
         this.matingTag = copy.matingTag;
+        this.interActionTag = copy.interActionTag;
         this.reservoir = copy.reservoir;
         this.generation = copy.generation;
         this.life = copy.life;
         this.death = copy.death;
         this.color = copy.color;
+        this.tradingTag = copy.tradingTag;
+        this.numCombats = copy.numCombats;
+        this.numTrades = copy.numTrades;
     }
 
     public boolean sense() {
@@ -197,26 +214,37 @@ public class Ant extends SimulationBody {
     }
 
     /**
-     * Assigns a random tag to the ant -- later we can add a tag length, for now they will be of length six,
-     * with potential values: A, B, C, D
+     * Assigns randoms tag to the ant -- tag length is in the range [1,6],
+     * with potential values: A, B, C, D.
+     *
+     * Todo: later we can add wildcards to the tags, but this would necessitate changing interaction comparisons
      */
     private void setInitialTag() {
-        //this.tag = "";
         this.matingTag = ""; // for now, the ants are asexual
         this.offenseTag = "";
         this.defenseTag = "";
+        this.interActionTag = "";
+        this.tradingTag = "";
+
+        Random rand = new Random();
+        this.matingTag += buildTag(rand.nextInt(genomeLength)+1);
+        this.offenseTag += buildTag(rand.nextInt(genomeLength)+1);
+        this.defenseTag += buildTag(rand.nextInt(genomeLength)+1);
+        this.interActionTag += buildTag(rand.nextInt(genomeLength)+1);
+        this.tradingTag += buildTag(1); // only trades one commodity
+    }
+
+    private String buildTag(int length) {
+        String t = "";
         ArrayList<Character> characters = new ArrayList<>();
         characters.add('A');
         characters.add('B');
         characters.add('C');
         characters.add('D');
-
-        for(int i = 0; i < 6; i++) {
-            this.matingTag += characters.get(new Random().nextInt(4));
-            this.offenseTag += characters.get(new Random().nextInt(4));
-            this.defenseTag += characters.get(new Random().nextInt(4));
+        for(int i = 0; i < length; i++) {
+            t += characters.get(new Random().nextInt(4));
         }
-        //System.out.println("Hello! My name is: " + this.tag);
+        return t;
     }
 
     /**
@@ -336,37 +364,52 @@ public class Ant extends SimulationBody {
 
                 // Ok, ok, we see an ant.  Let's see what interactions we get for right now
                 EchoAntCatFly model = new EchoAntCatFly();
-                double maybeIWin = model.likelyWinner(this.offenseTag,antObj.defenseTag);
-                double maybeYouWin = model.likelyWinner(antObj.offenseTag, this.defenseTag);
-                //System.out.println("Fight Values: " + maybeIWin + " " + this.offenseTag + " " +  maybeYouWin + antObj.defenseTag);
-                //System.out.println("Fight Values: " + maybeIWin + " " + this.defenseTag + " " +  maybeYouWin + antObj.offenseTag);
 
-                // According to the Smith and Bedau paper, the likelihood of fleeing is equal to the probability
-                // of the agent losing a fight to another agent.  If it is the agent's turn, which it should be,
-                // and the agent decides to flee, then we will need to give the agent an opportunity to move away
-                // from the enemy.  This should also override anything else the agent wants to do.  For now, we will handle
-                // this via the UBF structure again.  We will only add ants that we want to flee from.  Otherwise, if it
-                // is the ants turn it should eat the other ant.  This will set the other ant to dead and we will transfer
-                // resources. -- todo:  look at hidden order as I think this is proportional may also just follow S & B paper
-                if(maybeIWin > maybeYouWin) {
-                    System.out.println("Likely to win the fight");
-                    double prob = new Random().nextDouble();
-                    if(prob <= maybeIWin) {
-                        antObj.alive = false; // the other ant is killed
-                        cleanUp(antObj); // take the ant's resources
-                        System.out.println("Momma! I just killed an ant...");
+                if (model.canInteract(this.offenseTag, antObj.interActionTag)) { // if true, combat can occur
+                    double maybeIWin = model.likelyWinner(this.offenseTag, antObj.defenseTag);
+                    double maybeYouWin = model.likelyWinner(antObj.offenseTag, this.defenseTag);
+
+                    // According to the Smith and Bedau paper, the likelihood of fleeing is equal to the probability
+                    // of the agent losing a fight to another agent.  If it is the agent's turn, which it should be,
+                    // and the agent decides to flee, then we will need to give the agent an opportunity to move away
+                    // from the enemy.  This should also override anything else the agent wants to do.  For now, we will handle
+                    // this via the UBF structure again.  We will only add ants that we want to flee from.  Otherwise, if it
+                    // is the ants turn it should eat the other ant.  This will set the other ant to dead and we will transfer
+                    // resources. -- todo:  look at hidden order as I think this is proportional may also just follow S & B paper
+                    if (maybeIWin > maybeYouWin) {
+                        System.out.println("Likely to win the fight");
+                        double prob = new Random().nextDouble();
+                        if (prob <= maybeIWin) {
+                            antObj.alive = false; // the other ant is killed
+                            cleanUp(antObj); // take the ant's resources
+                            System.out.println("Momma! I just killed an ant...");
+                        }
+                    } else if (maybeIWin != maybeYouWin) {
+                        //System.out.println("You better run!");  // todo this should probably result in a fleeing action, GOTOXX anywhere but here
+                        double prob = new Random().nextDouble();
+                        if (prob >= maybeYouWin) { // we don't succeed
+                            this.alive = false;
+                            antObj.cleanUp(this);
+                            System.out.println("Failed to flee.");
+                        }
+                    }
+                } // end combat check
+                if(model.canInteract(this.tradingTag, antObj.interActionTag)) { // ant can give commodity to another
+                    Resource temp = null;
+                    for(Resource r : this.reservoir) {
+                        if(r.type.equals(this.tradingTag)) {
+                            temp = r;
+                        }
+                    }
+                    if(temp != null) {
+                        // Note:  this is VERY dumb atm as it's only checking if it has a resource, not if it needs it
+                        // and wants to hold onto it
+                        System.out.println("Trading resoruce: " + temp.type);
+                        reservoir.remove(temp); // remove from this reservoir
+                        antObj.reservoir.add(temp); // transfer to other reservoir
                     }
                 }
-                else if(maybeIWin != maybeYouWin) {
-                    System.out.println("You better run!");  // todo this should probably result in a fleeing action, GOTOXX anywhere but here
-                    double prob = new Random().nextDouble();
-                    if(prob >= maybeYouWin) { // we don't succeed
-                        this.alive = false;
-                        antObj.cleanUp(this);
-                        System.out.println("Failed to flee.");
-                    }
-                }
-            }
+            } // end if within sensor range
         }
     }
 
