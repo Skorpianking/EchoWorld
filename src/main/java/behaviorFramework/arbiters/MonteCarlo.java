@@ -9,7 +9,7 @@ import java.util.Random;
 
 /**
  * The MonteCarlo arbitration method randomly selects actions from a
- * weighted distribution of the action's vote * an internal weight.
+ * distribution based on the action's utility (utility = action.getVote * weight).
  * The selected action is returned for 20 iterations.
  *
  */

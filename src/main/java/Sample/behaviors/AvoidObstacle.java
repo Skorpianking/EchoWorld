@@ -45,7 +45,7 @@ public class AvoidObstacle extends Behavior {
         for (SensedObject obj : sensedObjects) {
             angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
 
-            if (obj.getSide() == "Right" && angle > 0 && angle < ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on right
+            if (obj.getSide() == "Right" && angle >= 0 && angle < ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on right
                 action.setRightWheelVelocity(0.7);
                 action.setLeftWheelVelocity(0.05);
                 action.setVote(1);

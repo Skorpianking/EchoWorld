@@ -7,7 +7,7 @@ import java.util.Collection;
 
 /**
  * This arbiter builds an action that executes the sub-action with the
- * highest utility value where: (utility = action.getVote).
+ * highest vote value where: (utility = action.getVote).
  * 
  * The new action is given the highest overall utility value.
  * 

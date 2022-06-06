@@ -59,7 +59,7 @@ Therefore, object locations are restricted into the range:
 
 Key binding for light and obstacle moving is limited to 1 through 5.
 
-Vehicles
+##### Vehicles
 ```json
 {
 	"vehicleName": "Marie",       # Required
@@ -89,6 +89,7 @@ Vehicles
 	]
 }
 ```
+##### Behaviors with Parameters
 
 If a Behavior has parameters, it will need to overload setParameters method
 ```java
@@ -97,3 +98,16 @@ public void setParameters(ArrayList<String> params) {
     this.target = params.get(0);
 }
 ```
+##### Arbiters
+Several arbitration strategies are already present in the behaviorFactory.
+
+|     Arbiter               |     Weight    |     Vote      |     Description                                                                                                                                          |
+|---------------------------|---------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+|     Activation Fusion     |     Y         |     real      |     builds an action that selects each sub-actions based   on their highest utility value (utility = action.getVote * weight).                           |
+|     Command Fusion        |     Y         |     binary    |     builds an action from a sum of all voting sub-actions   scaled by the actions utility: (i.e. velocity += velocity[i] * action.getVote()   * w[i])    |
+|     Highest Activation    |     Y         |     real      |     selects the action with the highest utility value   (utility = action.getVote * weight)                                                              |
+|     Highest Priority      |     Y         |     binary    |     selects the action with the highest priority   (weight), (if voted)                                                                                  |
+|     Monte Carlo           |     Y         |     real      |     randomly selects actions from a distribution based   on the action's utility (utility = action.getVote * weight)                                     |
+|     Priority Fusion       |     Y         |     binary    |     builds an action that selects each sub-action based   on the highest priority (weight), (if voted)                                                   |
+|     Simple Priority       |     N         |     binary    |     selects the first action that has voted                                                                                                              |
+|     Utility Fusion        |     N         |     real      |     builds an action that selects each sub-action with      highest vote: (action.getVote)                                                               |
