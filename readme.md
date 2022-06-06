@@ -89,6 +89,21 @@ Key binding for light and obstacle moving is limited to 1 through 5.
 	]
 }
 ```
+
+##### State
+
+Data available in the state includes getters for:
+```java
+    ArrayList<SensedObject> sensedObjects;
+    double heading;
+    Vector2 velocity = new Vector2();
+    double angularVelocity;
+    double leftWheelVelocity;
+    double rightWheelVelocity;
+    double leftLightStrength;
+    double rightLightStrength;
+```
+
 ##### Behaviors with Parameters
 
 If a Behavior has parameters, it will need to overload setParameters method
