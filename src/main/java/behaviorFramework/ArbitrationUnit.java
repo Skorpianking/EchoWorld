@@ -7,8 +7,8 @@ import java.util.Collection;
  * All interchangable Arbitration Units must conform to this standard interface
  * to be usable within the behavior framework.
  *
- * Currently available arbiters include:
  * <table>
+ * <caption> Included Arbiters.</caption>
  * <thead>
  *   <tr>
  *     <th><br>Arbiter</th>

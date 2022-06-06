@@ -38,6 +38,8 @@ public class Vehicles extends SimulationFrame {
 
     /**
      * Constructor.
+     *
+     * @param scale pixels per meter
      */
     public Vehicles(int scale) {
         super("Vehicles", scale); // At the end of construction calls initializeWorld()

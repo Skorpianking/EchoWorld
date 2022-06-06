@@ -75,6 +75,7 @@ public class CodeExporter {
 	 * <p>
 	 * Returns a string containing the code for the export.
 	 * @param name the name of the generated class
+	 * @param world Simulation world
 	 * @return String
 	 */
 	public static final String export(String name, World<?> world) {
