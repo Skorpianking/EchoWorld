@@ -7,10 +7,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * This arbiter builds an action from the sub-actions with the
- * highest utility value (utility = action.getVote * weight).
+ * This arbiter builds an action that selects each sub-actions
+ * based on their highest utility value
+ * (utility = action.getVote * weight).
  * 
- * The new action is given the highest overall utility value.
+ * The new action is given the highest overall vote value.
  *
  * Action components: LeftWheelVelocity, RightWheelVelocity, Grab
  */

@@ -7,11 +7,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * This arbiter builds an action that represents a vector fusion of
- * all of the proposed actions into a single action object.
- * 
- * The strength of each contributing (non-zero) sub-action is scaled
- * the contributing actions weight: (i.e. velocity += velocity[i] * w[i])
+ * This arbiter builds an action from a sum of all voting sub-actions
+ * scaled by the actions utility:
+ * (i.e. velocity += velocity[i] * action.getVote() * w[i])
+ *
+ * The new action is given the highest overall vote value.
  *
  * Action components: LeftWheelVelocity, RightWheelVelocity, Grab
  *

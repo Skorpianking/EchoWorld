@@ -38,6 +38,8 @@ public class Vehicles extends SimulationFrame {
 
     /**
      * Constructor.
+     *
+     * @param scale pixels per meter
      */
     public Vehicles(int scale) {
         super("Vehicles", scale); // At the end of construction calls initializeWorld()
@@ -149,7 +151,7 @@ public class Vehicles extends SimulationFrame {
                 insertVehicle(vehicle, item);
             } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
                 // The name is likely a filename. Create a JSONVehicle and load the json file
-                String fileName = "data\\" + vehicleName + ".json";
+                String fileName = "data//" + vehicleName + ".json";
                 JSONVehicle vehicle = new JSONVehicle();
                 vehicle.initialize(this.world, fileName);
                 insertVehicle(vehicle, item);

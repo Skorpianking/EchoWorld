@@ -7,13 +7,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * This arbiter builds an action that executes the sub-actions with the
- * highest priority that voted. The new action is given a non-zero vote.
- * 
+ * This arbiter builds an action that selects each sub-action based on the
+ * highest priority (weight) (if voted)
+ *
  * If a high priority behavior submits an action, the specified actions
  * are used and any unspecified sub-actions are taken from the behavior
  * with the next-highest priority.
- *  
+ *
+ * The new action is given the highest overall vote value.
+ *
  * Action components: LeftWheelVelocity, RightWheelVelocity, Grab
  *
  */

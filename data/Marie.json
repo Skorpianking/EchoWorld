@@ -11,11 +11,11 @@
 					"name": "Sample.behaviors.Love"
 				},
 				{
-					"name": "Sample.behaviors.Wander"
-				} ,
-				{
 					"name": "Sample.behaviors.AvoidObstacle",
 					"arbiter": false
+				},
+				{
+					"name": "Sample.behaviors.Wander"
 				},
 				{
 					"name": "behaviorFramework.behaviors.NoOp",

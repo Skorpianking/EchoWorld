@@ -8,7 +8,7 @@ import java.util.Collection;
 
 /**
  * This arbiter selects the action with the highest priority, (if it voted)
- * winner takes all.   --if (vote > 0) priority = weight
+ * winner takes all.   --if (vote &gt; 0) priority = weight
  *
  */
 public class HighestPriority extends ArbitrationUnit {

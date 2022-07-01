@@ -43,6 +43,7 @@ public class JSONVehicle extends Vehicle {
      * JSONVehicle does not include a mechanism to allow for a unique State.
      *
      * @param myWorld the simulation world passed to Vehicle to maintain connection
+     * @param filename the json filename to load
      */
     public void initialize(World<SimulationBody> myWorld, String filename) {
         super.initialize(myWorld, state);
@@ -116,9 +117,9 @@ public class JSONVehicle extends Vehicle {
      * @param json Behavior tree in JSON
      * @param tree Current node in the tree
      * @return executable behavior tree
-     * @throws ClassNotFoundException
-     * @throws InstantiationException
-     * @throws IllegalAccessException
+     * @throws ClassNotFoundException Behavior not located
+     * @throws InstantiationException Behavior wasn't created
+     * @throws IllegalAccessException Call to class loader failed
      */
     public CompositeBehavior treeFromJSON(JsonObject json, CompositeBehavior tree) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         JsonArray array;
@@ -178,7 +179,7 @@ public class JSONVehicle extends Vehicle {
     /**
      *  Stub for future writing of the behavior tree into a JSON file.
      *
-     * @param filename
+     * @param filename the filename to save into
      */
     public void treeToJSON(String filename) {
     }

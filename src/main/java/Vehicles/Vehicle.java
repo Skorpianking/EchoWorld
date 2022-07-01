@@ -119,6 +119,8 @@ public class Vehicle extends SimulationBody {
     /**
      * Converts sensor data into percepts stored in state. <br>
      * Overload to add additional sensor parsing.
+     *
+     * @return boolean success/failure
      */
     public boolean sense() {
         state.tick();
@@ -139,6 +141,8 @@ public class Vehicle extends SimulationBody {
     /**
      * Must be overloaded. Current action is no op.<br>
      * Called before render to get action for the current time step.<br>
+     *
+     * @return return a noop action
      */
     public Action decideAction() { //Graphics2D g) {
         Action result = new Action();
