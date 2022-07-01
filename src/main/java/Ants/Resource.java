@@ -2,6 +2,7 @@ package Ants;
 
 import org.dyn4j.geometry.Vector2;
 
+import java.awt.*;
 import java.util.Objects;
 import java.util.Random;
 
@@ -15,6 +16,7 @@ import java.util.Random;
 public class Resource {
     public String type; // A,B,C, or D -- whatever we may want
     public Vector2 location;
+    public Color color = Color.GREEN;
 
     /**
      * Basic constructor, however, it assigns a random resource and a random location
@@ -55,7 +57,7 @@ public class Resource {
      */
     private Vector2 randomLocation() {
         int max = 20;
-        int min = -25;
+        int min = -20;
         Math.floor(Math.random()*(max-min+1)+min);
         return(new Vector2(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min)));
     }

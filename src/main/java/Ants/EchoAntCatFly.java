@@ -4,7 +4,8 @@ package Ants;
  * This interaction model is based on Holland's original Echo interactions.  However, it uses
  * the Hamming Distance calculation proposed in Smith and Bedau's paper on Echo.
  */
-public class EchoAntCatFly extends InteractionModel{
+public class EchoAntCatFly extends InteractionModel {
+    boolean strictMatching = false; // how strict we want the matches to be for trading, mating, etc. true = perfect, full string match
 
     /**
      * Returns the probability, 1 - HammingDistance/Tag length, that an agent will win a fight.
@@ -42,26 +43,21 @@ public class EchoAntCatFly extends InteractionModel{
      * @return
      */
     public boolean canInteract(String agent1Condition, String agent2InteractionTag) {
-        /**
-        if(agent1Condition.length() > agent2InteractionTag.length()) {
-            return false; // the condition is too long to match the interaction tag
+        if(strictMatching) {
+             if(agent1Condition.equals(agent2InteractionTag))
+                 return true;
+            else
+                return false;
         }
         else {
-            for (int i = 0; i < agent1Condition.length(); i++) {
-                if (agent1Condition.charAt(i) != agent2InteractionTag.charAt(i)) {
-                    return false; // does not meet the interactionTag 'prefix'
-                }
+            // I've noticed a huge reduction in interactions with the strict matching.  I am going to
+            // reduce this to just the first letter of the interaction tag, meaning, if the first letter
+            // of the interaction tag is matched by the combat, trading, or mating tag, there can be
+            // an interaction
+            if (agent1Condition.charAt(0) != agent2InteractionTag.charAt(0)) {
+                return false; // does not meet the interactionTag 'prefix'
             }
+            return true; // if we get here, huzzah, they can interact
         }
-         */
-
-        // I've noticed a huge reduction in interactions with the strict matching.  I am going ro
-        // reduce this to just the first letter of the interaction tag, meaning, if the first letter
-        // of the interaction tag is matched by the combat, trading, or mating tag, there can be
-        // an interaction
-        if (agent1Condition.charAt(0) != agent2InteractionTag.charAt(0)) {
-            return false; // does not meet the interactionTag 'prefix'
-        }
-        return true; // if we get here, huzzah, they can interact
     }
 }
