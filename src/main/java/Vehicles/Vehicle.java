@@ -282,8 +282,11 @@ public class Vehicle extends SimulationBody {
         double defl = this.getLinearVelocity().dot(clamp);
 
         // clamp the velocity
-        defl = Interval.clamp(defl, 0.0, MAX_VELOCITY);
-        this.setLinearVelocity(baseNormal.multiply(defl));
+        defl = Interval.clamp(defl, -MAX_VELOCITY, MAX_VELOCITY);
+        if (defl < 0.0)
+            this.setLinearVelocity(baseNormal.multiply(-defl));
+        else
+            this.setLinearVelocity(baseNormal.multiply(defl));
 
         // clamp the angular velocity
         double av = this.getAngularVelocity();

@@ -3,8 +3,8 @@
     <output-path>$PROJECT_DIR$/out/artifacts/EchoWorld_jar</output-path>
     <root id="archive" name="EchoWorld.jar">
       <element id="module-output" name="EchoWorld" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/../json-simple-4.0.1.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/dyn4j/dyn4j/4.2.0/dyn4j-4.2.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/com/github/cliftonlabs/json-simple/4.0.1/json-simple-4.0.1.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
