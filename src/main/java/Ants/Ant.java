@@ -4,6 +4,7 @@ import Vehicles.Action;
 import Vehicles.SensedObject;
 import Vehicles.State;
 import Sample.behaviors.GotoXX;
+import Vehicles.Vehicle;
 import behaviorFramework.ArbitrationUnit;
 import behaviorFramework.CompositeBehavior;
 import behaviorFramework.arbiters.HighestPriority;
@@ -19,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Random;
 
-public class Ant extends SimulationBody {
+public class Ant extends Vehicle {
     // Echo parameters -- will be extended over time
     String id;
     String tag; // this is the Echo tag variable described by Holland
@@ -30,12 +31,23 @@ public class Ant extends SimulationBody {
     String tradingTag;
     String parent = "NONE";
 
-    // Conditions
-    // String tradeCondition = ""; -- save for later...
+    // Parameters added from Smith and Bedau Echo-world implementation
+    double randomDeathProb = .00001; // prob of death and taxes
+    double probTax = .0001;
+
+    // Conditions: these must match another agent's interAction tag to occur.  Right now these will
+    // be of length 1 -- but can be of arbitrary length.
+    String tradeCondition = "";
+    String combatCondition = "";
+    String matingCondition = "";
 
     // Possibly useful metrics to highlight a genome's combat and trade capabilities during its lifetime in the system
     int numTrades = 0;
     int numCombats = 0;
+    int numReproductions = 0;
+    boolean fight = false;
+    boolean trade = false;
+    boolean reproduce = false;
 
     // Genomic length, how long can each tag be -- this is just one more parameter that can affect system behavior
     // Our original work allowed each tag to be up to 6 characters in length.
@@ -72,14 +84,9 @@ public class Ant extends SimulationBody {
     final double ballFriction = 0.00;
     final double ballRestitution = 0.9;
 
-    // Straight from vehicle
-    private double MAX_VELOCITY = 2; // arbitrary right now
-    private final double MAX_ANGULAR_VELOCITY = 1; // how fast we can turn
-    private final double ANGULAR_DAMPENING = 0.1;
+    // Straight from vehicle class
     private final double K_p = 10;   //Proportional Control Constant
-
     private int SENSOR_RANGE = 2; // how far an ant can see
-    private int MAX_TORQUE = 1; // how fast we can turn
     private double GRAB_RANGE = 1; // how far "off" the target can be, allows us to home in on a target
 
     // World the ant lives in
@@ -114,8 +121,51 @@ public class Ant extends SimulationBody {
         behaviorTree.add(new GotoXX("Home"));
         behaviorTree.add(new GotoXX("Resource"));
         setInitialTag(); // set the ant's tag
-        id = interActionTag+matingTag+offenseTag+defenseTag+tradingTag; // combine all the tags eventually
-        tag = interActionTag+matingTag+offenseTag+defenseTag+tradingTag;
+        id = interActionTag+matingTag+offenseTag+defenseTag+tradingTag+combatCondition+tradeCondition+matingCondition; // combine all the tags eventually
+        tag = interActionTag+matingTag+offenseTag+defenseTag+tradingTag+combatCondition+tradeCondition+matingCondition;
+    }
+
+    public Ant(World<SimulationBody> world, String[] newTag1) {
+        this.myWorld = world;
+        //this.setColor(Color.CYAN);
+        setRandomColor();
+        this.addFixture(Geometry.createCircle(ballRadius), ballDensity, ballFriction, ballRestitution);
+        this.setRandomVelocity(); // set a random initial velocity
+        this.setLinearDamping(0.3);
+        this.setAngularDamping(0.8);
+        this.setMass(MassType.NORMAL);
+
+        int max = 15;
+        int min = -15;
+        double x_pos = Math.floor(Math.random()*(max-min+1)+min); // done just for code clarity
+        double y_pos = Math.floor(Math.random()*(max-min+1)+min);
+        this.translate(x_pos,y_pos);
+
+        home = new Vector2(x_pos,y_pos); // center of the screen for now.
+
+        // Instantiate behaviorTree
+        ArrayList<Double> weights = new ArrayList<>();
+        setWeights(weights);
+        ArbitrationUnit arbiter = new HighestPriority(weights);
+        behaviorTree = new CompositeBehavior();
+        behaviorTree.setArbitrationUnit(arbiter);
+        behaviorTree.add(new Wander());
+        //behaviorTree.add(new GoHome()); // <-- parameter to get home before death needs to be tuned
+        behaviorTree.add(new GotoXX("Home"));
+        behaviorTree.add(new GotoXX("Resource"));
+
+        // Tags are done special with this constructor
+        interActionTag = newTag1[0];
+        matingTag = newTag1[1];
+        offenseTag = newTag1[2];
+        defenseTag = newTag1[3];
+        tradingTag = newTag1[4];
+        combatCondition = newTag1[5];
+        tradeCondition = newTag1[6];
+        matingCondition = newTag1[7];
+
+        id = interActionTag+matingTag+offenseTag+defenseTag+tradingTag+combatCondition+tradeCondition+matingCondition; // combine all the tags eventually
+        tag = interActionTag+matingTag+offenseTag+defenseTag+tradingTag+combatCondition+tradeCondition+matingCondition;
     }
 
     /**
@@ -154,6 +204,10 @@ public class Ant extends SimulationBody {
         this.tradingTag = copy.tradingTag;
         this.numCombats = copy.numCombats;
         this.numTrades = copy.numTrades;
+        this.numReproductions = copy.numReproductions;
+        this.tradeCondition = copy.tradeCondition;
+        this.combatCondition = copy.combatCondition;
+        this.matingCondition = copy.matingCondition;
     }
 
     public boolean sense() {
@@ -225,6 +279,9 @@ public class Ant extends SimulationBody {
         this.defenseTag = "";
         this.interActionTag = "";
         this.tradingTag = "";
+        this.matingCondition = "";
+        this.tradeCondition = "";
+        this.combatCondition = "";
 
         Random rand = new Random();
         this.matingTag += buildTag(rand.nextInt(genomeLength)+1);
@@ -232,6 +289,9 @@ public class Ant extends SimulationBody {
         this.defenseTag += buildTag(rand.nextInt(genomeLength)+1);
         this.interActionTag += buildTag(rand.nextInt(genomeLength)+1);
         this.tradingTag += buildTag(1); // only trades one commodity
+        this.matingCondition += buildTag(1);
+        this.tradeCondition += buildTag(1);
+        this.combatCondition += buildTag(1);
     }
 
     private String buildTag(int length) {
@@ -243,6 +303,28 @@ public class Ant extends SimulationBody {
         characters.add('D');
         for(int i = 0; i < length; i++) {
             t += characters.get(new Random().nextInt(4));
+        }
+        return t;
+    }
+
+    private String mutateTag(String tag, double mutationRate) {
+        String t = "";
+        ArrayList<Character> characters = new ArrayList<>();
+        characters.add('A');
+        characters.add('B');
+        characters.add('C');
+        characters.add('D');
+        for(int i = 0; i < tag.length(); i++) {
+            double prob = new Random().nextDouble();
+            if(prob <= mutationRate) {
+                //System.out.println("mutation occurred");
+                t += characters.get(new Random().nextInt(4));
+                //setRandomColor(); // it's no longer the same species, this may change back to stay the same for observing
+                // lineages.
+            }
+            else {
+                t += tag.charAt(i);
+            }
         }
         return t;
     }
@@ -302,20 +384,89 @@ public class Ant extends SimulationBody {
      *
      * @param resources
      */
-    public void decide(ArrayList<Ant> allAgent_Ants, ArrayList<Resource> resources) {
+    public void decide(ArrayList<Ant> allAgent_Ants, ArrayList<Resource> resources, ArrayList<Ant[]> matingPairs) {
         action.clear();
+        deathAndTaxes();
         if(this.alive) { // as we have introduced interaction, dead ants could get processed inside the game loop
             // Step 1:  Sense
             life++;
             updateLife();
             updateHome();
             updateResources(resources);
-            updateAnts(allAgent_Ants);
+            updateAnts(allAgent_Ants, matingPairs);
             // Step 2:  Decide
             decideAction();
         }
         // Step 3:  Act
         act(action);
+    }
+
+
+    /**
+     * Random death and tax function - both are inevitable.  Controlled by randomDeathProb and probTax set at
+     * the top of the class.
+     */
+    private void deathAndTaxes() {
+        Random rand = new Random();
+        if (rand.nextDouble() < randomDeathProb) {
+            this.alive = false;
+            System.out.println("Ant mysteriously died.");
+        }
+        else if(rand.nextDouble() < probTax) {
+            // ant must pay the tax -- according to the paper, this is one of each resource.
+            // if it cannot, it dies.  Now there's is more severe, as in, it must also be able
+            // to replicate... to do that, I would have to call this before going through the breeding process?
+            if(!replicate()) { // if it cannot replicate, it dies.
+                this.alive = false;
+                System.out.println("Could not replicate before the tax man came.");
+            }
+            else { // Remove one of each resource from the reservoir
+                ArrayList<Resource> resRemoval = new ArrayList<>();
+                // very hacked
+                boolean a = false;
+                boolean b = false;
+                boolean c = false;
+                boolean d = false;
+                for(Resource res : reservoir) {
+                    if(!a && res.type.equals("A")) {
+                        resRemoval.add(res);
+                        a = true;
+                    }
+                    if(!b && res.type.equals("B")) {
+                        resRemoval.add(res);
+                        b = true;
+                    }
+                    if(!c && res.type.equals("B")) {
+                        resRemoval.add(res);
+                        c = true;
+                    }
+                    if(!d && res.type.equals("B")) {
+                        resRemoval.add(res);
+                        d = true;
+                    }
+                }
+                for(Resource res : resRemoval) {
+                    reservoir.remove(res); // remove what we can from the ant. Smith and Bedau did not say
+                    // they killed an ant that couldn't pay the full tax, just if it couldn't replicate.
+                }
+            }
+        }
+    }
+
+    /**
+     * Mutates the genome of an agent with some probability per space
+     * @param mutationRate
+     */
+    public void mutate(double mutationRate) {
+        interActionTag = mutateTag(interActionTag,mutationRate);
+        matingTag = mutateTag(matingTag,mutationRate);
+        offenseTag = mutateTag(offenseTag,mutationRate);
+        defenseTag = mutateTag(defenseTag,mutationRate);
+        tradingTag = mutateTag(tradingTag,mutationRate);
+        combatCondition = mutateTag(combatCondition,mutationRate);
+        tradeCondition = mutateTag(tradeCondition,mutationRate);
+        matingCondition = mutateTag(matingCondition,mutationRate);
+        tag = interActionTag+matingTag+offenseTag+defenseTag+tradingTag+combatCondition+tradeCondition+matingCondition;
     }
 
     /**
@@ -350,8 +501,9 @@ public class Ant extends SimulationBody {
      * May not need to add this to the sense object list as we can have this behavior trump other actions?
      *
      * @param allAgent_ants
+     * @param matingPairs
      */
-    private void updateAnts(ArrayList<Ant> allAgent_ants) {
+    private void updateAnts(ArrayList<Ant> allAgent_ants, ArrayList<Ant[]> matingPairs) {
         for(Ant antObj : allAgent_ants) {
             Vector2 heading = new Vector2(this.getWorldCenter(), antObj.getWorldCenter());
             double angle = heading.getAngleBetween(this.getLinearVelocity()); // radians
@@ -365,7 +517,7 @@ public class Ant extends SimulationBody {
                 // Ok, ok, we see an ant.  Let's see what interactions we get for right now
                 EchoAntCatFly model = new EchoAntCatFly();
 
-                if (model.canInteract(this.offenseTag, antObj.interActionTag)) { // if true, combat can occur
+                if (model.canInteract(this.combatCondition, antObj.interActionTag)) { // if true, combat can occur
                     double maybeIWin = model.likelyWinner(this.offenseTag, antObj.defenseTag);
                     double maybeYouWin = model.likelyWinner(antObj.offenseTag, this.defenseTag);
 
@@ -377,24 +529,30 @@ public class Ant extends SimulationBody {
                     // is the ants turn it should eat the other ant.  This will set the other ant to dead and we will transfer
                     // resources. -- todo:  look at hidden order as I think this is proportional may also just follow S & B paper
                     if (maybeIWin > maybeYouWin) {
-                        System.out.println("Likely to win the fight");
+                       // System.out.println("Likely to win the fight");
                         double prob = new Random().nextDouble();
                         if (prob <= maybeIWin) {
                             antObj.alive = false; // the other ant is killed
                             cleanUp(antObj); // take the ant's resources
-                            System.out.println("Momma! I just killed an ant...");
+                           // System.out.println("Momma! I just killed an ant...");
                         }
+                        numCombats++;
+                        fight = true;
                     } else if (maybeIWin != maybeYouWin) {
                         //System.out.println("You better run!");  // todo this should probably result in a fleeing action, GOTOXX anywhere but here
                         double prob = new Random().nextDouble();
                         if (prob >= maybeYouWin) { // we don't succeed
                             this.alive = false;
                             antObj.cleanUp(this);
-                            System.out.println("Failed to flee.");
+                            //System.out.println("Failed to flee.");
                         }
                     }
                 } // end combat check
-                if(model.canInteract(this.tradingTag, antObj.interActionTag)) { // ant can give commodity to another
+                // Trading check -- two way condition must be met!
+                if(model.canInteract(this.tradeCondition, antObj.interActionTag) &&
+                model.canInteract(antObj.tradeCondition, this.interActionTag)) { // ant can give commodity to another
+                    trade = true;
+                    numTrades++;
                     Resource temp = null;
                     for(Resource r : this.reservoir) {
                         if(r.type.equals(this.tradingTag)) {
@@ -404,13 +562,54 @@ public class Ant extends SimulationBody {
                     if(temp != null) {
                         // Note:  this is VERY dumb atm as it's only checking if it has a resource, not if it needs it
                         // and wants to hold onto it
-                        System.out.println("Trading resoruce: " + temp.type);
+                        //System.out.println("I am trading resource: " + temp.type);
                         reservoir.remove(temp); // remove from this reservoir
                         antObj.reservoir.add(temp); // transfer to other reservoir
                     }
+                    // Now trade the other way
+                    temp = null;
+                    for(Resource r : antObj.reservoir) {
+                        if(r.type.equals(antObj.tradingTag)) {
+                            temp = r;
+                        }
+                    }
+                    if(temp != null) {
+                        // Note:  this is VERY dumb atm as it's only checking if it has a resource, not if it needs it
+                        // and wants to hold onto it
+                        //System.out.println("I am receiving resource: " + temp.type);
+                        this.reservoir.add(temp); // remove from this reservoir
+                        antObj.reservoir.remove(temp); // transfer to other reservoir
+                    }
                 }
+                // Todo:  mating check goes here, also two way condition -- according to S & B, if a trade occurs, mating will not
+                /** -- it's causing concurrency issues with dyn4j right now.  We may have to do mating in it's
+                 * own loop in the game loop.
+                 */
+                /*
+                else if(model.canInteract(this.matingCondition, antObj.interActionTag) &&
+                        model.canInteract(antObj.matingCondition, this.interActionTag)) {
+                    // Agents can mate -- pass pairings along via an arraylist to the simulation / game loop
+                    //System.out.println("Mating possible");
+                    Ant[] pair = new Ant[2];
+                    pair[0] = this;
+                    pair[1] = antObj;
+                    matingPairs.add(pair);
+                    this.alive = false;
+                    antObj.alive = false;
+                }
+                */
+
             } // end if within sensor range
         }
+    }
+
+    /**
+     * Quick method to reset these booleans each time step
+     */
+    public void reset() {
+        trade = false;
+        reproduce = false;
+        fight = false;
     }
 
     private void cleanUp(Ant otherAnt) {
