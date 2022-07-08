@@ -17,6 +17,10 @@ public class Resource {
     public String type; // A,B,C, or D -- whatever we may want
     public Vector2 location;
     public Color color = Color.GREEN;
+    int MaxX = 30;
+    int MinX = -30;
+    int MaxY = 20;
+    int MinY = -20;
 
     /**
      * Basic constructor, however, it assigns a random resource and a random location
@@ -56,10 +60,9 @@ public class Resource {
      * @return
      */
     private Vector2 randomLocation() {
-        int max = 20;
-        int min = -20;
-        Math.floor(Math.random()*(max-min+1)+min);
-        return(new Vector2(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min)));
+        double x = Math.floor(Math.random()*(MaxX-MinX+1)+MinX);
+        double y = Math.floor(Math.random()*(MaxY-MinY+1)+MinY);
+        return(new Vector2(x,y));
     }
 
 

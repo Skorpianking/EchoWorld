@@ -11,6 +11,7 @@ import behaviorFramework.arbiters.HighestPriority;
 import Sample.behaviors.Wander;
 import framework.SimulationBody;
 import org.dyn4j.geometry.Geometry;
+import org.dyn4j.geometry.Interval;
 import org.dyn4j.geometry.MassType;
 import org.dyn4j.geometry.Vector2;
 import org.dyn4j.world.World;
@@ -32,7 +33,7 @@ public class Ant extends Vehicle {
     String parent = "NONE";
 
     // Parameters added from Smith and Bedau Echo-world implementation
-    double randomDeathProb = .00001; // prob of death and taxes
+    double randomDeathProb = .0001; // prob of death and taxes
     double probTax = .0001;
 
     // Conditions: these must match another agent's interAction tag to occur.  Right now these will
@@ -48,10 +49,11 @@ public class Ant extends Vehicle {
     boolean fight = false;
     boolean trade = false;
     boolean reproduce = false;
+    String predator = "NONE"; // empty string if ant dies naturally or through taxation, otherwise, set by the combat outcome
 
     // Genomic length, how long can each tag be -- this is just one more parameter that can affect system behavior
     // Our original work allowed each tag to be up to 6 characters in length.
-    int genomeLength = 6;
+    int genomeLength = 1;
 
     // Parameter for seeing how long the ant lived, they can recharge at home.  More successful ants should live longer
     // Generation = timestep it was introduced into the population
@@ -75,22 +77,18 @@ public class Ant extends Vehicle {
     // Actual ant "body" for the world to paint
     private Vector2 leftWheelLocation = new Vector2(-0.5, -0.5); // holdovers from vehicle class, right now
     private Vector2 rightWheelLocation = new Vector2( 0.5, -0.5); // I don't want to rehash the physics to turn the ant
+    private double GRAB_RANGE = 1; // how far "off" the target can be, allows us to home in on a target
+    private final int SENSOR_RANGE = 2; // how far the line casts go
 
     // All taken from the cue class template
-    // 2.25 in diameter = 0.028575 m radius
     final double ballRadius = 0.25; //0.1; //0.028575;
-    // 0.126 oz/in^3 = 217.97925 kg/m^3
     final double ballDensity = 217.97925;
     final double ballFriction = 0.00;
     final double ballRestitution = 0.9;
 
-    // Straight from vehicle class
-    private final double K_p = 10;   //Proportional Control Constant
-    private int SENSOR_RANGE = 2; // how far an ant can see
-    private double GRAB_RANGE = 1; // how far "off" the target can be, allows us to home in on a target
 
-    // World the ant lives in
-    protected World<SimulationBody> myWorld;
+    public Ant() {
+    }
 
     public Ant(World<SimulationBody> myWorld) {
         this.myWorld = myWorld;
@@ -139,7 +137,7 @@ public class Ant extends Vehicle {
         int min = -15;
         double x_pos = Math.floor(Math.random()*(max-min+1)+min); // done just for code clarity
         double y_pos = Math.floor(Math.random()*(max-min+1)+min);
-        this.translate(x_pos,y_pos);
+        //this.translate(x_pos,y_pos);
 
         home = new Vector2(x_pos,y_pos); // center of the screen for now.
 
@@ -208,11 +206,15 @@ public class Ant extends Vehicle {
         this.tradeCondition = copy.tradeCondition;
         this.combatCondition = copy.combatCondition;
         this.matingCondition = copy.matingCondition;
+        this.predator = copy.predator;
     }
 
     public boolean sense() {
         state.tick();
+        state.setHeading(convertTransformToHeading());
         state.setVelocity(this.getLinearVelocity()); // LinearVelocity captures heading and speed
+        state.setAngularVelocity(this.getAngularVelocity());
+        state.updateLightStrengths();
         return true;
     }
 
@@ -224,6 +226,7 @@ public class Ant extends Vehicle {
     public Action decideAction() {
         action.clear();
         action = behaviorTree.genAction(state); // get an action from the behavior tree
+        //System.out.println(action.name);
         return action;
     }
 
@@ -235,7 +238,6 @@ public class Ant extends Vehicle {
      * @param a Action being applied to the vehicle
      */
     public void act(Action a) {
-
         double left = a.getLeftWheelVelocity();
         double right = a.getRightWheelVelocity();
 
@@ -265,6 +267,22 @@ public class Ant extends Vehicle {
         baseNormal.multiply(left+right);
         this.setLinearVelocity(baseNormal);
 
+        // Constrain the vehicle to prevent spinning out of control
+        // Get the linear velocity in the direction of the baseVehicle's front
+        Vector2 clamp = this.getTransform().getTransformedR(new Vector2(0.0, 1.0));
+        double defl = this.getLinearVelocity().dot(clamp);
+
+        // clamp the velocity
+        defl = Interval.clamp(defl, -MAX_VELOCITY, MAX_VELOCITY);
+        if (defl < 0.0)
+            this.setLinearVelocity(baseNormal.multiply(-defl));
+        else
+            this.setLinearVelocity(baseNormal.multiply(defl));
+
+        // clamp the angular velocity
+        double av = this.getAngularVelocity();
+        av = Interval.clamp(av, -MAX_ANGULAR_VELOCITY, MAX_ANGULAR_VELOCITY);
+        this.setAngularVelocity(av);
     }
 
     /**
@@ -384,7 +402,7 @@ public class Ant extends Vehicle {
      *
      * @param resources
      */
-    public void decide(ArrayList<Ant> allAgent_Ants, ArrayList<Resource> resources, ArrayList<Ant[]> matingPairs) {
+    public void decide(ArrayList<Ant> allAgent_Ants, ArrayList<Resource> resources) {
         action.clear();
         deathAndTaxes();
         if(this.alive) { // as we have introduced interaction, dead ants could get processed inside the game loop
@@ -393,7 +411,7 @@ public class Ant extends Vehicle {
             updateLife();
             updateHome();
             updateResources(resources);
-            updateAnts(allAgent_Ants, matingPairs);
+            updateAnts(allAgent_Ants);
             // Step 2:  Decide
             decideAction();
         }
@@ -410,7 +428,7 @@ public class Ant extends Vehicle {
         Random rand = new Random();
         if (rand.nextDouble() < randomDeathProb) {
             this.alive = false;
-            System.out.println("Ant mysteriously died.");
+            //System.out.println("Ant mysteriously died.");
         }
         else if(rand.nextDouble() < probTax) {
             // ant must pay the tax -- according to the paper, this is one of each resource.
@@ -418,7 +436,7 @@ public class Ant extends Vehicle {
             // to replicate... to do that, I would have to call this before going through the breeding process?
             if(!replicate()) { // if it cannot replicate, it dies.
                 this.alive = false;
-                System.out.println("Could not replicate before the tax man came.");
+                //System.out.println("Could not replicate before the tax man came.");
             }
             else { // Remove one of each resource from the reservoir
                 ArrayList<Resource> resRemoval = new ArrayList<>();
@@ -498,12 +516,10 @@ public class Ant extends Vehicle {
     /**
      * Adds sensed ants to the sensed object list
      *
-     * May not need to add this to the sense object list as we can have this behavior trump other actions?
+     *  @param allAgent_ants
      *
-     * @param allAgent_ants
-     * @param matingPairs
      */
-    private void updateAnts(ArrayList<Ant> allAgent_ants, ArrayList<Ant[]> matingPairs) {
+    private void updateAnts(ArrayList<Ant> allAgent_ants) {
         for(Ant antObj : allAgent_ants) {
             Vector2 heading = new Vector2(this.getWorldCenter(), antObj.getWorldCenter());
             double angle = heading.getAngleBetween(this.getLinearVelocity()); // radians
@@ -533,6 +549,8 @@ public class Ant extends Vehicle {
                         double prob = new Random().nextDouble();
                         if (prob <= maybeIWin) {
                             antObj.alive = false; // the other ant is killed
+                            System.out.println("Predation event (Type 1): " + this.tag + " ate " + antObj.tag);
+                            antObj.predator = this.tag; // predation event
                             cleanUp(antObj); // take the ant's resources
                            // System.out.println("Momma! I just killed an ant...");
                         }
@@ -541,16 +559,20 @@ public class Ant extends Vehicle {
                     } else if (maybeIWin != maybeYouWin) {
                         //System.out.println("You better run!");  // todo this should probably result in a fleeing action, GOTOXX anywhere but here
                         double prob = new Random().nextDouble();
-                        if (prob >= maybeYouWin) { // we don't succeed
+                        if (prob <= maybeYouWin) { // other ant succeeds in killing us
                             this.alive = false;
+                            this.predator = antObj.tag; // predation event
+                            System.out.println("Predation event (Type 2):" + antObj.tag + " ate " + this.tag);
                             antObj.cleanUp(this);
                             //System.out.println("Failed to flee.");
                         }
+                        numCombats++;
+                        fight = true;
                     }
                 } // end combat check
                 // Trading check -- two way condition must be met!
-                if(model.canInteract(this.tradeCondition, antObj.interActionTag) &&
-                model.canInteract(antObj.tradeCondition, this.interActionTag)) { // ant can give commodity to another
+                else if(model.canInteract(this.tradeCondition, antObj.interActionTag) &&
+                model.canInteract(antObj.tradeCondition, this.interActionTag) && this.alive) { // ant can give commodity to another
                     trade = true;
                     numTrades++;
                     Resource temp = null;
@@ -630,10 +652,17 @@ public class Ant extends Vehicle {
 
         // Find the closest resource and head towards it
         for(Resource resObj : resources) {
+            Vector2 myPos = this.getWorldCenter();
+            Vector2 resPos = resObj.location;
+
+            double tDist = Math.sqrt(Math.pow(myPos.x - resPos.x,2) +
+                    Math.pow(myPos.y - resPos.y,2));
+
             Vector2 heading = new Vector2(this.getWorldCenter(), resObj.location);
             double angle = heading.getAngleBetween(this.getLinearVelocity()); // radians
-            double tDist = this.getWorldCenter().distance(resObj.location); //
+
             if(tDist < distance && tDist <= SENSOR_RANGE) {
+                //System.out.println("Resource located at: " + resObj.location + " " + tDist);
                 String type = "Resource";
                 distance = tDist;
                 obj = new SensedObject(heading, angle, distance, type, "empty", resObj.location);
@@ -756,5 +785,10 @@ public class Ant extends Vehicle {
     public Vector2 getHome() {
         return home;
     }
+
+    public void setPosition(Vector2 localCenter) {
+        this.translate(localCenter.x,localCenter.y);
+    }
+
 }
 

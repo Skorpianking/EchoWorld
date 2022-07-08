@@ -33,17 +33,18 @@ public class AntWorld extends SimulationFrame {
     public ArrayList<Ant[]> matingPairs = new ArrayList<>();
 
     // Init variables, also used for testing
-    int numAnts = 100; // with strict matching, see EchoAntCatFly, this should start a little lower.
+    int numAnts = 50; // with strict matching, see EchoAntCatFly, this should start a little lower.
     int numResources = 10;
     int scale = 20;
     int generation = 0; // helps track when ants were added to the world
-    int timeSteps = 10000; // how long the simulation will last.  S & B did 10^6, we are doing 10^3 right now
-    double mutationRate = 0.005; // how one may change a genome
+    int timeSteps = 10000;//00; // how long the simulation will last.  S & B did 10^6, we are doing 10^3 right now
+    double mutationRate = 0.0001; // how one may change a genome
     // (ie generations) much faster than their sim - we do actual movement through the environment
 
     // Vars for writing to a file
     String directory = System.getProperty("user.dir");
-    String filename = directory + File.separator + "random_echo_ant_test_death_and_taxes" + 11 + ".csv";
+    //String filename = directory + File.separator + "testing.csv";
+    String filename = directory + File.separator + "echo_pop_50_genome_1_mutation_0001_" + 1 + ".csv";
     PrintWriter outputStream = null; // file writer
 
     /**
@@ -72,7 +73,7 @@ public class AntWorld extends SimulationFrame {
         try {
             String tacticalAgents = filename;
             outputStream = new PrintWriter( new FileOutputStream(tacticalAgents, true));
-            outputStream.write("timestep,id,tag,offense,defense,mating,generation,life,death,parent,numCombats,numTrades,numReproductions,didIFight,didITrade,didIReproduce" +
+            outputStream.write("timestep,id,tag,offense,defense,mating,generation,life,death,parent,numCombats,numTrades,numReproductions,didIFight,didITrade,didIReproduce,predators" +
                     "\n"); // writes header to csv file
         }
         catch (FileNotFoundException e){
@@ -91,36 +92,35 @@ public class AntWorld extends SimulationFrame {
     private void addWorldObjects(int scale) {
         // add bounding shapes to the world, these are the walls
         SimulationBody right = new SimulationBody();
-        SimulationBody left = new SimulationBody();
-        SimulationBody bottom = new SimulationBody();
-        SimulationBody top = new SimulationBody();
-
         right.setColor(Color.black);
-        right.addFixture(Geometry.createRectangle(0.2, 40 + scale));
+        right.addFixture(Geometry.createRectangle(0.2, canvas.getHeight() / camera.scale));
         right.setMass(MassType.INFINITE);
-        right.translate(16.65 + scale * 1.16, 7);
-        right.setUserData("Obstacle");
+        right.translate((canvas.getWidth()/ (2* camera.scale)) - 0.1, 0);
+        right.setUserData(new String("Obstacle"));
         this.world.addBody(right);
 
+        SimulationBody left = new SimulationBody();
         left.setColor(Color.black);
-        left.addFixture(Geometry.createRectangle(0.2, 40 + scale));
+        left.addFixture(Geometry.createRectangle(0.2, canvas.getHeight() / camera.scale));
         left.setMass(MassType.INFINITE);
-        left.translate(-16.65 - scale * 1.16, 7);
-        left.setUserData("Obstacle");
+        left.translate(-(canvas.getWidth()/ (2* camera.scale)) + 0.1, 0);
+        left.setUserData(new String("Obstacle"));
         this.world.addBody(left);
 
+        SimulationBody top = new SimulationBody();
         top.setColor(Color.black);
-        top.addFixture(Geometry.createRectangle(40 + scale * 2, 0.2));
+        top.addFixture(Geometry.createRectangle(canvas.getWidth() / camera.scale, 0.2));
         top.setMass(MassType.INFINITE);
-        top.translate(0, 8.25 + scale * 0.58);
-        top.setUserData("Obstacle");
+        top.translate(0, (canvas.getHeight()/(2*camera.scale)) - 0.1);
+        top.setUserData(new String("Obstacle"));
         this.world.addBody(top);
 
+        SimulationBody bottom = new SimulationBody();
         bottom.setColor(Color.black);
-        bottom.addFixture(Geometry.createRectangle(40 + scale * 2, 0.2));
+        bottom.addFixture(Geometry.createRectangle(canvas.getWidth() / camera.scale, 0.2));
         bottom.setMass(MassType.INFINITE);
-        bottom.translate(0, -8.25 - scale * 0.58);
-        bottom.setUserData("Obstacle");
+        bottom.translate(0, -(canvas.getHeight()/(2*camera.scale)) + 0.1);
+        bottom.setUserData(new String("Obstacle"));
         this.world.addBody(bottom);
 
 
@@ -128,7 +128,7 @@ public class AntWorld extends SimulationFrame {
         SimulationBody newLight = new SimulationBody();
         newLight.setColor(Color.yellow);
         newLight.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
-        newLight.translate(new Vector2(-8.0 - scale * .5, -5 - scale * .5));
+        newLight.translate(new Vector2(-8.0, -5));
         newLight.setMass(MassType.INFINITE);
         newLight.setUserData("Light");
         this.world.addBody(newLight);
@@ -137,7 +137,7 @@ public class AntWorld extends SimulationFrame {
         SimulationBody extraLight = new SimulationBody();
         extraLight.setColor(Color.yellow);
         extraLight.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
-        extraLight.translate(new Vector2(8.0 + scale * .5, 5 + scale * 0.5));
+        extraLight.translate(new Vector2(8.0, 5));
         extraLight.setMass(MassType.INFINITE);
         extraLight.setUserData("Light");
         this.world.addBody(extraLight);
@@ -257,35 +257,38 @@ public class AntWorld extends SimulationFrame {
         if (!this.paused.isActive()) {
             ArrayList<SimulationBody> newAnts = new ArrayList<SimulationBody>();
             for(SimulationBody alive: antColonies) {
-                Ant temp = new Ant((Ant)alive);
-                //System.out.println(temp.id + " " + temp.getLinearVelocity());
-                if(temp.replicate()) { // If this ant can replicate, it will
-                    ((Ant)alive).numReproductions++;
-                    ((Ant)alive).reproduce = true;
-                    // Ideally we would like to replicate from a parent ant versus just adding randos to the world
-                    // One could, if so inclined, take stock of the entire population, saving those that are
-                    // more fit and letting them breed to create the next generation of ants.
-                    // Alright, to add more words here, we are going to replicate new ants at the location of
-                    // the parent ant, give it the same tag, but not the resources.
-                    Ant newA = new Ant(this.world);
-                    //System.out.println("Hello! My name is: " + newA.id);
-                    newA.matingTag = temp.matingTag;
-                    newA.matingCondition = temp.matingCondition;
-                    newA.tradeCondition = temp.tradeCondition;
-                    newA.combatCondition = temp.combatCondition;
-                    newA.tradingTag = temp.tradingTag;
-                    newA.defenseTag = temp.defenseTag;
-                    newA.offenseTag = temp.offenseTag;
-                    newA.interActionTag = temp.interActionTag;
-                    newA.mutate(mutationRate); // mutation
-                    newA.id = newA.tag+generation; //newA.matingTag+newA.offenseTag+newA.defenseTag;
-                    newA.setParent(temp.id);
-                    newA.setGeneration(generation);
-                    newA.setHome(temp.getHome()); // same home as its parent
-                    newA.setColor(temp.getColor()); // same color as its parent
-                    newA.reservoir = new ArrayList<>(); // resets the reservoir
-                    newAnts.add(newA); // adding after this loop to avoid concurrency issues
-                    this.world.addBody(newA); // add to the world
+                if(((Ant)alive).isAlive()) {
+                    Ant temp = new Ant((Ant) alive);
+                    //System.out.println(temp.id + " " + temp.getLinearVelocity());
+                    if (temp.replicate()) { // If this ant can replicate, it will
+                        ((Ant) alive).numReproductions++;
+                        ((Ant) alive).reproduce = true;
+                        // Ideally we would like to replicate from a parent ant versus just adding randos to the world
+                        // One could, if so inclined, take stock of the entire population, saving those that are
+                        // more fit and letting them breed to create the next generation of ants.
+                        // Alright, to add more words here, we are going to replicate new ants at the location of
+                        // the parent ant, give it the same tag, but not the resources.
+                        Ant newA = new Ant(this.world);
+                        newA.matingTag = temp.matingTag;
+                        newA.matingCondition = temp.matingCondition;
+                        newA.tradeCondition = temp.tradeCondition;
+                        newA.combatCondition = temp.combatCondition;
+                        newA.tradingTag = temp.tradingTag;
+                        newA.defenseTag = temp.defenseTag;
+                        newA.offenseTag = temp.offenseTag;
+                        newA.interActionTag = temp.interActionTag;
+                        newA.mutate(mutationRate); // mutation
+                        newA.id = newA.tag + generation; //newA.matingTag+newA.offenseTag+newA.defenseTag;
+                        //System.out.println("Hello! My name is: " + newA.id);
+                        newA.setParent(temp.id);
+                        newA.setGeneration(generation);
+                        newA.setHome(temp.getHome()); // same home as its parent
+                        newA.setColor(temp.getColor()); // same color as its parent
+                        newA.setPosition(temp.getLocalCenter());
+                        newA.reservoir = new ArrayList<>(); // resets the reservoir
+                        newAnts.add(newA); // adding after this loop to avoid concurrency issues
+                        this.world.addBody(newA); // add to the world
+                    }
                 }
             }
 
@@ -331,7 +334,13 @@ public class AntWorld extends SimulationFrame {
         // Sync the display on some systems.
         // (on Linux, this fixes event queue problems)
         Toolkit.getDefaultToolkit().sync();
-        world.step(1);
+        try {
+            world.step(1);
+        }
+        catch(Exception e) {
+            e.printStackTrace(System.out);
+            System.out.println("Time step: " + timeSteps);
+        }
         stepNumber++;
         step.setActive(false);
     }
@@ -392,12 +401,14 @@ public class AntWorld extends SimulationFrame {
                 //"id,offense,defense,mating,generation,life,death
                 outputStream.write(generation + ","+ temp.id + ","+ temp.tag +"," + temp.offenseTag + "," + temp.defenseTag + "," + temp.matingTag + "," +
                         temp.getGeneration() + "," + temp.getLife() + "," + "0" + "," + temp.parent + "," + temp.numCombats + "," +
-                        temp.numTrades + "," + temp.numReproductions + "," + temp.fight + "," + temp.trade + "," + temp.reproduce + "\n");
+                        temp.numTrades + "," + temp.numReproductions + "," + temp.fight + "," + temp.trade + "," + temp.reproduce +
+                        "," + temp.predator + "\n");
             }
             else {
                 outputStream.write(generation + "," + temp.id + "," + temp.tag + "," + temp.offenseTag + "," + temp.defenseTag + "," + temp.matingTag + "," +
                         temp.getGeneration() + "," + temp.getLife() + "," + generation + "," + temp.parent + "," + temp.numCombats + "," +
-                        temp.numTrades + "," + temp.numReproductions + "," + temp.fight + "," + temp.trade + "," + temp.reproduce + "\n");
+                        temp.numTrades + "," + temp.numReproductions + "," + temp.fight + "," + temp.trade + "," + temp.reproduce +
+                        "," + temp.predator + "\n");
             }
             temp.reset();
         }
@@ -413,7 +424,7 @@ public class AntWorld extends SimulationFrame {
         // Now move ants
         for(SimulationBody v : antColonies) {
             if((((Ant)v).isAlive())) {
-                ((Ant) v).decide(antColonies, resources, matingPairs);
+                ((Ant) v).decide(antColonies, resources);
                 v.render(g, elapsedTime);
                 ((Ant) v).decLife();
             }

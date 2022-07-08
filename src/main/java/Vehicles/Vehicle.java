@@ -21,12 +21,12 @@ public class Vehicle extends SimulationBody {
     private final Vector2 leftWheelLocation = new Vector2(-0.5, -0.5);
     private final Vector2 rightWheelLocation = new Vector2( 0.5, -0.5);
 
-    private final double MAX_VELOCITY = 2; // arbitrary right now
-    private final double MAX_ANGULAR_VELOCITY = 1; // how fast we can turn
-    private final int SENSOR_RANGE = 20; // how far the line casts go
-    private final double ANGULAR_DAMPENING = 0.1;
+    protected final double MAX_VELOCITY = 2; // arbitrary right now
+    protected final double MAX_ANGULAR_VELOCITY = 1; // how fast we can turn
+    protected final int SENSOR_RANGE = 20; // how far the line casts go
+    protected final double ANGULAR_DAMPENING = 0.1;
 
-    private final double K_p = 10;   // PID: Proportional Control Constant
+    protected final double K_p = 10;   // PID: Proportional Control Constant
 
     private State state;
 
