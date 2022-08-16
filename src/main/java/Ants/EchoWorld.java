@@ -37,11 +37,11 @@ public class EchoWorld extends SimulationFrame {
     int generation = 0; // helps track when ants were added to the world
     int timeSteps = 10000; // how long the simulation will last.  S & B did 10^6, we are doing 10^3 right now
     int resourceFlow = 10; // add up to this many resources to the world at a time P(addRes) = 0.20
-    double mutationRate = 0.0001; // how one may change a genome
+    double mutationRate = 0.1; // how one may change a genome
 
     // Vars for writing to a file
     String directory = System.getProperty("user.dir");
-    String filename = directory + File.separator + "echo_pop_50_genome_4_mutation_0001_" + 1 + ".csv";
+    String filename = directory + File.separator + "echo_pop_50_genome_1_mutation_1_" + 1 + ".csv";
     PrintWriter outputStream = null; // file writer
 
 
@@ -68,7 +68,7 @@ public class EchoWorld extends SimulationFrame {
         try {
             String tacticalAgents = filename;
             outputStream = new PrintWriter( new FileOutputStream(tacticalAgents, true));
-            outputStream.write("timestep,id,tag,offense,defense,mating,generation,life,death,parent,numCombats,numTrades,numReproductions,didIFight,didITrade,didIReproduce,predators" +
+            outputStream.write("timestep,id,tag,offense,defense,mating,generation,life,death,parent,numCombats,numTrades,numReproductions,didIFight,didITrade,didIReproduce,predators,tradepartners" +
                     "\n"); // writes header to csv file
         }
         catch (FileNotFoundException e){
@@ -200,7 +200,7 @@ public class EchoWorld extends SimulationFrame {
                     System.out.println("Obstacles must have a size [width, height]!");
                     System.exit(0);
                 }
-
+/**
                 SimulationBody Obstacle = new SimulationBody();
                 Obstacle.setColor(Color.black);
                 Obstacle.addFixture(Geometry.createRectangle(width, height));
@@ -216,6 +216,7 @@ public class EchoWorld extends SimulationFrame {
                     Obstacle.setMass(MassType.INFINITE); // Default to immovable
                 }
                 this.world.addBody(Obstacle);
+ **/
             }
         } catch (Exception e) {} // Obstacles are optional
     }
@@ -259,7 +260,7 @@ public class EchoWorld extends SimulationFrame {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        String filename = new String("echoworld_50agents_4lengthtags.json");
+        String filename = new String("echoworld_50agents_1lengthtags.json");
 
         // Read in the JSON world file
         try (FileReader fileReader = new FileReader((filename))) {
@@ -271,11 +272,10 @@ public class EchoWorld extends SimulationFrame {
 
         // Get world scale factor (pixels per meter)
         BigDecimal scale = (BigDecimal)worldJSON.get("pixels_per_meter");
-
         try {
             EchoWorld simulation = new EchoWorld(scale.intValue());
             simulation.run();
-        } catch(Exception e) {
+        } catch (Exception e) {
             System.out.println("FAILURE in Main():" + e);
         }
     }
@@ -405,13 +405,13 @@ public class EchoWorld extends SimulationFrame {
                 outputStream.write(generation + ","+ temp.id + ","+ temp.tag +"," + temp.offenseTag + "," + temp.defenseTag + "," + temp.matingTag + "," +
                         temp.getGeneration() + "," + temp.getLife() + "," + "0" + "," + temp.parent + "," + temp.numCombats + "," +
                         temp.numTrades + "," + temp.numReproductions + "," + temp.fight + "," + temp.trade + "," + temp.reproduce +
-                        "," + temp.predator + "\n");
+                        "," + temp.predator + "," + temp.tradePartners + "\n");
             }
             else {
                 outputStream.write(generation + "," + temp.id + "," + temp.tag + "," + temp.offenseTag + "," + temp.defenseTag + "," + temp.matingTag + "," +
                         temp.getGeneration() + "," + temp.getLife() + "," + generation + "," + temp.parent + "," + temp.numCombats + "," +
                         temp.numTrades + "," + temp.numReproductions + "," + temp.fight + "," + temp.trade + "," + temp.reproduce +
-                        "," + temp.predator + "\n");
+                        "," + temp.predator + "," + temp.tradePartners + "\n");
             }
             temp.reset();
         }

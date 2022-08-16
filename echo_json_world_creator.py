@@ -95,8 +95,8 @@ def setPosition():
 tagStrArray = ["interActionTag", "matingTag", "offenseTag", "defenseTag", "tradingTag",
                "combatCondition", "tradeCondition", "matingCondition", "position"]
 
-numAgents = 5
-tagLength = 4
+numAgents = 50
+tagLength = 1
 agent = "{\n"+"  \"pixels_per_meter\": 20,\n"+"  \"agents\": [\n"
 for i in range(0,numAgents):
     agent += "\t{\n\t\""+tagStrArray[0]+"\": \"" + buildTag(randint(1,tagLength)) + "\",\n"
@@ -114,7 +114,7 @@ agent += "],\n\t" + "\"lights\": [\n\t{\n\t " + "\t\"position\": [18,15],\n\t\t"
 
 print(agent)
 
-with open('echoworld_5agents_4lengthtags.json', 'w') as outfile:
+with open('echoworld_50agents_1lengthtags.json', 'w') as outfile:
     outfile.write(agent)
 
 
