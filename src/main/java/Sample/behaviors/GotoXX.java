@@ -18,7 +18,6 @@ public class GotoXX extends Behavior {
     private int lastSeenCounter = 0; // Set to 5 when seen
     private String target;
 
-
     // Vote = 1
     // motor outputs are 0.9 and 0.9 - angle in radians
     // Keeps track of last time seen and moves toward it for 5 ticks

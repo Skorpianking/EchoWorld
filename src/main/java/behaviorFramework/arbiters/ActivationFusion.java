@@ -34,7 +34,8 @@ public class ActivationFusion extends ArbitrationUnit {
 		double maxUtility         = 0.0;
 		double utilityLeftWheel   = 0.0;
 		double utilityRightWheel  = 0.0;
-		double utilityGrab        = 0.0;
+		double utilityPickup      = 0.0;
+		double utilityDrop        = 0.0;
 
 		for(Action a : actionSet) {
 			double utility = a.getVote() * w.get(actionIndex);
@@ -56,12 +57,17 @@ public class ActivationFusion extends ArbitrationUnit {
 			}
 
 			// Set as the highest utility for Grab so far
-			if (a.isGrab() && utility > utilityGrab)
+			if (a.getPickup() != null && utility > utilityPickup)
 			{
-				action.setGrab(a.isGrab());
-				utilityGrab = utility;
+				action.setPickup(a.getPickup());
+				utilityPickup = utility;
 			}
 
+			// Set as the highest utility for Drop so far
+			if ( a.getDrop() && utility > utilityDrop) {
+				action.setDrop(true);
+				utilityDrop = utility;
+			}
 			actionIndex++;
 		}	
 

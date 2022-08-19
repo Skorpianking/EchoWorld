@@ -1,9 +1,6 @@
 package Sample;
 
-import Sample.behaviors.AvoidObstacle;
-import Sample.behaviors.Love;
-import Sample.behaviors.MyNoOp;
-import Sample.behaviors.Wander;
+import Sample.behaviors.*;
 import Vehicles.Action;
 import Vehicles.Vehicle;
 import behaviorFramework.ArbitrationUnit;
@@ -69,8 +66,10 @@ public class Callie extends Vehicle {
         //gotox.setParameters(params);
         //behaviorTree.add(gotox);
         // OR:
-        //behaviorTree.add(new GotoXX("Light"));
-        behaviorTree.add(new Love());
+        behaviorTree.add(new Drop());
+        behaviorTree.add(new PickUp("Food"));
+        behaviorTree.add(new GotoX("Food"));
+        //behaviorTree.add(new Love());
         behaviorTree.add(new AvoidObstacle());
         behaviorTree.add(new Wander());
         behaviorTree.add(new MyNoOp());

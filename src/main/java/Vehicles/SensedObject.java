@@ -1,5 +1,6 @@
 package Vehicles;
 
+import framework.SimulationBody;
 import org.dyn4j.geometry.Vector2;
 
 public class SensedObject {
@@ -9,6 +10,7 @@ public class SensedObject {
     private double distance;
     private String type;
     private String side;
+    private SimulationBody body;
 
     /**
      * Create a new instantiated SensedObject
@@ -49,5 +51,13 @@ public class SensedObject {
 
     public Vector2 getHit() {
         return hit;
+    }
+
+    public SimulationBody getBody() {
+        return body;
+    }
+
+    public void setBody(SimulationBody body) {
+        this.body = body;
     }
 }

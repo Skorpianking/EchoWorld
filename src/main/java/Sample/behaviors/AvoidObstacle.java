@@ -43,16 +43,18 @@ public class AvoidObstacle extends Behavior {
 
         double angle = 0;
         for (SensedObject obj : sensedObjects) {
-            angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
+            if (obj.getType().equals("Obstacle")) {
+                angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
 
-            if (obj.getSide() == "Right" && angle >= 0 && angle < ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on right
-                action.setRightWheelVelocity(0.7);
-                action.setLeftWheelVelocity(-0.05);
-                action.setVote(1);
-            } else if (obj.getSide() == "Left" && angle < 0 && angle > -ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on left
-                action.setRightWheelVelocity(-0.05);
-                action.setLeftWheelVelocity(0.7);
-                action.setVote(1);
+                if (obj.getSide() == "Right" && angle >= 0 && angle < ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on right
+                    action.setRightWheelVelocity(0.7);
+                    action.setLeftWheelVelocity(-0.05);
+                    action.setVote(1);
+                } else if (obj.getSide() == "Left" && angle < 0 && angle > -ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on left
+                    action.setRightWheelVelocity(-0.05);
+                    action.setLeftWheelVelocity(0.7);
+                    action.setVote(1);
+                }
             }
         }
 

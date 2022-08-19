@@ -1,9 +1,11 @@
 package Vehicles;
 
+import framework.SimulationBody;
+
 /**
  * The action includes all of the vehicles actuators.
  *
- * Action components: LeftWheelVelocity, RightWheelVelocity, Grab
+ * Action components: LeftWheelVelocity, RightWheelVelocity, Pickup, Drop
  *
  * NOTE: Any additions to this require the 4 behaviorFramework
  * fusion arbiters to be updated (ActivationFusion, CommandFusion,
@@ -13,17 +15,20 @@ package Vehicles;
 public class Action {
     private double leftWheelVelocity; // {-1..1}
     private double rightWheelVelocity; // {-1..1}
-    private boolean grab;
+    private SimulationBody pickup;
+    private boolean drop;
 
     public Action() {
         leftWheelVelocity = rightWheelVelocity = 0.0;
-        grab = false;
+        pickup = null;
+        drop = false;
     }
 
     public Action(Action a) {
         this.leftWheelVelocity = a.leftWheelVelocity;
         this.rightWheelVelocity = a.rightWheelVelocity;
-        this.grab = a.grab;
+        this.pickup = a.pickup;
+        this.drop = a.drop;
     }
 
     public void setLeftWheelVelocity(double leftWheelVelocity) {
@@ -42,10 +47,6 @@ public class Action {
         this.rightWheelVelocity = rightWheelVelocity;
     }
 
-    public void setGrab(boolean grab) {
-        this.grab = grab;
-    }
-
     public double getLeftWheelVelocity() {
         return leftWheelVelocity;
     }
@@ -54,7 +55,15 @@ public class Action {
         return rightWheelVelocity;
     }
 
-    public boolean isGrab() {
-        return grab;
+    public void setPickup(SimulationBody pickup) {
+        this.pickup = pickup;
     }
+
+    public SimulationBody getPickup() {
+        return pickup;
+    }
+
+    public void setDrop(boolean p) { drop = p;}
+
+    public boolean getDrop() { return drop; }
 }

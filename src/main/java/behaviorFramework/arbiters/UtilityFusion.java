@@ -50,9 +50,9 @@ public class UtilityFusion extends ArbitrationUnit {
 			}
 
 			// Set as the highest utility for Grab so far
-			if (a.isGrab() && utility > utilityGrab)
+			if (a.getPickup() != null && utility > utilityGrab)
 			{
-				action.setGrab(a.isGrab());
+				action.setPickup(a.getPickup());
 				utilityGrab = utility;
 			}
 		}

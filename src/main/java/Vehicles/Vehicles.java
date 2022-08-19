@@ -62,13 +62,12 @@ public class Vehicles extends SimulationFrame {
         keyBoundItemList = new HashMap<Integer, SimulationBody>();
         myVehicles = new ArrayList<SimulationBody>();
 
-        //int scale = 10; // this doesn't appear to be something you can pull from the world at this point.
         // scale is associated with camera, pixels per meter
         // Frame is hard coded in the framework to 800x1600. this means for a scale of 20, it should be a 40x80 world
         // With the origin at the center, it becomes:  -20..20, -40..40
-        // so canvas.width & canvas.height / camera.scale
+        // World size = canvas.width & canvas.height / camera.scale
 
-        // add bounding shapes to the world, these are the walls
+        // Add bounding shapes to the world, these are the walls
         SimulationBody right = new SimulationBody();
         right.setColor(Color.black);
         right.addFixture(Geometry.createRectangle(0.2, canvas.getHeight() / camera.scale));
@@ -101,38 +100,10 @@ public class Vehicles extends SimulationFrame {
         bottom.setUserData(new String("Obstacle"));
         this.world.addBody(bottom);
 
-        // Add Lights (polygons)
+        // Add Vehicles
         ArrayList<BigDecimal> position;
         double x = 0.0;
         double y = 0.0;
-        ArrayList<JsonObject> lights = (ArrayList<JsonObject>)worldJSON.get("lights");
-        for (JsonObject item: lights) {
-            try {
-                position = (ArrayList<BigDecimal>) (item.get("position"));
-                x = position.get(0).doubleValue();
-                y = position.get(1).doubleValue();
-            } catch (Exception e) {
-                System.out.println("Lights must have a position [x, y]!");
-                System.exit(0);
-            }
-
-            SimulationBody Light = new SimulationBody();
-            Light.setColor(Color.yellow);
-            Light.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
-            Light.translate(new Vector2(x, y));
-            Light.setMass(MassType.NORMAL);
-            Light.setUserData(new String("Light"));
-            try {
-                BigDecimal key = (BigDecimal)item.get("bound_key");
-                if (key.intValue() >= 1 && key.intValue() <=5) {
-                    keyBoundItemList.put(key.intValue(), Light);
-                }
-            } catch (Exception e) { // Fall through, it is optional to have a key binding for a light
-            }
-            this.world.addBody(Light);
-        }
-
-        // Add Vehicles
         ArrayList<JsonObject> vehicles = (ArrayList<JsonObject>)worldJSON.get("vehicles");
         String vehicleName = null;
         for (JsonObject item: vehicles) {
@@ -157,6 +128,36 @@ public class Vehicles extends SimulationFrame {
                 insertVehicle(vehicle, item);
             }
         }
+
+        // Add Lights (polygons)
+        try {
+            ArrayList<JsonObject> lights = (ArrayList<JsonObject>) worldJSON.get("lights");
+            for (JsonObject item : lights) {
+                try {
+                    position = (ArrayList<BigDecimal>) (item.get("position"));
+                    x = position.get(0).doubleValue();
+                    y = position.get(1).doubleValue();
+                } catch (Exception e) {
+                    System.out.println("Lights must have a position [x, y]!");
+                    System.exit(0);
+                }
+
+                SimulationBody Light = new SimulationBody();
+                Light.setColor(Color.yellow);
+                Light.addFixture(Geometry.createUnitCirclePolygon(5, 0.5));
+                Light.translate(new Vector2(x, y));
+                Light.setMass(MassType.NORMAL);
+                Light.setUserData(new String("Light"));
+                try {
+                    BigDecimal key = (BigDecimal) item.get("bound_key");
+                    if (key.intValue() >= 1 && key.intValue() <= 5) {
+                        keyBoundItemList.put(key.intValue(), Light);
+                    }
+                } catch (Exception e) { // Fall through, it is optional to have a key binding for a light
+                }
+                this.world.addBody(Light);
+            }
+        } catch (Exception e) {} // Lights are optional
 
         // Add Obstacles (rectangles)
         try {
@@ -198,6 +199,30 @@ public class Vehicles extends SimulationFrame {
                 this.world.addBody(Obstacle);
             }
         } catch (Exception e) {} // Obstacles are optional
+
+        // Add Food (squares)
+        try {
+            ArrayList<JsonObject> food = (ArrayList<JsonObject>) worldJSON.get("food");
+            double width = 0.0;
+            double height = 0.0;
+            for (JsonObject item : food) {
+                try {
+                    position = (ArrayList<BigDecimal>) (item.get("position"));
+                    x = position.get(0).doubleValue();
+                    y = position.get(1).doubleValue();
+                } catch (Exception e) {
+                    System.out.println("Food must have a position [x, y]!");
+                    System.exit(0);
+                }
+
+                SimulationBody Food = new SimulationBody();
+                Food.setColor(Color.pink);
+                Food.addFixture(Geometry.createRectangle(0.5, 0.5));
+                Food.translate(new Vector2(x, y));
+                Food.setUserData(new String("Food"));
+                this.world.addBody(Food);
+            }
+        } catch (Exception e) {} // Food is optional
     }
 
     /**
@@ -212,7 +237,7 @@ public class Vehicles extends SimulationFrame {
                 vehicle.setDrawScanLines(true);
             else
                 vehicle.setDrawScanLines(false);
-        } catch (Exception e) { // drawing scan lines is not set default to false
+        } catch (Exception e) { // drawing scan lines is not set. Default to false
             vehicle.setDrawScanLines(false);
         }
 
@@ -226,6 +251,15 @@ public class Vehicles extends SimulationFrame {
             int min = (int)-(canvas.getHeight()/ (2* camera.scale) + 2);
             vehicle.translate(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min));
         }
+
+        try {
+            ArrayList<BigDecimal> position = (ArrayList<BigDecimal>) (item.get("position"));
+            double x = position.get(0).doubleValue();
+            double y = position.get(1).doubleValue();
+            vehicle.setHome(x, y);
+        } catch (Exception e) { // Home is non-existent if not set
+        }
+
         myVehicles.add(vehicle);
         world.addBody(vehicle);
     }
@@ -248,7 +282,7 @@ public class Vehicles extends SimulationFrame {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        String filename = new String("data//world.json");
+        String filename = new String("data//world1.json");
 
         // Read in the JSON world file
         try (FileReader fileReader = new FileReader((filename))) {

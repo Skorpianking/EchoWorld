@@ -38,7 +38,8 @@ public class PriorityFusion extends ArbitrationUnit {
 		double maxPriority	       = 0.0;
 		double priorityLeftWheel   = 0.0;
 		double priorityRightWheel  = 0.0;
-		double priorityGrab        = 0.0;
+		double priorityPickup      = 0.0;
+		double priorityDrop        = 0.0;
 
 		for(Action a : actionSet) {
 			if (a.getVote() > 0.0) {
@@ -62,10 +63,16 @@ public class PriorityFusion extends ArbitrationUnit {
 				}
 				
 				// Set as the highest priority for gunRotation so far
-				if (a.isGrab() && priority > priorityGrab)
+				if (a.getPickup() != null && priority > priorityPickup)
 				{
-					action.setGrab(a.isGrab());
-					priorityGrab = priority;
+					action.setPickup(a.getPickup());
+					priorityPickup = priority;
+				}
+
+				if (a.getDrop() && priority > priorityDrop)
+				{
+					action.setDrop(true);
+					priorityDrop = priority;
 				}
 
 				actionIndex++;

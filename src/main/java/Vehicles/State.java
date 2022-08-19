@@ -15,7 +15,7 @@ public class State {
     private double angularVelocity;
     private double leftWheelVelocity;
     private double rightWheelVelocity;
-    private boolean holding;
+    private boolean holding = false;
 
     private double leftLightStrength;
     private double rightLightStrength;

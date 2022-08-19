@@ -2,6 +2,7 @@ package behaviorFramework.arbiters;
 
 import behaviorFramework.Action;
 import behaviorFramework.ArbitrationUnit;
+import framework.SimulationBody;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,11 +39,11 @@ public class CommandFusion extends ArbitrationUnit {
 		
 		double leftWheel = 0.0;
 		double rightWheel = 0.0;
-		boolean grab = false;
+		SimulationBody pickup = null;
+		boolean drop = false;
 
 		double uLeftWheel 	= 0.0;
 		double uRightWheel	= 0.0;
-		double uGrab 	= 0.0;
 
 		for(Action a : actionSet) {
 			double utility =  a.getVote() * w.get(actionIndex);
@@ -58,10 +59,13 @@ public class CommandFusion extends ArbitrationUnit {
 				rightWheel += a.getRightWheelVelocity() * utility;
 				uRightWheel += utility;
 			}
-			if (a.isGrab())
+			if (a.getPickup() != null)
 			{
-				grab = true;
-				uGrab += utility;
+				pickup = a.getPickup();
+			}
+			if (a.getDrop())
+			{
+				drop = a.getDrop();
 			}
 			actionIndex++;
 		}
@@ -69,7 +73,9 @@ public class CommandFusion extends ArbitrationUnit {
 		action.setVote(maxVote);
 		action.setLeftWheelVelocity(leftWheel/uLeftWheel);
 		action.setRightWheelVelocity(rightWheel/uRightWheel);
-		action.setGrab(grab);
+		action.setPickup(pickup);
+		if (drop)
+			action.setDrop(true);
 
 		return action;
 	}

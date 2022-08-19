@@ -2,6 +2,7 @@ package Vehicles;
 
 import framework.SimulationBody;
 import org.dyn4j.dynamics.BodyFixture;
+import org.dyn4j.dynamics.joint.WeldJoint;
 import org.dyn4j.geometry.*;
 import org.dyn4j.world.DetectFilter;
 import org.dyn4j.world.World;
@@ -9,6 +10,7 @@ import org.dyn4j.world.result.RaycastResult;
 
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -20,6 +22,7 @@ public class Vehicle extends SimulationBody {
 
     private final Vector2 leftWheelLocation = new Vector2(-0.5, -0.5);
     private final Vector2 rightWheelLocation = new Vector2( 0.5, -0.5);
+    private WeldJoint<SimulationBody> gripper;
 
     protected final double MAX_VELOCITY = 2; // arbitrary right now
     protected final double MAX_ANGULAR_VELOCITY = 1; // how fast we can turn
@@ -30,6 +33,8 @@ public class Vehicle extends SimulationBody {
 
     private State state;
 
+    private Vector2 home;
+
     // array of values to "sweep" across -- hand jammed to get a reasonable sweep that doesn't eat too much processing time
     // -10 to 120 degrees in steps of 5 degrees (added +/- 7.5, +/- 2.5
     double[] sweepValues = {
@@ -37,7 +42,7 @@ public class Vehicle extends SimulationBody {
             0.6981,  0.7854, 0.8727, 0.9599, 1.0472, 1.1344, 1.2217, 1.3090, 1.3962, 1.4833,
             1.5707,  1.6580, 1.7453, 1.8325, 1.9198, 2.0071, 2.0944};
 
-    // Creates the world
+    // The World the vehicle is placed in
     protected World<SimulationBody> myWorld;
 
     private boolean drawScanLines = false;
@@ -82,6 +87,8 @@ public class Vehicle extends SimulationBody {
         this.addFixture(rightWheel);
         this.setColor(Color.CYAN);
 
+        // gripper
+        gripper = null;
 /*        // -- "wheels"
         leftWheel = new SimulationBody();
         leftWheel.addFixture(Geometry.createRectangle(.33, .5));
@@ -134,6 +141,8 @@ public class Vehicle extends SimulationBody {
         state.setVelocity(this.getLinearVelocity()); // LinearVelocity captures heading and speed
         state.setAngularVelocity(this.getAngularVelocity());
         state.updateLightStrengths();
+        if (gripper != null)
+            state.setHolding(true);
 
         return true;
     }
@@ -177,12 +186,8 @@ public class Vehicle extends SimulationBody {
                 double angle = heading.getAngleBetween(state.getHeading()); // baseVehicle.getLinearVelocity()); // radians
                 double distance = result.getRaycast().getDistance();
                 String type = "UNKNOWN";
-                if (result.getBody().getUserData() != null) { // If not set, just make Unknown
-                    if (result.getBody().getUserData().equals("Light")) {
-                        type = "Light";
-                    } else {
-                        type = "Obstacle";
-                    }
+                if (result.getBody().getUserData() != null) { // If not set, will be UNKNOWN
+                    type = result.getBody().getUserData().toString();
                 }
 
                 String side = "Left";
@@ -191,6 +196,14 @@ public class Vehicle extends SimulationBody {
                 }
 
                 obj = new SensedObject(heading, angle, distance, type, side, result.getRaycast().getPoint());
+
+                if (obj.getType().equals("Food")) {
+                    // If this is a hit from the center
+                    if (( angle < 0 && obj.getSide() == "Left" ) || (angle < 0 && obj.getSide() == "Right")) {
+                        obj.setBody(result.getBody());
+                    }
+                }
+
                 state.addSensedObject(obj);
             }
         }
@@ -237,6 +250,9 @@ public class Vehicle extends SimulationBody {
                     g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
                 }
             }
+        }
+        if (home != null) {
+
         }
     }
 
@@ -292,6 +308,38 @@ public class Vehicle extends SimulationBody {
         double av = this.getAngularVelocity();
         av = Interval.clamp(av, -MAX_ANGULAR_VELOCITY, MAX_ANGULAR_VELOCITY);
         this.setAngularVelocity(av);
+
+        // pickup an object only if not already holding something
+        if (a.getPickup() != null) {
+            if (this.gripper == null) {
+
+                SimulationBody food = a.getPickup();
+
+                // Am I close enough to pickup the object?
+                if (this.getTransform().getTranslation().distance(food.getTransform().getTranslation()) < 2.0) {
+                    // Create a joint between the vehicle and the object, and change the object's mass so we can move it
+                    gripper = new WeldJoint(this, food, new Vector2(0.0, 0.75));
+                    this.myWorld.addJoint(gripper);
+                    food.setMass(MassType.NORMAL);
+                    food.setUserData(new String("PickedUpFood")); // This will make it so that other vehicles won't target it
+                } else {
+                    System.out.println(this.getUserData() + ": Cannot Pickup, too far away!");
+                }
+            } else {
+                System.out.println(this.getUserData() + ": Cannot Pickup. Already holding an object: " + gripper.getBody2().getUserData());
+            }
+        }
+
+        // drop the object being held
+        if (a.getDrop()) {
+            if (gripper != null) {
+                gripper.getBody2().setUserData("Garbage"); // Renaming the object for testing.
+                this.myWorld.removeJoint(gripper);
+                gripper = null;
+            } else {
+                System.out.println(this.getUserData() + ": Cannot Drop. Not holding anything");
+            }
+        }
     }
 
     /**
@@ -330,6 +378,10 @@ public class Vehicle extends SimulationBody {
      * @param val
      */
     void setDrawScanLines(boolean val) {drawScanLines = val;}
+
+    void setHome(double x, double y) {
+        home = new Vector2(x,y);
+    }
 }
 
 

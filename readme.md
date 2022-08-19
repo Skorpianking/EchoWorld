@@ -25,15 +25,16 @@ Mouse click and drag moves the camera
       "name": "Sample.Callie",  # To load a class need full package name
       "position": [-5,-5],      # optional, default to random
       "draw_scan_lines": "true" # optional, default to false
+      "home": [5,5]             # optional, default to N/A
     },{
       "name": "Marie",          # To load JSON need path to file
       "position": [5,5],
       "draw_scan_lines": "true"
     }
   ],
-  "lights": [                # Required Array
+  "lights": [                # Optional Array
     {
-      "position": [18,15],   # Required
+      "position": [18,15],   # Location (required)
       "bound_key": 1         # Optional, default to unbound
     }, {
       "position": [-18.0, -15.0]
@@ -41,10 +42,16 @@ Mouse click and drag moves the camera
   ],
   "obstacles": [             # Optional Array
     {
-      "position": [-10,-10], # Obstacle's center
-      "size": [2,4]          # Width & Height
+      "position": [-10,-10], # Obstacle's center (required)
+      "size": [2,4]          # Width & Height (required)
       "bound_key": 2         # Optional, default to unbound
     }
+  ],
+  "food": [                 # Optional Array
+    {
+     "position": [-2,-2]    # Location (required)
+    }
+  ]
 }
 ```
 ###### Details
