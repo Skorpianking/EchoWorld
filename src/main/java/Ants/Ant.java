@@ -50,10 +50,13 @@ public class Ant extends Vehicle {
     boolean trade = false;
     boolean reproduce = false;
     String predator = "NONE"; // empty string if ant dies naturally or through taxation, otherwise, set by the combat outcome
+    String tradePartners = "NONE"; // add partners here
 
     // Genomic length, how long can each tag be -- this is just one more parameter that can affect system behavior
-    // Our original work allowed each tag to be up to 6 characters in length.
-    int genomeLength = 1;
+    // Our original work allowed each tag to be up to 6 characters in length.  Change this to match
+    // whichever starting length you have selected as main... note:  future should add this as a parameter
+    // that gets updated.
+    int genomeLength = 5;
 
     // Parameter for seeing how long the ant lived, they can recharge at home.  More successful ants should live longer
     // Generation = timestep it was introduced into the population
@@ -207,6 +210,7 @@ public class Ant extends Vehicle {
         this.combatCondition = copy.combatCondition;
         this.matingCondition = copy.matingCondition;
         this.predator = copy.predator;
+        this.tradePartners = copy.tradePartners;
     }
 
     public boolean sense() {
@@ -575,6 +579,8 @@ public class Ant extends Vehicle {
                 model.canInteract(antObj.tradeCondition, this.interActionTag) && this.alive) { // ant can give commodity to another
                     trade = true;
                     numTrades++;
+                    addTradeTag(antObj.tag);
+                    antObj.addTradeTag(this.tag);
                     Resource temp = null;
                     for(Resource r : this.reservoir) {
                         if(r.type.equals(this.tradingTag)) {
@@ -622,6 +628,15 @@ public class Ant extends Vehicle {
                 */
 
             } // end if within sensor range
+        }
+    }
+
+    private void addTradeTag(String id) {
+        if(this.tradePartners.equals("NONE")) {
+            this.tradePartners = id;
+        }
+        else {
+            this.tradePartners += "_" + id; // allow us to break this apart later
         }
     }
 

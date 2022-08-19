@@ -12,7 +12,18 @@ import networkx as nx
 
 
 # Now read the csv back in to ensure we now have floats instead of strings
-df = pd.read_csv('echo_pop_50_genome_4_mutation_0001_1.csv')
+# The following runs had predation cycles and are worth more analysis
+# 'echo_pop_50_genome_1_mutation_001_9.csv'
+# 'echo_pop_50_genome_1_mutation_001_10.csv' 
+# 'echo_pop_50_genome_1_mutation_0001_3.csv'
+# 'echo_pop_50_genome_1_mutation_0001_6.csv'
+# 'echo_pop_50_genome_1_mutation_0001_7.csv'
+# 'echo_pop_50_genome_5_mutation_001_9.csv'
+
+
+# may need to redo 0001_1, it had some weird data errors in it, running part 2 now
+# to see if something similar happens. -- rerun part 1, something was wrong
+df = pd.read_csv('echo_pop_50_genome_5_mutation_0001_10.csv') 
 #df = pd.read_csv('testing.csv')
 
 
@@ -26,6 +37,8 @@ df = pd.read_csv('echo_pop_50_genome_4_mutation_0001_1.csv')
 ids = pd.unique(df.tag)
 time = pd.unique(df.timestep)
 
+# I don't believe the next lines are true. I think we have double++ counting over time
+# as the parent doesn't change between timesteps.  We would have to build sets of 
 occur = df.groupby(['parent']).size() # counts the number of times a parent occurs - shows success of genomes over time
 occur = occur[:-1] # have to get rid of the [] parents, these were the original generation, last element
 occur = occur.sort_values(ascending=True) # sorts the series from smallest occurance to largest
@@ -119,8 +132,82 @@ edgeSet = set(elements)
 # then plot it
 
 # -- test code -- #
-graph = nx.DiGraph()
-#graph.add_edges_from([("root", "a"), ("a", "b"), ("a", "e"), ("b", "c"), ("b", "d"), ("d", "e")])
-graph.add_edges_from(edgeSet)
-nx.draw(graph, with_labels=False, font_weight='bold')
+graph1 = nx.DiGraph()
+graph1.add_edges_from(edgeSet)
+nx.draw(graph1, with_labels=False, font_weight='bold')
 plt.show()
+
+
+# Another point would be to trace family lineages back through time to see if 
+# sets of lineages dominate. Obviously, with high mutation rates we would argue
+# that individual genotypes are species derived from our orignal 50 family
+# lineages, but it would be interesting to see how long those original lines
+# lasted.
+
+# One final point is to trace trading over time.  This could (hopefully)
+# show ant - caterpillar - fly triangles where ant -> fly -> caterpillar and
+# caterpillar supplies ant with a trade commodity.  We alreay have double
+# predation webs like ant -> fly -> caterpillar
+tradePartners = df.loc[df['tradepartners'] != 'NONE']  
+elementPartners = {}
+for row in tradePartners.iterrows():
+    tradeSet = set(row[1]['tradepartners'].split('_'))
+    tempSet = {}
+    for trader in tradeSet:
+        tList = [trader,row[1]['tag']]
+        tList.sort()
+        tempSet.update({(tList[0],tList[1])})
+    elementPartners.update(tempSet)
+
+# Now the hard part, we have who trades with who, but now we have to cross reference
+# those trades with predation... wonder if we can add the two together to a digraph
+# in some manner to highlight the the different edges... that would be nice but probably
+# harder to do?  Maybe build the map of trades first
+tradeSet = []
+for key in elementPartners.keys():
+    tradeSet.append((key,elementPartners[key]))
+tradeSet = set(tradeSet)
+
+graph2 = nx.DiGraph()
+graph2.add_edges_from(tradeSet)
+nx.draw(graph2, with_labels=False, font_weight='bold')
+plt.show()
+
+# Graphs don't exactly show cycles well.  They show the complex webs of predation
+# but the cycles may not be easy to find.
+print("Predator - Prey Cycles:")
+print(nx.recursive_simple_cycles(graph1))
+print("Trade cycles:")
+print(nx.recursive_simple_cycles(graph2))
+
+
+# Wwe will iterate through the predator edge set list grabbing the victim
+# we will then iterate though the trade set to see if the victim trades
+# with a predator of the first predator - so far, this hasn't worked
+# but I haven't tested a lot of data sets and there may be something
+# else I need to consider here -- aka, this ain't perfect yet.
+for p1 in edgeSet:
+    victim = p1[1]
+    for v1 in tradeSet:
+        tPartner = []
+        if victim == v1[0]:
+            tPartner = v1[1]
+        elif victim == v1[1]:
+            tPartner = v1[0]
+        if tPartner != []:
+            for p2 in edgeSet:
+                if tPartner == p2[1] and p1 == p2[0]:
+                    print('Eureka!')
+            
+
+
+# Let's grab all the shortest paths in the predator graph
+path = dict(nx.all_pairs_shortest_path(graph1,1))
+# we have a dictionary of all the paths from each node to all other nodes
+# It is implied that a -> b in the predator graph means a eats b.  We
+# would need to check the trade edge set to see if there exists a 'c' such that
+# b trades with c, or c trades with b (doesn't matter), AND c -> a. to create
+# the an-catepillar-fly triangle that Holland theorized could come about in his
+# echo world model
+#keys = path.keys() #  get the keys for the predator paths
+
