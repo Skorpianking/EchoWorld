@@ -56,7 +56,7 @@ public class Ant extends Vehicle {
     // Our original work allowed each tag to be up to 6 characters in length.  Change this to match
     // whichever starting length you have selected as main... note:  future should add this as a parameter
     // that gets updated.
-    int genomeLength = 5;
+    int genomeLength = 10;
 
     // Parameter for seeing how long the ant lived, they can recharge at home.  More successful ants should live longer
     // Generation = timestep it was introduced into the population

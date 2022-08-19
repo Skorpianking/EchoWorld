@@ -41,7 +41,7 @@ public class EchoWorld extends SimulationFrame {
 
     // Vars for writing to a file
     String directory = System.getProperty("user.dir");
-    String filename = directory + File.separator + "echo_pop_50_genome_1_mutation_1_" + 1 + ".csv";
+    String filename = directory + File.separator + "echo_pop_50_genome_10_mutation_1_" + 10 + ".csv";
     PrintWriter outputStream = null; // file writer
 
 
@@ -260,7 +260,7 @@ public class EchoWorld extends SimulationFrame {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        String filename = new String("echoworld_50agents_1lengthtags.json");
+        String filename = new String("echoworld_50agents_10lengthtags.json");
 
         // Read in the JSON world file
         try (FileReader fileReader = new FileReader((filename))) {
