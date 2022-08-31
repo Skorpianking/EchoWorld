@@ -35,15 +35,46 @@ public class EchoWorld extends SimulationFrame {
     public ArrayList<Resource> resources = new ArrayList<Resource>();
 
     int generation = 0; // helps track when ants were added to the world
-    int timeSteps = 10000; // how long the simulation will last.  S & B did 10^6, we are doing 10^3 right now
-    int resourceFlow = 10; // add up to this many resources to the world at a time P(addRes) = 0.20
-    double mutationRate = 0.1; // how one may change a genome
+    int resourceFlow = 30; // add up to this many resources to the world at a time P(addRes) = 0.20
+    // bumped RF to 100 for 10 length tags to see if I can ramp up breed/trade/combats -- too much,
+    // try 20...
 
-    // Vars for writing to a file
-    String directory = System.getProperty("user.dir");
-    String filename = directory + File.separator + "echo_pop_50_genome_10_mutation_1_" + 10 + ".csv";
+    // Vars for running the sim:  where the file goes, timesteps, etc.
+    static int tLength = 1; // update Ant.java to mirror this tag length
+    static int timeSteps = 10000; // how long the simulation will last.  S & B did 10^6, we are doing 10^3 right now
+    static double mutationRate = 0.0001; // probability of changing part of the genome
+    static int runNum = 1; // sim run number you are about to fire off
+    static String directory = System.getProperty("user.dir");
+    //String filename = directory + File.separator + "echo_pop_50_genome_1_mutation_0001_TS_20000_" + 3 + ".csv";
+    static String filename = "";
+    static String jsonToLoad = "echoworld_50agents_1lengthtags.json";
     PrintWriter outputStream = null; // file writer
+    boolean addObstacles = true;
 
+    /**
+     * Entry point for the example application.
+     * @param args command line arguments
+     */
+    public static void main(String[] args) {
+        // Read in the JSON world file
+        try (FileReader fileReader = new FileReader((jsonToLoad))) {
+            worldJSON = (JsonObject) Jsoner.deserialize(fileReader);
+        } catch (Exception e) {
+            System.out.println("FAILED to Load:" + jsonToLoad +"/n" + e);
+            System.exit(0);
+        }
+
+        // Get world scale factor (pixels per meter)
+        BigDecimal scale = (BigDecimal)worldJSON.get("pixels_per_meter");
+        filename = directory + File.separator + "DATA_obstacle_pop_50_tagLength_" + tLength + "_scale_" + scale + "_mutation_" + mutationRate + "_TS_" + timeSteps + "_" + runNum + ".csv";
+        try {
+            EchoWorld simulation = new EchoWorld(scale.intValue());
+            simulation.run();
+        } catch (Exception e) {
+            System.out.println("FAILURE in Main():" + e);
+        }
+
+    }
 
     /**
      * Constructor.
@@ -200,23 +231,25 @@ public class EchoWorld extends SimulationFrame {
                     System.out.println("Obstacles must have a size [width, height]!");
                     System.exit(0);
                 }
-/**
-                SimulationBody Obstacle = new SimulationBody();
-                Obstacle.setColor(Color.black);
-                Obstacle.addFixture(Geometry.createRectangle(width, height));
-                Obstacle.translate(new Vector2(x, y));
-                Obstacle.setUserData(new String("Obstacle"));
-                try {
-                    BigDecimal key = (BigDecimal) item.get("bound_key");
-                    if (key.intValue() >= 1 && key.intValue() <= 5) {
-                        keyBoundItemList.put(key.intValue(), Obstacle);
+
+                if(addObstacles) {
+                    SimulationBody Obstacle = new SimulationBody();
+                    Obstacle.setColor(Color.black);
+                    Obstacle.addFixture(Geometry.createRectangle(width, height));
+                    Obstacle.translate(new Vector2(x, y));
+                    Obstacle.setUserData(new String("Obstacle"));
+                    try {
+                        BigDecimal key = (BigDecimal) item.get("bound_key");
+                        if (key.intValue() >= 1 && key.intValue() <= 5) {
+                            keyBoundItemList.put(key.intValue(), Obstacle);
+                        }
+                        Obstacle.setMass(MassType.NORMAL);
+                    } catch (Exception e) { // It is optional to have a key binding for an obstacle.
+                        Obstacle.setMass(MassType.INFINITE); // Default to immovable
                     }
-                    Obstacle.setMass(MassType.NORMAL);
-                } catch (Exception e) { // It is optional to have a key binding for an obstacle.
-                    Obstacle.setMass(MassType.INFINITE); // Default to immovable
+                    this.world.addBody(Obstacle);
                 }
-                this.world.addBody(Obstacle);
- **/
+
             }
         } catch (Exception e) {} // Obstacles are optional
     }
@@ -255,30 +288,7 @@ public class EchoWorld extends SimulationFrame {
         }
     }
 
-    /**
-     * Entry point for the example application.
-     * @param args command line arguments
-     */
-    public static void main(String[] args) {
-        String filename = new String("echoworld_50agents_10lengthtags.json");
 
-        // Read in the JSON world file
-        try (FileReader fileReader = new FileReader((filename))) {
-            worldJSON = (JsonObject) Jsoner.deserialize(fileReader);
-        } catch (Exception e) {
-            System.out.println("FAILED to Load:" + filename +"/n" + e);
-            System.exit(0);
-        }
-
-        // Get world scale factor (pixels per meter)
-        BigDecimal scale = (BigDecimal)worldJSON.get("pixels_per_meter");
-        try {
-            EchoWorld simulation = new EchoWorld(scale.intValue());
-            simulation.run();
-        } catch (Exception e) {
-            System.out.println("FAILURE in Main():" + e);
-        }
-    }
 
     /**
      *
@@ -319,6 +329,9 @@ public class EchoWorld extends SimulationFrame {
                     toRemove.add(v);
                 }
             } // action loop complete
+            if(timeSteps % 5000 == 0) {
+                System.out.println("************** Passing Timestep: " + timeSteps + "**************");
+            }
             cleanUp();
         }
 
@@ -479,8 +492,8 @@ public class EchoWorld extends SimulationFrame {
         for(SimulationBody alive: antColonies) {
             if (((Ant) alive).isAlive()) {
                 Ant temp = new Ant((Ant) alive);
-                //System.out.println(temp.id + " " + temp.getLinearVelocity());
-                if (temp.replicate()) { // If this ant can replicate, it will
+                if (temp.replicate(true)) { // If this ant can replicate, it will
+                    //System.out.println("Replicating: res after: " + temp.reservoir.size());
                     ((Ant) alive).numReproductions++;
                     ((Ant) alive).reproduce = true;
                     Ant newA = new Ant(this.world);
