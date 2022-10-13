@@ -5,7 +5,7 @@
       "name": "Sample.Callie",
       "position": [-5,-5],
       "draw_scan_lines": "true",
-      "home": [5,5]
+      "home": "SquidSisters"
     }
   ],
   "lights": [
@@ -25,6 +25,13 @@
   "food": [
     {
       "position": [-2,2]
+    }
+  ],
+  "homes": [
+    {
+      "name": "SquidSisters",
+      "position": [5,5],
+      "resource": 2
     }
   ]
 }

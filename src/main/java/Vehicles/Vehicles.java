@@ -29,6 +29,7 @@ public class Vehicles extends SimulationFrame {
     private static JsonObject worldJSON;
 
     public ArrayList<SimulationBody> myVehicles;
+    public ArrayList<Home> homeList;
 
     private Map<Integer, SimulationBody> keyBoundItemList;
     private SimulationBody keyBoundItem = null;
@@ -61,6 +62,7 @@ public class Vehicles extends SimulationFrame {
         this.world.setGravity(World.ZERO_GRAVITY);
         keyBoundItemList = new HashMap<Integer, SimulationBody>();
         myVehicles = new ArrayList<SimulationBody>();
+        homeList = new ArrayList<Home>();
 
         // scale is associated with camera, pixels per meter
         // Frame is hard coded in the framework to 800x1600. this means for a scale of 20, it should be a 40x80 world
@@ -72,7 +74,7 @@ public class Vehicles extends SimulationFrame {
         right.setColor(Color.black);
         right.addFixture(Geometry.createRectangle(0.2, canvas.getHeight() / camera.scale));
         right.setMass(MassType.INFINITE);
-        right.translate((canvas.getWidth()/ (2* camera.scale)) - 0.1, 0);
+        right.translate((canvas.getWidth() / (2 * camera.scale)) - 0.1, 0);
         right.setUserData(new String("Obstacle"));
         this.world.addBody(right);
 
@@ -80,7 +82,7 @@ public class Vehicles extends SimulationFrame {
         left.setColor(Color.black);
         left.addFixture(Geometry.createRectangle(0.2, canvas.getHeight() / camera.scale));
         left.setMass(MassType.INFINITE);
-        left.translate(-(canvas.getWidth()/ (2* camera.scale)) + 0.1, 0);
+        left.translate(-(canvas.getWidth() / (2 * camera.scale)) + 0.1, 0);
         left.setUserData(new String("Obstacle"));
         this.world.addBody(left);
 
@@ -88,7 +90,7 @@ public class Vehicles extends SimulationFrame {
         top.setColor(Color.black);
         top.addFixture(Geometry.createRectangle(canvas.getWidth() / camera.scale, 0.2));
         top.setMass(MassType.INFINITE);
-        top.translate(0, (canvas.getHeight()/(2*camera.scale)) - 0.1);
+        top.translate(0, (canvas.getHeight() / (2 * camera.scale)) - 0.1);
         top.setUserData(new String("Obstacle"));
         this.world.addBody(top);
 
@@ -96,17 +98,53 @@ public class Vehicles extends SimulationFrame {
         bottom.setColor(Color.black);
         bottom.addFixture(Geometry.createRectangle(canvas.getWidth() / camera.scale, 0.2));
         bottom.setMass(MassType.INFINITE);
-        bottom.translate(0, -(canvas.getHeight()/(2*camera.scale)) + 0.1);
+        bottom.translate(0, -(canvas.getHeight() / (2 * camera.scale)) + 0.1);
         bottom.setUserData(new String("Obstacle"));
         this.world.addBody(bottom);
 
-        // Add Vehicles
+        // Get list of Homes
         ArrayList<BigDecimal> position;
         double x = 0.0;
         double y = 0.0;
-        ArrayList<JsonObject> vehicles = (ArrayList<JsonObject>)worldJSON.get("vehicles");
+        try {
+            ArrayList<JsonObject> homes = (ArrayList<JsonObject>) worldJSON.get("homes");
+
+            for (JsonObject item : homes) {
+                String homeName = null;
+                double resource = 0.0;
+                try {
+                    position = (ArrayList<BigDecimal>) (item.get("position"));
+                    x = position.get(0).doubleValue();
+                    y = position.get(1).doubleValue();
+                } catch (Exception e) {
+                    System.out.println("Homes must have a position [x, y]!");
+                    System.exit(0);
+                }
+                try {
+                    homeName = (String) item.get("name");
+                } catch (Exception e) {
+                    System.out.println("Homes must have a name!");
+                    System.exit(0);
+                }
+                try{
+                    BigDecimal temp = (BigDecimal) (item.get("resource"));
+                    resource = temp.doubleValue();
+                } catch (Exception e) {
+                    System.out.println("Homes having resources are optional?");
+                }
+                // Add the home to the Home List.
+                Home h = new Home();
+                h.position = new Vector2(x,y);
+                h.name = homeName;
+                h.resource = resource;
+                homeList.add(h);
+            }
+        } catch (Exception e) { } // Homes are optional
+
+        // Add Vehicles
+        ArrayList<JsonObject> vehicles = (ArrayList<JsonObject>) worldJSON.get("vehicles");
         String vehicleName = null;
-        for (JsonObject item: vehicles) {
+        for (JsonObject item : vehicles) {
             try {
                 vehicleName = (String) item.get("name");
             } catch (Exception e) {
@@ -114,18 +152,40 @@ public class Vehicles extends SimulationFrame {
                 System.exit(0);
             }
 
+            // Get vehicle's home name (optional)
+            String vehicleHome = null;
+            try {
+                vehicleHome = (String) item.get("home");
+            } catch (Exception e) { } // Having a home is optional
+
             try {
                 // If the vehicle is a named class try and load the class
                 Vehicle vehicle = (Vehicle) Class.forName(new String(vehicleName)).newInstance();
                 System.out.println("Classname:" + vehicle.getClass().getName());
                 vehicle.initialize(this.world);
+                if (vehicleHome != null) {
+                    // Find the home in the homeList
+                    for(Home h : homeList){
+                        if (vehicleHome.equals(h.name))
+                            vehicle.setHome(h.position);
+                    }
+                }
                 insertVehicle(vehicle, item);
             } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
                 // The name is likely a filename. Create a JSONVehicle and load the json file
                 String fileName = "data//" + vehicleName + ".json";
                 JSONVehicle vehicle = new JSONVehicle();
-                vehicle.initialize(this.world, fileName);
+                vehicle.initialize(this.world, fileName); // Halts on failure
                 insertVehicle(vehicle, item);
+                if (vehicleHome != null) {
+                    // Find the home in the homeList
+                    for(Home h : homeList){
+                        if (vehicleHome.equals(h.name)) {
+                            vehicle.setHome(h.position);
+                            break;
+                        }
+                    }
+                }
             }
         }
 
@@ -157,7 +217,8 @@ public class Vehicles extends SimulationFrame {
                 }
                 this.world.addBody(Light);
             }
-        } catch (Exception e) {} // Lights are optional
+        } catch (Exception e) {
+        } // Lights are optional
 
         // Add Obstacles (rectangles)
         try {
@@ -198,7 +259,8 @@ public class Vehicles extends SimulationFrame {
                 }
                 this.world.addBody(Obstacle);
             }
-        } catch (Exception e) {} // Obstacles are optional
+        } catch (Exception e) {
+        } // Obstacles are optional
 
         // Add Food (squares)
         try {
@@ -222,7 +284,10 @@ public class Vehicles extends SimulationFrame {
                 Food.setUserData(new String("Food"));
                 this.world.addBody(Food);
             }
-        } catch (Exception e) {} // Food is optional
+        } catch (Exception e) {
+        } // Food is optional
+
+
     }
 
     /**
@@ -282,7 +347,7 @@ public class Vehicles extends SimulationFrame {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        String filename = new String("data//world1.json");
+        String filename = new String("data//world2.json");
 
         // Read in the JSON world file
         try (FileReader fileReader = new FileReader((filename))) {

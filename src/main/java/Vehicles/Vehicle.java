@@ -382,6 +382,10 @@ public class Vehicle extends SimulationBody {
     void setHome(double x, double y) {
         home = new Vector2(x,y);
     }
+
+    void setHome(Vector2 pos) {
+        home = pos;
+    }
 }
 
 
