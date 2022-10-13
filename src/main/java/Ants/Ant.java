@@ -1,5 +1,6 @@
 package Ants;
 
+import Sample.behaviors.AvoidObstacle;
 import Vehicles.Action;
 import Vehicles.SensedObject;
 import Vehicles.State;
@@ -56,7 +57,7 @@ public class Ant extends Vehicle {
     // Our original work allowed each tag to be up to 6 characters in length.  Change this to match
     // whichever starting length you have selected as main... note:  future should add this as a parameter
     // that gets updated.
-    int genomeLength = 5;
+    int genomeLength = 1;
 
     // Parameter for seeing how long the ant lived, they can recharge at home.  More successful ants should live longer
     // Generation = timestep it was introduced into the population
@@ -74,14 +75,14 @@ public class Ant extends Vehicle {
 
     // Extra variables to track the ants
     private boolean alive = true;
-    private int lifespan = 2000;
+    private int lifespan = 3000;
     private Vector2 home; // where the ant's home is
 
     // Actual ant "body" for the world to paint
     private Vector2 leftWheelLocation = new Vector2(-0.5, -0.5); // holdovers from vehicle class, right now
     private Vector2 rightWheelLocation = new Vector2( 0.5, -0.5); // I don't want to rehash the physics to turn the ant
     private double GRAB_RANGE = 1; // how far "off" the target can be, allows us to home in on a target
-    private final int SENSOR_RANGE = 2; // how far the line casts go
+    private final int SENSOR_RANGE = 3; // how far the line casts go
 
     // All taken from the cue class template
     final double ballRadius = 0.25; //0.1; //0.028575;
@@ -117,8 +118,8 @@ public class Ant extends Vehicle {
         ArbitrationUnit arbiter = new HighestPriority(weights);
         behaviorTree = new CompositeBehavior();
         behaviorTree.setArbitrationUnit(arbiter);
+        //behaviorTree.add(new AvoidObstacle());
         behaviorTree.add(new Wander());
-        //behaviorTree.add(new GoHome()); // <-- parameter to get home before death needs to be tuned
         behaviorTree.add(new GotoXX("Home"));
         behaviorTree.add(new GotoXX("Resource"));
         setInitialTag(); // set the ant's tag
@@ -150,10 +151,13 @@ public class Ant extends Vehicle {
         ArbitrationUnit arbiter = new HighestPriority(weights);
         behaviorTree = new CompositeBehavior();
         behaviorTree.setArbitrationUnit(arbiter);
+
         behaviorTree.add(new Wander());
-        //behaviorTree.add(new GoHome()); // <-- parameter to get home before death needs to be tuned
         behaviorTree.add(new GotoXX("Home"));
         behaviorTree.add(new GotoXX("Resource"));
+
+        // ********* behavior wander testing with following the light ********* //
+        behaviorTree.add(new GotoXX("Light"));
 
         // Tags are done special with this constructor
         interActionTag = newTag1[0];
@@ -174,9 +178,10 @@ public class Ant extends Vehicle {
      * @param weights
      */
     private void setWeights(ArrayList<Double> weights) {
-        weights.add(0,1.0);
-        weights.add(1,3.0);
-        weights.add(2, 2.0);
+        weights.add(0,.9);
+        weights.add(1,1.2);
+        weights.add(2, 1.1);
+        weights.add(2, 1.1);
     }
 
     /**
@@ -354,9 +359,12 @@ public class Ant extends Vehicle {
     /**
      * Determines if the ant can replicate -- based on resources in the reservoir and its tag.  Items in its tag
      * must each be present in the reservoir for it to replicate.  For this iteraion of ants, this is asexual reproduction.
+     *
+     * @param burn -- if set to True, will remove resources immediately if the agent can replicate, otherwise,
+     *             the function will still say if the agent can replicate, just not burn the resources.
      * @return
      */
-    public boolean replicate() {
+    public boolean replicate(boolean burn) {
         // Doing this the naive way first
         int countA = 0;
         int countB = 0;
@@ -364,26 +372,31 @@ public class Ant extends Vehicle {
         int countD = 0;
 
         // Count occurrences in the ant's tag, remember, this will later be fairly unique to sets of ants
-        long tagCountA = this.matingTag.chars().filter(ch -> ch == 'A').count();
-        long tagCountB = this.matingTag.chars().filter(ch -> ch == 'B').count();
-        long tagCountC = this.matingTag.chars().filter(ch -> ch == 'C').count();
-        long tagCountD = this.matingTag.chars().filter(ch -> ch == 'D').count();
+        //long tagCountA = this.matingTag.chars().filter(ch -> ch == 'A').count();
+        //long tagCountB = this.matingTag.chars().filter(ch -> ch == 'B').count();
+        //long tagCountC = this.matingTag.chars().filter(ch -> ch == 'C').count();
+        //long tagCountD = this.matingTag.chars().filter(ch -> ch == 'D').count();
+
+        long tagCountA = this.tag.chars().filter(ch -> ch == 'A').count();
+        long tagCountB = this.tag.chars().filter(ch -> ch == 'B').count();
+        long tagCountC = this.tag.chars().filter(ch -> ch == 'C').count();
+        long tagCountD = this.tag.chars().filter(ch -> ch == 'D').count();
 
         ArrayList<Resource> toBurn = new ArrayList<Resource>(); // save resources to burn here
         for(Resource res: reservoir) {
-            if(res.type.equals("A")) {
+            if(res.type.equals("A") && countA < tagCountA) {
                 countA++;
                 toBurn.add(res);
             }
-            if(res.type.equals("B")) {
+            if(res.type.equals("B")  && countB < tagCountB) {
                 countB++;
                 toBurn.add(res);
             }
-            if(res.type.equals("C")) {
+            if(res.type.equals("C")  && countC < tagCountC) {
                 countC++;
                 toBurn.add(res);
             }
-            if(res.type.equals("D")) {
+            if(res.type.equals("D")  && countD < tagCountD) {
                 countD++;
                 toBurn.add(res);
             }
@@ -391,8 +404,12 @@ public class Ant extends Vehicle {
         // Now we can see if the ant can replicate
         if(countA >= tagCountA && countB >= tagCountB && countC >= tagCountC && countD >= tagCountD) {
             // Agent can replicate -- burn the resources
-            for(Resource remove : toBurn) {
-                reservoir.remove(remove);
+            if(burn) {
+                //System.out.println("Replication try -- res before: " + this.reservoir.size() + " tag + length: "
+                //        + tag + " " + tag.length());
+                for (Resource remove : toBurn) {
+                    reservoir.remove(remove);
+                }
             }
             return true;
         }
@@ -411,7 +428,7 @@ public class Ant extends Vehicle {
         deathAndTaxes();
         if(this.alive) { // as we have introduced interaction, dead ants could get processed inside the game loop
             // Step 1:  Sense
-            life++;
+            //life++;
             updateLife();
             updateHome();
             updateResources(resources);
@@ -438,11 +455,11 @@ public class Ant extends Vehicle {
             // ant must pay the tax -- according to the paper, this is one of each resource.
             // if it cannot, it dies.  Now there's is more severe, as in, it must also be able
             // to replicate... to do that, I would have to call this before going through the breeding process?
-            if(!replicate()) { // if it cannot replicate, it dies.
+            if(!replicate(false)) { // if it cannot replicate, it dies.
                 this.alive = false;
                 //System.out.println("Could not replicate before the tax man came.");
             }
-            else { // Remove one of each resource from the reservoir
+            else { // Remove one of each resource from the reservoir -- this is the tax
                 ArrayList<Resource> resRemoval = new ArrayList<>();
                 // very hacked
                 boolean a = false;
@@ -498,7 +515,7 @@ public class Ant extends Vehicle {
         double dist = this.getWorldCenter().distance(home);
         if(dist < 2) {
             //System.out.println("Dist from home: " + dist + " WC: " + this.basicAnt.getWorldCenter());
-            lifespan = 2000;
+            lifespan = 3000;
             setRandomVelocity(); // send it back into the world
         }
     }
@@ -680,7 +697,7 @@ public class Ant extends Vehicle {
                 //System.out.println("Resource located at: " + resObj.location + " " + tDist);
                 String type = "Resource";
                 distance = tDist;
-                obj = new SensedObject(heading, angle, distance, type, "empty", resObj.location);
+                obj = new SensedObject(heading, angle, distance, type, "Resource", resObj.location);
                 found = resObj;
             }
         }
@@ -689,7 +706,7 @@ public class Ant extends Vehicle {
             if(obj.getDistance() < GRAB_RANGE) {
                 // Add to the ant's reservoir
                 reservoir.add(new Resource(found));
-                resources.remove(found); // remove from the resource array -- unsure if this is working 100%
+                resources.remove(found); // remove from the resource array
             }
             else
                 state.addSensedObject(obj);
