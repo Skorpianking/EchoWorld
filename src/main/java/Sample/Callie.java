@@ -67,6 +67,9 @@ public class Callie extends Vehicle {
         //behaviorTree.add(gotox);
         // OR:
         behaviorTree.add(new Drop());
+        //behaviorTree.add(new GotoHome()); // don't like this because we should be able to use GotoX("Home"), but
+                                          // its vote is conditional on only once food is held. This is where swapping
+                                          // trees or having a game BehaviorTree state machine like activity happen
         behaviorTree.add(new PickUp("Food"));
         behaviorTree.add(new GotoX("Food"));
         //behaviorTree.add(new Love());

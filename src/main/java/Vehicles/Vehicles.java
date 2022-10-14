@@ -317,14 +317,6 @@ public class Vehicles extends SimulationFrame {
             vehicle.translate(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min));
         }
 
-        try {
-            ArrayList<BigDecimal> position = (ArrayList<BigDecimal>) (item.get("position"));
-            double x = position.get(0).doubleValue();
-            double y = position.get(1).doubleValue();
-            vehicle.setHome(x, y);
-        } catch (Exception e) { // Home is non-existent if not set
-        }
-
         myVehicles.add(vehicle);
         world.addBody(vehicle);
     }
@@ -385,6 +377,13 @@ public class Vehicles extends SimulationFrame {
                 ((Vehicle)v).sense(); // call to sense the world.
                 Action act = ((Vehicle)v).decideAction(); // must cast it so we can call the decideAction function.
                 ((Vehicle)v).act(act);
+            }
+
+            // Home updates
+            for(Home h : homeList) {
+                h.resource = h.resource * 0.999; // decay the resource a little bit each step.
+                if (h.resource > 3.0)
+                    System.out.println("SPAWN!!!!!");
             }
         }
 

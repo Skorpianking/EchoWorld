@@ -138,6 +138,20 @@ public class Vehicle extends SimulationBody {
         rayCasting(-0.50, 0.8, 0); // left sensor
         rayCasting(0.50, 0.8, 1); // right sensor
 
+        // Add this vehicles home to the list of SensedObjects.
+        // Vehicles sense their relationship to their home irrespective of obstacles and distance.
+        SensedObject obj;
+        double deltaX = home.x-this.getTransform().getTranslationX();
+        double deltaY = home.y-this.getTransform().getTranslationY();
+        double angle = Math.atan2(deltaY, deltaX);
+        double distance = Math.sqrt((deltaX*deltaX)+(deltaY*deltaY));
+        double offsetAngle = Math.atan2(Math.sin(angle-state.getHeading()), Math.cos(angle-state.getHeading()));
+        String side = "Left";
+        if (offsetAngle < 0.0)
+            side = "Right";
+        obj = new SensedObject(null, angle, distance, "Home", side, home);
+        state.addSensedObject(obj);
+
         state.setVelocity(this.getLinearVelocity()); // LinearVelocity captures heading and speed
         state.setAngularVelocity(this.getAngularVelocity());
         state.updateLightStrengths();
@@ -252,7 +266,8 @@ public class Vehicle extends SimulationBody {
             }
         }
         if (home != null) {
-
+            g.setColor(Color.cyan);
+            g.drawOval((int)(home.x*scale), (int)(home.y*scale), 4, 4);
         }
     }
 
@@ -321,7 +336,7 @@ public class Vehicle extends SimulationBody {
                     gripper = new WeldJoint(this, food, new Vector2(0.0, 0.75));
                     this.myWorld.addJoint(gripper);
                     food.setMass(MassType.NORMAL);
-                    food.setUserData(new String("PickedUpFood")); // This will make it so that other vehicles won't target it
+                    food.setUserData("PickedUpFood"); // This will make it so that other vehicles won't target it
                 } else {
                     System.out.println(this.getUserData() + ": Cannot Pickup, too far away!");
                 }

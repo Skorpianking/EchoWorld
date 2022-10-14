@@ -30,7 +30,7 @@
   "homes": [
     {
       "name": "SquidSisters",
-      "position": [5,5],
+      "position": [5,-15],
       "resource": 2
     }
   ]

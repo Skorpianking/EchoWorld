@@ -260,7 +260,7 @@ public class AntWorld extends SimulationFrame {
                 if(((Ant)alive).isAlive()) {
                     Ant temp = new Ant((Ant) alive);
                     //System.out.println(temp.id + " " + temp.getLinearVelocity());
-                    if (temp.replicate()) { // If this ant can replicate, it will
+                    if (temp.replicate(false)) { // If this ant can replicate, it will
                         ((Ant) alive).numReproductions++;
                         ((Ant) alive).reproduce = true;
                         // Ideally we would like to replicate from a parent ant versus just adding randos to the world
