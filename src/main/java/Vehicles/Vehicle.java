@@ -10,7 +10,6 @@ import org.dyn4j.world.result.RaycastResult;
 
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -33,7 +32,7 @@ public class Vehicle extends SimulationBody {
 
     private State state;
 
-    private Vector2 home;
+    private Home home;
 
     // array of values to "sweep" across -- hand jammed to get a reasonable sweep that doesn't eat too much processing time
     // -10 to 120 degrees in steps of 5 degrees (added +/- 7.5, +/- 2.5
@@ -118,7 +117,7 @@ public class Vehicle extends SimulationBody {
         state = new State();
     }
 
-    public void initialize(World<SimulationBody> myWorld, State s) {
+    public void initialize(World<SimulationBody> myWorld,  State s) {
         bulkInit(myWorld);
         state = s;
     }
@@ -139,18 +138,7 @@ public class Vehicle extends SimulationBody {
         rayCasting(0.50, 0.8, 1); // right sensor
 
         // Add this vehicles home to the list of SensedObjects.
-        // Vehicles sense their relationship to their home irrespective of obstacles and distance.
-        SensedObject obj;
-        double deltaX = home.x-this.getTransform().getTranslationX();
-        double deltaY = home.y-this.getTransform().getTranslationY();
-        double angle = Math.atan2(deltaY, deltaX);
-        double distance = Math.sqrt((deltaX*deltaX)+(deltaY*deltaY));
-        double offsetAngle = Math.atan2(Math.sin(angle-state.getHeading()), Math.cos(angle-state.getHeading()));
-        String side = "Left";
-        if (offsetAngle < 0.0)
-            side = "Right";
-        obj = new SensedObject(null, angle, distance, "Home", side, home);
-        state.addSensedObject(obj);
+        state.addSensedObject(senseHome());
 
         state.setVelocity(this.getLinearVelocity()); // LinearVelocity captures heading and speed
         state.setAngularVelocity(this.getAngularVelocity());
@@ -195,6 +183,9 @@ public class Vehicle extends SimulationBody {
 
             List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.raycast(ray, length, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
             for (RaycastResult<SimulationBody, BodyFixture> result : results) {
+                // First check if this is our Home. If so, do not add it because it is added separately.
+                if (result.getBody().getUserData().equals(home.name))
+                    break;
                 // Get the direction between the center of the vehicle and the impact point
                 Vector2 heading = new Vector2(this.getWorldCenter(), result.getRaycast().getPoint());
                 double angle = heading.getAngleBetween(state.getHeading()); // baseVehicle.getLinearVelocity()); // radians
@@ -209,6 +200,9 @@ public class Vehicle extends SimulationBody {
                     side = "Right";
                 }
 
+                if (type == home.name) // Skip our home
+                    break;
+
                 obj = new SensedObject(heading, angle, distance, type, side, result.getRaycast().getPoint());
 
                 if (obj.getType().equals("Food")) {
@@ -221,6 +215,35 @@ public class Vehicle extends SimulationBody {
                 state.addSensedObject(obj);
             }
         }
+    }
+
+    /**
+     * Vehicles sense their relationship to their home irrespective of obstacles and distance.\
+     *
+     * @return SensedObject vehicles home
+     */
+    private SensedObject senseHome() {
+        SensedObject obj;
+
+        double deltaX = home.position.x-this.getTransform().getTranslationX();
+        double deltaY = home.position.y-this.getTransform().getTranslationY();
+        double angle = Math.atan2(deltaY, deltaX);
+        double distance = Math.sqrt((deltaX*deltaX)+(deltaY*deltaY));
+        double offsetAngle = Math.atan2(Math.sin(angle-state.getHeading()), Math.cos(angle-state.getHeading()));
+        String side = "Left";
+            if (offsetAngle < 0.0)
+        side = "Right";
+        obj = new SensedObject(null, angle, distance, "Home", side, home.position);
+
+        return obj;
+    }
+
+    /**
+     *
+     */
+    private void senseOtherHomes() {
+        Home allHomes;
+
     }
 
     /**
@@ -264,10 +287,6 @@ public class Vehicle extends SimulationBody {
                     g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
                 }
             }
-        }
-        if (home != null) {
-            g.setColor(Color.cyan);
-            g.drawOval((int)(home.x*scale), (int)(home.y*scale), 4, 4);
         }
     }
 
@@ -394,12 +413,8 @@ public class Vehicle extends SimulationBody {
      */
     void setDrawScanLines(boolean val) {drawScanLines = val;}
 
-    void setHome(double x, double y) {
-        home = new Vector2(x,y);
-    }
-
-    void setHome(Vector2 pos) {
-        home = pos;
+    void setHome(Home home) {
+        this.home = home;
     }
 }
 

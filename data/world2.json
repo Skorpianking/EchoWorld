@@ -4,8 +4,13 @@
     {
       "name": "Sample.Callie",
       "position": [-5,-5],
+      "draw_scan_lines": "false",
+      "home": "Callie_s"
+    },{
+      "name": "Marie",
+      "position": [5,5],
       "draw_scan_lines": "true",
-      "home": "SquidSisters"
+      "home": "Marie_s"
     }
   ],
   "lights": [
@@ -29,8 +34,12 @@
   ],
   "homes": [
     {
-      "name": "SquidSisters",
+      "name": "Marie_s",
       "position": [5,-15],
+      "resource": 2
+    },{
+      "name": "Callie_s",
+      "position": [-15,5],
       "resource": 2
     }
   ]

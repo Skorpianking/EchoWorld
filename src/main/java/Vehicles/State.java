@@ -19,8 +19,8 @@ public class State {
 
     private double leftLightStrength;
     private double rightLightStrength;
-    private int lightDecayLeft;
-    private int lightDecayRight;
+    private int lightDecayLeft; // These decays provide persistence on light detection
+    private int lightDecayRight;// if a raycast misses between steps.
 
     public State() {
         leftLightStrength = rightLightStrength = 0.0;

@@ -137,6 +137,13 @@ public class Vehicles extends SimulationFrame {
                 h.position = new Vector2(x,y);
                 h.name = homeName;
                 h.resource = resource;
+                SimulationBody homeBody = new SimulationBody();
+                homeBody.setColor(Color.green);
+                homeBody.addFixture(Geometry.createUnitCirclePolygon(50, 0.5));
+                homeBody.translate(new Vector2(x, y));
+                homeBody.setUserData(new String(homeName));
+                this.world.addBody(homeBody);
+                h.body = homeBody;
                 homeList.add(h);
             }
         } catch (Exception e) { } // Homes are optional
@@ -166,8 +173,10 @@ public class Vehicles extends SimulationFrame {
                 if (vehicleHome != null) {
                     // Find the home in the homeList
                     for(Home h : homeList){
-                        if (vehicleHome.equals(h.name))
-                            vehicle.setHome(h.position);
+                        if (vehicleHome.equals(h.name)) {
+                            vehicle.setHome(h);
+                            h.body.setColor(vehicle.getColor());
+                        }
                     }
                 }
                 insertVehicle(vehicle, item);
@@ -181,8 +190,8 @@ public class Vehicles extends SimulationFrame {
                     // Find the home in the homeList
                     for(Home h : homeList){
                         if (vehicleHome.equals(h.name)) {
-                            vehicle.setHome(h.position);
-                            break;
+                            vehicle.setHome(h);
+                            h.body.setColor(vehicle.getColor());
                         }
                     }
                 }
@@ -379,11 +388,9 @@ public class Vehicles extends SimulationFrame {
                 ((Vehicle)v).act(act);
             }
 
-            // Home updates
-            for(Home h : homeList) {
-                h.resource = h.resource * 0.999; // decay the resource a little bit each step.
-                if (h.resource > 3.0)
-                    System.out.println("SPAWN!!!!!");
+            // Update Home
+            for (Home h : homeList) {
+                h.Step();
             }
         }
 
