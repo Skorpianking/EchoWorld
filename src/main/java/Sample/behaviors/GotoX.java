@@ -48,7 +48,7 @@ public class GotoX extends Behavior {
 
     /**
      * <p>Will identify the closest SensedObject return matching the
-     * target string. Then calculate and action to move toward the target.</p>
+     * target string. Then calculate an action to move toward the target.</p>
      *
      * <p>It also moves toward the last seen target for 5 ticks after seeing
      * one.</p>
