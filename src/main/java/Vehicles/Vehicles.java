@@ -326,13 +326,13 @@ public class Vehicles extends SimulationFrame {
             vehicle.translate(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min));
         }
 
-        try {
+/*        try {
             String name = (String)item.get("name");
             vehicle.setUserData(name);
         } catch (Exception e) { // Name will be Vehicle
             vehicle.setUserData(new String("Vehicle"));
         }
-
+*/
 
         myVehicles.add(vehicle);
         world.addBody(vehicle);
