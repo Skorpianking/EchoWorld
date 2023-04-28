@@ -55,6 +55,23 @@ public class Callie extends Vehicle {
         setColor(new Color(206,81,156));
         setUserData(getClass().getName());
 
+                /*
+                        -> Conditional(isHolding)
+                                    |
+              t ------------------------------------------  f
+                |                                        |
+          Conditional(isAtHome)                    SimplePriority
+                |                                        |
+        t -------------------- f           -------------------------------------
+          |                  |             |             |            |        |
+      Drop(Food)      SimplePriority   PickUp(Food)  GotoX(Food)  AvoidObst  Wander
+                             |
+                 -----------------------
+                 |           |         |
+             GotoX(Home) AvoidObst  Wander
+
+         */
+
         // Instantiate behaviorTree
         behaviorTree = new CompositeBehavior();
 
@@ -63,26 +80,21 @@ public class Callie extends Vehicle {
         ArbitrationUnit arbiter = new Conditional("isHolding", state);
         behaviorTree.setArbitrationUnit(arbiter);
 
-        CompositeBehavior comp = new CompositeBehavior();
-        comp.setArbitrationUnit(new SimplePriority());
-        behaviorTree.add(comp);
+        CompositeBehavior atHome = new CompositeBehavior(); // isHolding == true
+        atHome.setArbitrationUnit((new Conditional("isAtHome", state)));
+        behaviorTree.add(atHome);
 
-        comp.add(new GotoX("Home"));
-        comp.add(new AvoidObstacle());
-        comp.add(new Wander());
+        atHome.add(new Drop()); // isAtHome == true
 
-        /*
-            -> Conditional(isHolding)
-                        |
-              t -------------------  f
-                |                 |
-              NoOp          SimplePriority
-                                  |
-                        -----------------------------------
-                        |         |             |         |
-                 PickUp(Food)  GotoX(Food)  AvoidObst   Wander
-         */
-        comp = new CompositeBehavior();
+        CompositeBehavior goHome = new CompositeBehavior(); // isAtHome == false
+        goHome.setArbitrationUnit(new SimplePriority());
+        atHome.add(goHome);
+
+        goHome.add(new GotoX("Home"));
+        goHome.add(new AvoidObstacle());
+        goHome.add(new Wander());
+
+        CompositeBehavior comp = new CompositeBehavior(); // isHolding == false
         comp.setArbitrationUnit(new SimplePriority());
         behaviorTree.add(comp);
 

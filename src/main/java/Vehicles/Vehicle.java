@@ -137,7 +137,7 @@ public class Vehicle extends SimulationBody {
         rayCasting(-0.50, 0.8, 0); // left sensor
         rayCasting(0.50, 0.8, 1); // right sensor
 
-        // Add this vehicles home to the list of SensedObjects.
+        // Add this vehicle's home to the list of SensedObjects. Also, set 'atHome' if next to it.
         state.addSensedObject(senseHome());
 
         state.setVelocity(this.getLinearVelocity()); // LinearVelocity captures heading and speed
@@ -234,6 +234,10 @@ public class Vehicle extends SimulationBody {
             if (offsetAngle < 0.0)
         side = "Right";
         obj = new SensedObject(null, angle, distance, "Home", side, home.position);
+
+        // If vehicle is within 2m, set atHome
+        if (distance <= 2.0)
+            state.setAtHome(true);
 
         return obj;
     }

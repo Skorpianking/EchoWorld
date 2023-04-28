@@ -16,6 +16,7 @@ public class State {
     private double leftWheelVelocity;
     private double rightWheelVelocity;
     private boolean holding = false;
+    private boolean atHome = false;
 
     // Braitenberg Vehicle specific data (for Love, Fear, Hate)
     private double leftLightStrength;
@@ -137,5 +138,7 @@ public class State {
         }
     }
 
+    public void setAtHome(boolean aH) { atHome = aH; }
 
+    public boolean isAtHome() { return atHome; }
 }

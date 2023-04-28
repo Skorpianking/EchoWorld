@@ -5,11 +5,9 @@ import behaviorFramework.Action;
 import behaviorFramework.Behavior;
 
 public class Drop extends Behavior {
-    private int counter;
 
     public Drop() {
         super();
-        counter = 0;
     }
 
     public Action genAction(State state) {
@@ -19,12 +17,9 @@ public class Drop extends Behavior {
         action.name = "Drop";
         action.setVote(0);
 
-        if (state.isHolding())
-            counter++;
-        if (counter > 25) {
+        if (state.isHolding()) {
             action.setDrop(true);
             action.setVote(1);
-            counter = 0;
         }
 
         return action;
