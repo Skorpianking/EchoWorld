@@ -6,6 +6,8 @@ import Vehicles.Vehicle;
 import behaviorFramework.ArbitrationUnit;
 import behaviorFramework.CompositeBehavior;
 import behaviorFramework.arbiters.SimplePriority;
+import behaviorFramework.arbiters.Conditional;
+import behaviorFramework.behaviors.NoOp;
 import framework.SimulationBody;
 import org.dyn4j.world.World;
 
@@ -57,8 +59,37 @@ public class Callie extends Vehicle {
         behaviorTree = new CompositeBehavior();
 
         // Set arbiter
-        ArbitrationUnit arbiter = new SimplePriority();
+        // ArbitrationUnit arbiter = new SimplePriority();
+        ArbitrationUnit arbiter = new Conditional("isHolding", state);
         behaviorTree.setArbitrationUnit(arbiter);
+
+        CompositeBehavior comp = new CompositeBehavior();
+        comp.setArbitrationUnit(new SimplePriority());
+        behaviorTree.add(comp);
+
+        comp.add(new GotoX("Home"));
+        comp.add(new AvoidObstacle());
+        comp.add(new Wander());
+
+        /*
+            -> Conditional(isHolding)
+                        |
+              t -------------------  f
+                |                 |
+              NoOp          SimplePriority
+                                  |
+                        -----------------------------------
+                        |         |             |         |
+                 PickUp(Food)  GotoX(Food)  AvoidObst   Wander
+         */
+        comp = new CompositeBehavior();
+        comp.setArbitrationUnit(new SimplePriority());
+        behaviorTree.add(comp);
+
+        comp.add(new PickUp("Food"));
+        comp.add(new GotoX("Food"));
+        comp.add(new AvoidObstacle());
+        comp.add(new Wander());
 
         // Add behaviors
         //GotoXX gotox = new GotoXX();
@@ -66,6 +97,8 @@ public class Callie extends Vehicle {
         //gotox.setParameters(params);
         //behaviorTree.add(gotox);
         // OR:
+
+        /*
         behaviorTree.add(new Drop());
         //behaviorTree.add(new GotoHome()); // don't like this because we should be able to use GotoX("Home"), but
                                           // its vote is conditional on only once food is held. This is where swapping
@@ -75,7 +108,10 @@ public class Callie extends Vehicle {
         //behaviorTree.add(new Love());
         behaviorTree.add(new AvoidObstacle());
         behaviorTree.add(new Wander());
+
         behaviorTree.add(new MyNoOp());
+         */
+
     }
 
     /**

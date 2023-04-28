@@ -27,4 +27,5 @@ public class MyState extends State {
     public int getMyMemory() {
         return myMemory;
     }
+
 }

@@ -84,7 +84,10 @@ public class GotoX extends Behavior {
         }
 
         if (bestObj != null) {
-            if (bestAngle > 0  && bestObj.getSide() == "Right") { // Light on Right
+            if (bestAngle >= 179.0 || bestAngle <= -179.0) { // Object is directly left and in an edge case.
+                action.setRightWheelVelocity(0.9);
+                action.setLeftWheelVelocity(0.9);
+            } else if (bestAngle > 0  && bestObj.getSide() == "Right") { // Light on Right
                 action.setRightWheelVelocity(0.9 - Math.abs(bestObj.getAngle()));
                 action.setLeftWheelVelocity(0.9);
             } else if (bestAngle < 0  && bestObj.getSide() == "Left") { // Light on Left

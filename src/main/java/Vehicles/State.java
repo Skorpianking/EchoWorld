@@ -17,6 +17,7 @@ public class State {
     private double rightWheelVelocity;
     private boolean holding = false;
 
+    // Braitenberg Vehicle specific data (for Love, Fear, Hate)
     private double leftLightStrength;
     private double rightLightStrength;
     private int lightDecayLeft; // These decays provide persistence on light detection

@@ -356,7 +356,7 @@ public class Vehicles extends SimulationFrame {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        String filename = new String("data//world2.json");
+        String filename = new String("data//world1.json");
 
         // Read in the JSON world file
         try (FileReader fileReader = new FileReader((filename))) {
