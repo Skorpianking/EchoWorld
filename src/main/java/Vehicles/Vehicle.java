@@ -374,6 +374,9 @@ public class Vehicle extends SimulationBody {
                 gripper.getBody2().setUserData("Garbage"); // Renaming the object for testing.
                 this.myWorld.removeJoint(gripper);
                 gripper = null;
+                if (state.isAtHome()) {
+
+                }
             } else {
                 System.out.println(this.getUserData() + ": Cannot Drop. Not holding anything");
             }
