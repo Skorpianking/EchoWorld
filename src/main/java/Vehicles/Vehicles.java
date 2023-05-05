@@ -34,6 +34,8 @@ public class Vehicles extends SimulationFrame {
     private Map<Integer, SimulationBody> keyBoundItemList;
     private SimulationBody keyBoundItem = null;
 
+    private ArrayList<SimulationBody> foodList;
+
     private boolean drawScanLines = true;   // right now going to fall through and
     // let each vehicle be set to draw or not.
 
@@ -63,6 +65,7 @@ public class Vehicles extends SimulationFrame {
         keyBoundItemList = new HashMap<Integer, SimulationBody>();
         myVehicles = new ArrayList<SimulationBody>();
         homeList = new ArrayList<Home>();
+        foodList = new ArrayList<SimulationBody>();
 
         // scale is associated with camera, pixels per meter
         // Frame is hard coded in the framework to 800x1600. this means for a scale of 20, it should be a 40x80 world
@@ -292,6 +295,7 @@ public class Vehicles extends SimulationFrame {
                 Food.translate(new Vector2(x, y));
                 Food.setUserData(new String("Food"));
                 this.world.addBody(Food);
+                foodList.add(Food);
             }
         } catch (Exception e) {
         } // Food is optional
@@ -397,8 +401,17 @@ public class Vehicles extends SimulationFrame {
             }
 
             // Update Home
-            for (Home h : homeList) {
-                h.Step();
+            for (SimulationBody f : foodList) {
+                for (Home h : homeList) {
+                    if (h.position.distance(f.getTransform().getTranslation()) < 1.0 && f.getUserData().equals("Garbage")) {
+                        h.resource += 20.0;
+                        f.translate(new Vector2(0, 6)); // Translation is in relation to current position.
+                        f.setUserData("Food");
+                        f.setLinearVelocity(0,0);
+                        f.setMass(MassType.INFINITE);
+                    }
+                    h.Step();
+                }
             }
         }
 

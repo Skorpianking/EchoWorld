@@ -62,13 +62,13 @@ public class Callie extends Vehicle {
                 |                                        |
           Conditional(isAtHome)                    SimplePriority
                 |                                        |
-        t -------------------- f           -------------------------------------
-          |                  |             |             |            |        |
-      Drop(Food)      SimplePriority   PickUp(Food)  GotoX(Food)  AvoidObst  Wander
+        t -------------------- f           ------------------------------------------------
+          |                  |             |             |            |          |        |
+      Drop(Food)      SimplePriority   PickUp(Food)  GetUnstuck GotoX(Food)  AvoidObst  Wander
                              |
-                 -----------------------
-                 |           |         |
-             GotoX(Home) AvoidObst  Wander
+                 ----------------------------------
+                 |           |           |        |
+             GetUnstuck  GotoX(Home) AvoidObst  Wander
 
          */
 
@@ -90,18 +90,24 @@ public class Callie extends Vehicle {
         goHome.setArbitrationUnit(new SimplePriority());
         atHome.add(goHome);
 
+        GetUnstuck gu = new GetUnstuck();
+        AvoidObstacle ao = new AvoidObstacle();
+        Wander w = new Wander();
+
+        goHome.add(gu);
         goHome.add(new GotoX("Home"));
-        goHome.add(new AvoidObstacle());
-        goHome.add(new Wander());
+        goHome.add(ao);
+        goHome.add(w);
 
         CompositeBehavior comp = new CompositeBehavior(); // isHolding == false
         comp.setArbitrationUnit(new SimplePriority());
         behaviorTree.add(comp);
 
         comp.add(new PickUp("Food"));
+        comp.add(gu);
         comp.add(new GotoX("Food"));
-        comp.add(new AvoidObstacle());
-        comp.add(new Wander());
+        comp.add(ao);
+        comp.add(w);
 
         // Add behaviors
         //GotoXX gotox = new GotoXX();

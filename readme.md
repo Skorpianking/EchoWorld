@@ -109,6 +109,8 @@ Data available in the state includes getters for:
     double rightWheelVelocity;
     double leftLightStrength;
     double rightLightStrength;
+    boolean holding;
+    boolean atHome;
 ```
 
 ##### Behaviors with Parameters
@@ -123,13 +125,14 @@ public void setParameters(ArrayList<String> params) {
 ##### Arbiters
 Several arbitration strategies are already present in the behaviorFactory.
 
-|     Arbiter               |     Weight    |     Vote      |     Description                                                                                                                                          |
-|---------------------------|---------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-|     Activation Fusion     |     Y         |     real      |     builds an action that selects each sub-actions based   on their highest utility value (utility = action.getVote * weight).                           |
-|     Command Fusion        |     Y         |     binary    |     builds an action from a sum of all voting sub-actions   scaled by the actions utility: (i.e. velocity += velocity[i] * action.getVote()   * w[i])    |
-|     Highest Activation    |     Y         |     real      |     selects the action with the highest utility value   (utility = action.getVote * weight)                                                              |
-|     Highest Priority      |     Y         |     binary    |     selects the action with the highest priority   (weight), (if voted)                                                                                  |
-|     Monte Carlo           |     Y         |     real      |     randomly selects actions from a distribution based   on the action's utility (utility = action.getVote * weight)                                     |
-|     Priority Fusion       |     Y         |     binary    |     builds an action that selects each sub-action based   on the highest priority (weight), (if voted)                                                   |
-|     Simple Priority       |     N         |     binary    |     selects the first action that has voted                                                                                                              |
-|     Utility Fusion        |     N         |     real      |     builds an action that selects each sub-action with      highest vote: (action.getVote)                                                               |
+|     Arbiter               |     Weight    |     Vote        |     Description                                                                                                                                          |
+|---------------------------|---------------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+|     Activation Fusion     |     Y         |     real        |     builds an action that selects each sub-actions based   on their highest utility value (utility = action.getVote * weight).                           |
+|     Command Fusion        |     Y         |     binary      |     builds an action from a sum of all voting sub-actions   scaled by the actions utility: (i.e. velocity += velocity[i] * action.getVote()   * w[i])    |
+|     Highest Activation    |     Y         |     real        |     selects the action with the highest utility value   (utility = action.getVote * weight)                                                              |
+|     Highest Priority      |     Y         |     binary      |     selects the action with the highest priority   (weight), (if voted)                                                                                  |
+|     Monte Carlo           |     Y         |     real        |     randomly selects actions from a distribution based   on the action's utility (utility = action.getVote * weight)                                     |
+|     Priority Fusion       |     Y         |     binary      |     builds an action that selects each sub-action based   on the highest priority (weight), (if voted)                                                   |
+|     Simple Priority       |     N         |     binary      |     selects the first action that has voted                                                                                                              |
+|     Utility Fusion        |     N         |     real        |     builds an action that selects each sub-action with      highest vote: (action.getVote)                                                               |
+|     Conditional           |     N         |     passthrough |     selects first action if state boolean true, second if false. Requires boolean method call parameter  highest vote: that action's vote                |

@@ -145,6 +145,8 @@ public class Vehicle extends SimulationBody {
         state.updateLightStrengths();
         if (gripper != null)
             state.setHolding(true);
+        else
+            state.setHolding(false);
 
         return true;
     }
@@ -238,6 +240,8 @@ public class Vehicle extends SimulationBody {
         // If vehicle is within 2m, set atHome
         if (distance <= 2.0)
             state.setAtHome(true);
+        else
+            state.setAtHome(false);
 
         return obj;
     }
@@ -371,12 +375,12 @@ public class Vehicle extends SimulationBody {
         // drop the object being held
         if (a.getDrop()) {
             if (gripper != null) {
-                gripper.getBody2().setUserData("Garbage"); // Renaming the object for testing.
+                SimulationBody food = gripper.getBody2();
+                food.setUserData("Garbage"); // Renaming the object for testing.
+                food.setLinearVelocity(0,0);
                 this.myWorld.removeJoint(gripper);
                 gripper = null;
-                if (state.isAtHome()) {
-
-                }
+                // state.setHolding(false);
             } else {
                 System.out.println(this.getUserData() + ": Cannot Drop. Not holding anything");
             }
