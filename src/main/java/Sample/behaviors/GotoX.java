@@ -86,23 +86,23 @@ public class GotoX extends Behavior {
         double bestHeading = Math.toRadians(bestAngle);
 
         if (bestObj != null) {
-            if (Math.abs(bestHeading - state.getHeading()) < 0.05) { // Object is directly ahead.
+            if (Math.abs(bestHeading - state.getHeading()) < 0.05 || bestObj.getSide().equals("Center")) { // Object is directly ahead.
                 action.setRightWheelVelocity(0.9);
                 action.setLeftWheelVelocity(0.9);
             } else if (bestAngle > 0  && bestObj.getSide() == "Right") { // Object on Right
-                action.setRightWheelVelocity(0.9 - Math.abs(bestObj.getAngle()));
+                action.setRightWheelVelocity(0.6 - Math.abs(bestObj.getAngle()));
                 action.setLeftWheelVelocity(0.9);
             } else if (bestAngle < 0  && bestObj.getSide() == "Left") { // Object on Left
                 action.setRightWheelVelocity(0.9);
-                action.setLeftWheelVelocity(0.9 - Math.abs(bestObj.getAngle()));
+                action.setLeftWheelVelocity(0.6 - Math.abs(bestObj.getAngle()));
             } else if ( bestAngle > 0 && bestObj.getSide() == "Left" ) { // Middle Left
                 action.setRightWheelVelocity(0.9);
-                action.setLeftWheelVelocity(0.9 - Math.abs(bestObj.getAngle()) / 3);
+                action.setLeftWheelVelocity(0.6 - Math.abs(bestObj.getAngle()) / 3);
             } else if ( bestAngle < 0 && bestObj.getSide() == "Right" ) { // Middle Right
-                action.setRightWheelVelocity(0.9 - Math.abs(bestObj.getAngle()) / 3);
+                action.setRightWheelVelocity(0.6 - Math.abs(bestObj.getAngle()) / 3);
                 action.setLeftWheelVelocity(0.9);
             }
-            action.setVote(1);
+            action.setVote(Math.max(1, 2-bestObj.getDistance()));
             lastSeenCounter = 5;
             lastSeenAngle = bestAngle;
         }

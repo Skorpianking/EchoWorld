@@ -5,6 +5,8 @@ import Vehicles.Action;
 import Vehicles.Vehicle;
 import behaviorFramework.ArbitrationUnit;
 import behaviorFramework.CompositeBehavior;
+import behaviorFramework.arbiters.HighestActivation;
+import behaviorFramework.arbiters.HighestPriority;
 import behaviorFramework.arbiters.SimplePriority;
 import behaviorFramework.arbiters.Conditional;
 import behaviorFramework.behaviors.NoOp;
@@ -12,6 +14,8 @@ import framework.SimulationBody;
 import org.dyn4j.world.World;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 
 /**
@@ -60,11 +64,11 @@ public class Callie extends Vehicle {
                                     |
               t ------------------------------------------  f
                 |                                        |
-          Conditional(isAtHome)                    SimplePriority
+          Conditional(isAtHome)                    HighestActivation
                 |                                        |
         t -------------------- f           ------------------------------------------------
           |                  |             |             |            |          |        |
-      Drop(Food)      SimplePriority   PickUp(Food)  GetUnstuck GotoX(Food)  AvoidObst  Wander
+      Drop(Food)      SimplePriority   PickUp(Food)  GetUnstuck  AvoidObst  GotoX(Food) Wander
                              |
                  ----------------------------------
                  |           |           |        |
@@ -95,18 +99,18 @@ public class Callie extends Vehicle {
         Wander w = new Wander();
 
         goHome.add(gu);
-        goHome.add(new GotoX("Home"));
         goHome.add(ao);
+        goHome.add(new GotoX("Home"));
         goHome.add(w);
 
         CompositeBehavior comp = new CompositeBehavior(); // isHolding == false
-        comp.setArbitrationUnit(new SimplePriority());
+        comp.setArbitrationUnit(new HighestActivation(new ArrayList<Double>(Arrays.asList(0.5,0.2,0.1,0.1,0.1))));
         behaviorTree.add(comp);
 
         comp.add(new PickUp("Food"));
         comp.add(gu);
-        comp.add(new GotoX("Food"));
         comp.add(ao);
+        comp.add(new GotoX("Food"));
         comp.add(w);
 
         // Add behaviors

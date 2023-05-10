@@ -56,7 +56,7 @@ public class PickUp extends Behavior {
             // Locate "Food" and return the hit closest to the centerline of the vehicle
             if (obj.getType().equals(target)) {
                 // If this is a hit from the center
-                if (( angle < 0 && obj.getSide() == "Left" ) || (angle < 0 && obj.getSide() == "Right")) {
+                if ( angle > -15.0 && angle < 15.0 ) {
                     // And it is the closest
                     if (obj.getDistance() < bestObj.getDistance())
                         bestObj = obj;
@@ -65,7 +65,7 @@ public class PickUp extends Behavior {
         }
 
         // We will pickup the food if it is within 1.0 meter, and is in the middle (not on the sides)
-        if (bestObj.getDistance() < 1.0) {
+        if (bestObj.getDistance() < 0.4) {
             System.out.println("Pick It UP!!!!!");
             action.setPickup(bestObj.getBody());
             action.setVote(1);

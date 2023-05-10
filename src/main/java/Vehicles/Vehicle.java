@@ -131,11 +131,39 @@ public class Vehicle extends SimulationBody {
     public boolean sense() {
         state.tick();
 
+        if(home.body.getWorldCenter().x != -15.0)
+            System.out.println("HOME TELEPORTED!");
         state.setHeading(convertTransformToHeading());
 
         // Following code block draws Rays out from each sensor and stores returns in state
         rayCasting(-0.50, 0.8, 0); // left sensor
         rayCasting(0.50, 0.8, 1); // right sensor
+
+        // Put at front of vehicle
+        Vector2 start = this.getTransform().getTransformed(new Vector2(0.0, 0.8));// this.getWorldCenter();
+        SensedObject obj;
+        Ray ray = new Ray(start,(state.getHeading())); //baseVehicle.getLinearVelocity().getDirection()));
+
+        List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.raycast(ray, SENSOR_RANGE/2, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
+        for (RaycastResult<SimulationBody, BodyFixture> result : results) {
+            // First check if this is our Home. If so, do not add it because it is added separately.
+            if (result.getBody().getUserData().equals(home.name))
+                break;
+            // Get the direction between the center of the vehicle and the impact point
+            Vector2 heading = new Vector2(this.getWorldCenter(), result.getRaycast().getPoint());
+            double angle = heading.getAngleBetween(state.getHeading()); // baseVehicle.getLinearVelocity()); // radians
+            double distance = result.getRaycast().getDistance();
+            String type = "UNKNOWN";
+            if (result.getBody().getUserData() != null) { // If not set, will be UNKNOWN
+                type = result.getBody().getUserData().toString();
+            }
+            obj = new SensedObject(heading, angle, distance, type, "Center", result.getRaycast().getPoint());
+            if (obj.getType().equals("Food")) {
+                obj.setBody(result.getBody());
+            }
+            state.addSensedObject(obj);
+        }
+
 
         // Add this vehicle's home to the list of SensedObjects. Also, set 'atHome' if next to it.
         state.addSensedObject(senseHome());
@@ -209,9 +237,9 @@ public class Vehicle extends SimulationBody {
 
                 if (obj.getType().equals("Food")) {
                     // If this is a hit from the center
-                    if (( angle < 0 && obj.getSide() == "Left" ) || (angle < 0 && obj.getSide() == "Right")) {
+//                    if (( angle > 0 && obj.getSide() == "Left" ) || (angle < 0 && obj.getSide() == "Right")) {
                         obj.setBody(result.getBody());
-                    }
+//                    }
                 }
 
                 state.addSensedObject(obj);
@@ -238,7 +266,7 @@ public class Vehicle extends SimulationBody {
         obj = new SensedObject(null, angle, distance, "Home", side, home.position);
 
         // If vehicle is within 2m, set atHome
-        if (distance <= 2.0)
+        if (distance <= 2.2)
             state.setAtHome(true);
         else
             state.setAtHome(false);
@@ -294,6 +322,16 @@ public class Vehicle extends SimulationBody {
                     g.setColor(Color.MAGENTA);
                     g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
                 }
+            }
+            Vector2 v = this.getWorldCenter();
+            x = (int) (v.x * rayScale);
+            y = (int) (v.y * rayScale);
+            g.setColor(Color.BLACK);
+
+            Ray ray = new Ray(v, (state.getHeading())); //baseVehicle.getLinearVelocity().getDirection()));
+            List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.raycast(ray, SENSOR_RANGE / 2, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
+            for (RaycastResult<SimulationBody, BodyFixture> result : results) {
+                g.drawLine((int) (result.getRaycast().getPoint().x * rayScale), (int) (result.getRaycast().getPoint().y * rayScale), x, y);
             }
         }
     }
@@ -358,7 +396,8 @@ public class Vehicle extends SimulationBody {
                 SimulationBody food = a.getPickup();
 
                 // Am I close enough to pickup the object?
-                if (this.getTransform().getTranslation().distance(food.getTransform().getTranslation()) < 2.0) {
+                double dist = this.getTransform().getTranslation().distance(food.getTransform().getTranslation());
+                if (dist < 1.5) {
                     // Create a joint between the vehicle and the object, and change the object's mass so we can move it
                     gripper = new WeldJoint(this, food, new Vector2(0.0, 0.75));
                     this.myWorld.addJoint(gripper);
@@ -376,9 +415,10 @@ public class Vehicle extends SimulationBody {
         if (a.getDrop()) {
             if (gripper != null) {
                 SimulationBody food = gripper.getBody2();
-                food.setUserData("Garbage"); // Renaming the object for testing.
-                food.setLinearVelocity(0,0);
                 this.myWorld.removeJoint(gripper);
+                food.setUserData("Garbage"); // Renaming the object for testing.
+                food.setAtRest(true);
+                food.setMassType(MassType.INFINITE);
                 gripper = null;
                 // state.setHolding(false);
             } else {

@@ -390,6 +390,18 @@ public class Vehicles extends SimulationFrame {
 
         @Override
         public void begin(TimeStep timeStep, PhysicsWorld physicsWorld) {
+        }
+
+        @Override
+        public void updatePerformed(TimeStep timeStep, PhysicsWorld physicsWorld) {
+        }
+
+        @Override
+        public void postSolve(TimeStep timeStep, PhysicsWorld physicsWorld) {
+        }
+
+        @Override
+        public void end(TimeStep timeStep, PhysicsWorld physicsWorld) {
             if ((updateCounter++)%UPDATE_RATE != 0)
                 return;
 
@@ -403,7 +415,7 @@ public class Vehicles extends SimulationFrame {
             // Update Home
             for (SimulationBody f : foodList) {
                 for (Home h : homeList) {
-                    if (h.position.distance(f.getTransform().getTranslation()) < 1.0 && f.getUserData().equals("Garbage")) {
+                    if (h.position.distance(f.getTransform().getTranslation()) < 2.0 && f.getUserData().equals("Garbage")) {
                         h.resource += 20.0;
                         f.translate(new Vector2(0, 6)); // Translation is in relation to current position.
                         f.setUserData("Food");
@@ -413,18 +425,6 @@ public class Vehicles extends SimulationFrame {
                     h.Step();
                 }
             }
-        }
-
-        @Override
-        public void updatePerformed(TimeStep timeStep, PhysicsWorld physicsWorld) {
-        }
-
-        @Override
-        public void postSolve(TimeStep timeStep, PhysicsWorld physicsWorld) {
-        }
-
-        @Override
-        public void end(TimeStep timeStep, PhysicsWorld physicsWorld) {
         }
 
         public void setUpdateRate(int rate) {

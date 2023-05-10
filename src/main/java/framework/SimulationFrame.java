@@ -267,6 +267,8 @@ public abstract class SimulationFrame extends JFrame {
 		// render anything about the simulation (will render the World objects)
     	AffineTransform tx = g.getTransform();
 		g.translate(this.camera.offsetX, this.camera.offsetY);
+		if( this.world.getBody(5).getWorldCenter().x != -15.0)
+		   System.out.println("HOME TELEPORTED!");
 		this.render(g, elapsedTime);
 		g.setTransform(tx);
 

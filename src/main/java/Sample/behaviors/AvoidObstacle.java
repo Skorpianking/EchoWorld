@@ -15,7 +15,7 @@ public class AvoidObstacle extends Behavior {
     /**
      * Activation threshold (distance < DISTANCE_LIMIT)
      */
-    private final int DISTANCE_LIMIT = 3;
+    private final int DISTANCE_LIMIT = 2;
     /**
      * Limit the angles of concern to those in front
      */
