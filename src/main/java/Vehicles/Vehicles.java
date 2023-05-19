@@ -299,8 +299,6 @@ public class Vehicles extends SimulationFrame {
             }
         } catch (Exception e) {
         } // Food is optional
-
-
     }
 
     /**
@@ -387,6 +385,7 @@ public class Vehicles extends SimulationFrame {
     private class CustomStepListener implements StepListener {
         private int UPDATE_RATE = 3;
         private int updateCounter = 0;
+        private int foodSpawnTimer = 10;
 
         @Override
         public void begin(TimeStep timeStep, PhysicsWorld physicsWorld) {
@@ -412,18 +411,40 @@ public class Vehicles extends SimulationFrame {
                 ((Vehicle)v).act(act);
             }
 
-            // Update Home
+            /* Update Home and Food Spawn */
+            foodSpawnTimer--;
             for (SimulationBody f : foodList) {
+                // Home Update
                 for (Home h : homeList) {
                     if (h.position.distance(f.getTransform().getTranslation()) < 2.0 && f.getUserData().equals("Garbage")) {
                         h.resource += 20.0;
-                        f.translate(new Vector2(0, 6)); // Translation is in relation to current position.
-                        f.setUserData("Food");
+                        //f.translate(new Vector2(0, 6)); // Translation is in relation to current position.
+                        // put the food off-screen
+                        f.translate(-(canvas.getWidth() + 10), -(canvas.getHeight() + 10));
+                        //f.setUserData("Food");
                         f.setLinearVelocity(0,0);
                         f.setMass(MassType.INFINITE);
+                        foodSpawnTimer = 300;
                     }
                     h.Step();
                 }
+                // Food Spawn
+                if (f.getUserData().equals("Garbage") && foodSpawnTimer <= 0) {
+                    f.setUserData("Food");
+                    f.translateToOrigin();
+                    f.translate(-2,2);
+                }
+            }
+            // Did not have a Food object to move, create a new one.
+            if(foodSpawnTimer <= 0) {
+                SimulationBody Food = new SimulationBody();
+                Food.setColor(Color.pink);
+                Food.addFixture(Geometry.createRectangle(0.5, 0.5));
+                Food.translate(new Vector2(-2,2));
+                Food.setUserData(new String("Food"));
+                world.addBody(Food);
+                foodList.add(Food);
+                foodSpawnTimer = 5000;
             }
         }
 
