@@ -13,7 +13,7 @@ import java.util.Random;
  * to limit large velocity changes.</p>
  */
 public class Wander extends Behavior {
-    private final double ST_DEV = 0.2; // Size of the normal distribution
+    private final double ST_DEV = 0.15; // Size of the normal distribution
 
     // Vote = 1
 

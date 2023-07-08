@@ -139,7 +139,7 @@ public class Vehicle extends SimulationBody {
         rayCasting(-0.50, 0.8, 0); // left sensor
         rayCasting(0.50, 0.8, 1); // right sensor
 
-        // Put at front of vehicle
+        // One scan from front of vehicle
         Vector2 start = this.getTransform().getTransformed(new Vector2(0.0, 0.8));// this.getWorldCenter();
         SensedObject obj;
         Ray ray = new Ray(start,(state.getHeading())); //baseVehicle.getLinearVelocity().getDirection()));
@@ -170,6 +170,9 @@ public class Vehicle extends SimulationBody {
 
         state.setVelocity(this.getLinearVelocity()); // LinearVelocity captures heading and speed
         state.setAngularVelocity(this.getAngularVelocity());
+
+        state.setDeltaPosition(this.getChangeInPosition().getMagnitude()+this.getChangeInOrientation());
+
         state.updateLightStrengths();
         if (gripper != null)
             state.setHolding(true);
@@ -229,13 +232,15 @@ public class Vehicle extends SimulationBody {
                 if (sensor_x > 0.0) {
                     side = "Right";
                 }
-
-                if (type == home.name) // Skip our home
-                    break;
+//                if (type.equals(home.name)) // Skip our home
+//                    type = null;
 
                 obj = new SensedObject(heading, angle, distance, type, side, result.getRaycast().getPoint());
 
                 if (obj.getType().equals("Food")) {
+                    if (state.isHolding()) {
+                        obj.setType(new String("Obstacle"));
+                    } else
                     // If this is a hit from the center
 //                    if (( angle > 0 && obj.getSide() == "Left" ) || (angle < 0 && obj.getSide() == "Right")) {
                         obj.setBody(result.getBody());
@@ -265,8 +270,8 @@ public class Vehicle extends SimulationBody {
         side = "Right";
         obj = new SensedObject(null, angle, distance, "Home", side, home.position);
 
-        // If vehicle is within 2m, set atHome
-        if (distance <= 2.2)
+        // If vehicle is within 3.32m, set atHome
+        if (distance <= 3.32)
             state.setAtHome(true);
         else
             state.setAtHome(false);
@@ -308,14 +313,14 @@ public class Vehicle extends SimulationBody {
                         r,
                         r));
 
-                if (obj.getSide() == "Left") {
+                if (obj.getSide().equals( "Left")) {
                     Vector2 v = this.getTransform().getTransformed(new Vector2(-0.5, 0.8));
                     x = (int) (v.x * rayScale);
                     y = (int) (v.y * rayScale);
                     g.setColor(Color.ORANGE);
                     g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
                 }
-                if (obj.getSide() == "Right") {
+                if (obj.getSide().equals("Right")) {
                     Vector2 v = this.getTransform().getTransformed(new Vector2(0.5, 0.8));
                     x = (int) (v.x * rayScale);
                     y = (int) (v.y * rayScale);

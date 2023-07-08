@@ -37,6 +37,12 @@ public class Vehicles extends SimulationFrame {
     private ArrayList<SimulationBody> foodList;
 
     private boolean drawScanLines = true;   // right now going to fall through and
+
+    private int foodSpawnTimer;
+    private int foodSpawnTimerSetting;
+    private ArrayList<Vector2> foodLocationDistributionList;
+    private ArrayList<Vector2> foodLocationList;
+
     // let each vehicle be set to draw or not.
 
     /**
@@ -142,7 +148,7 @@ public class Vehicles extends SimulationFrame {
                 h.resource = resource;
                 SimulationBody homeBody = new SimulationBody();
                 homeBody.setColor(Color.green);
-                homeBody.addFixture(Geometry.createUnitCirclePolygon(50, 0.5));
+                homeBody.addFixture(Geometry.createUnitCirclePolygon(50, 1.5));
                 homeBody.translate(new Vector2(x, y));
                 homeBody.setUserData(new String(homeName));
                 this.world.addBody(homeBody);
@@ -259,7 +265,7 @@ public class Vehicles extends SimulationFrame {
                 Obstacle.setColor(Color.black);
                 Obstacle.addFixture(Geometry.createRectangle(width, height));
                 Obstacle.translate(new Vector2(x, y));
-                Obstacle.setUserData(new String("Obstacle"));
+                Obstacle.setUserData("Obstacle");
                 try {
                     BigDecimal key = (BigDecimal) item.get("bound_key");
                     if (key.intValue() >= 1 && key.intValue() <= 5) {
@@ -276,43 +282,57 @@ public class Vehicles extends SimulationFrame {
 
         // Add Food (squares)
         try {
-            ArrayList<JsonObject> food = (ArrayList<JsonObject>) worldJSON.get("food");
-            double width = 0.0;
-            double height = 0.0;
+            JsonObject jFood = (JsonObject) worldJSON.get("food");
+            foodSpawnTimer = ((BigDecimal) jFood.get("timer")).intValue();
+            foodSpawnTimerSetting = foodSpawnTimer;
+            foodLocationList = new ArrayList<Vector2>();
+            foodLocationDistributionList = new ArrayList<Vector2>();
+
+            ArrayList<JsonObject> food = (ArrayList<JsonObject>) jFood.get("locations");
             for (JsonObject item : food) {
                 try {
                     position = (ArrayList<BigDecimal>) (item.get("position"));
                     x = position.get(0).doubleValue();
                     y = position.get(1).doubleValue();
+                    foodLocationList.add(new Vector2(x,y));
+
+                    SimulationBody Food = new SimulationBody();
+                    Food.setColor(Color.pink);
+                    Food.addFixture(Geometry.createRectangle(0.5, 0.5));
+                    Food.translate(new Vector2(x, y));
+                    Food.setUserData(new String("Food"));
+                    this.world.addBody(Food);
+                    foodList.add(Food);
+
                 } catch (Exception e) {
                     System.out.println("Food must have a position [x, y]!");
                     System.exit(0);
                 }
-
-                SimulationBody Food = new SimulationBody();
-                Food.setColor(Color.pink);
-                Food.addFixture(Geometry.createRectangle(0.5, 0.5));
-                Food.translate(new Vector2(x, y));
-                Food.setUserData(new String("Food"));
-                this.world.addBody(Food);
-                foodList.add(Food);
+                try {
+                    position = (ArrayList<BigDecimal>) (item.get("distribution"));
+                    x = position.get(0).doubleValue();
+                    y = position.get(1).doubleValue();
+                    foodLocationDistributionList.add(new Vector2(x,y));
+                } catch (Exception e) {
+                    System.out.println("Food spawn location must have a distribution [x,y]!");
+                    System.exit(0);
+                }
             }
         } catch (Exception e) {
         } // Food is optional
     }
 
     /**
+     * Parse Vehicle details (draw_scan_lines and position) from the input
+     * json and add the vehicle to the world and Vehicle pool.
      *
-     * @param vehicle
-     * @param item
+     * @param vehicle The vehicle object
+     * @param item json (draw_scan_lines and position)
      */
     private void insertVehicle(Vehicle vehicle, JsonObject item) {
         try {
             String scanLines = (String)item.get("draw_scan_lines");
-            if (scanLines.equals("true"))
-                vehicle.setDrawScanLines(true);
-            else
-                vehicle.setDrawScanLines(false);
+            vehicle.setDrawScanLines(scanLines.equals("true"));
         } catch (Exception e) { // drawing scan lines is not set. Default to false
             vehicle.setDrawScanLines(false);
         }
@@ -327,14 +347,6 @@ public class Vehicles extends SimulationFrame {
             int min = (int)-(canvas.getHeight()/ (2* camera.scale) + 2);
             vehicle.translate(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min));
         }
-
-/*        try {
-            String name = (String)item.get("name");
-            vehicle.setUserData(name);
-        } catch (Exception e) { // Name will be Vehicle
-            vehicle.setUserData(new String("Vehicle"));
-        }
-*/
 
         myVehicles.add(vehicle);
         world.addBody(vehicle);
@@ -358,7 +370,7 @@ public class Vehicles extends SimulationFrame {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        String filename = new String("data//world1.json");
+        String filename = "data//world1.json";
 
         // Read in the JSON world file
         try (FileReader fileReader = new FileReader((filename))) {
@@ -385,7 +397,7 @@ public class Vehicles extends SimulationFrame {
     private class CustomStepListener implements StepListener {
         private int UPDATE_RATE = 3;
         private int updateCounter = 0;
-        private int foodSpawnTimer = 10;
+        //private int foodSpawnTimer;
 
         @Override
         public void begin(TimeStep timeStep, PhysicsWorld physicsWorld) {
@@ -424,7 +436,6 @@ public class Vehicles extends SimulationFrame {
                         //f.setUserData("Food");
                         f.setLinearVelocity(0,0);
                         f.setMass(MassType.INFINITE);
-                        foodSpawnTimer = 300;
                     }
                     h.Step();
                 }
@@ -432,19 +443,29 @@ public class Vehicles extends SimulationFrame {
                 if (f.getUserData().equals("Garbage") && foodSpawnTimer <= 0) {
                     f.setUserData("Food");
                     f.translateToOrigin();
-                    f.translate(-2,2);
+                    int loc = (int)(Math.random()*foodLocationList.size());
+                    double xSpawn = Math.random()*(2*foodLocationDistributionList.get(loc).x)-foodLocationDistributionList.get(loc).x;
+                    double ySpawn = Math.random()*(2*foodLocationDistributionList.get(loc).y)-foodLocationDistributionList.get(loc).y;
+
+                    f.translate(foodLocationList.get(loc).x+xSpawn, foodLocationList.get(loc).y+ySpawn);
+                    foodSpawnTimer = foodSpawnTimerSetting;
                 }
             }
-            // Did not have a Food object to move, create a new one.
-            if(foodSpawnTimer <= 0) {
+            // Did not have a Food object to move and we have less than 20, create a new one.
+            if(foodSpawnTimer <= 0 && foodList.size() < 20) {
                 SimulationBody Food = new SimulationBody();
                 Food.setColor(Color.pink);
                 Food.addFixture(Geometry.createRectangle(0.5, 0.5));
-                Food.translate(new Vector2(-2,2));
-                Food.setUserData(new String("Food"));
+                Food.setUserData("Food");
+
+                int loc = (int)(Math.random()*foodLocationList.size());
+                double xSpawn = Math.random()*(2*foodLocationDistributionList.get(loc).x)-foodLocationDistributionList.get(loc).x;
+                double ySpawn = Math.random()*(2*foodLocationDistributionList.get(loc).y)-foodLocationDistributionList.get(loc).y;
+                Food.translate(foodLocationList.get(loc).x+xSpawn, foodLocationList.get(loc).y+ySpawn);
+
                 world.addBody(Food);
                 foodList.add(Food);
-                foodSpawnTimer = 5000;
+                foodSpawnTimer = foodSpawnTimerSetting;
             }
         }
 

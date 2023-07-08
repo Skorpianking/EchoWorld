@@ -32,30 +32,31 @@ public class GetUnstuck extends Behavior {
         Action action = new Action();
         action.name = new String("GetUnstuck");
 
-        if(Math.abs(state.getVelocity().x) < 0.04 && Math.abs(state.getVelocity().y) < 0.04 && Math.abs(state.getAngularVelocity()) < 0.04) {
+        if ((Math.abs(state.getVelocity().x) < 0.04 && Math.abs(state.getVelocity().y) < 0.04 && Math.abs(state.getAngularVelocity()) < 0.04)
+            || Math.abs(state.getDeltaPosition()) < 0.001) {
             stuckCounter++;
         } else
             stuckCounter = 0;
 
-        if (stuckCounter >= 5) {
-            getUnstuckCounter = 27;
+        if (stuckCounter >= 10) {
+            getUnstuckCounter = 40;
             Random rand = new Random();
             leftORright = rand.nextInt(2);
             stuckCounter = 0;
         }
 
-        if (getUnstuckCounter > 10) {
+        if (getUnstuckCounter > 20) { // backup
             action.setRightWheelVelocity(-0.8);
             action.setLeftWheelVelocity(-0.8);
             action.setVote(1);
             getUnstuckCounter--;
-        } else if (getUnstuckCounter > 0) {
+        } else if (getUnstuckCounter > 0) { // turn randomly
             if (leftORright == 0) {
-                action.setRightWheelVelocity(-0.5);
+                action.setRightWheelVelocity(-0.7);
                 action.setLeftWheelVelocity(0.7);
             } else {
                 action.setRightWheelVelocity(0.7);
-                action.setLeftWheelVelocity(-0.5);
+                action.setLeftWheelVelocity(-0.7);
             }
             action.setVote(1);
             getUnstuckCounter--;

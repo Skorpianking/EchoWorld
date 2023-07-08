@@ -60,4 +60,6 @@ public class SensedObject {
     public void setBody(SimulationBody body) {
         this.body = body;
     }
+
+    public void setType(String ty) {this.type = ty;}
 }

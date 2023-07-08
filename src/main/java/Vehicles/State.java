@@ -17,6 +17,7 @@ public class State {
     private double rightWheelVelocity;
     private boolean holding = false;
     private boolean atHome = false;
+    private double deltaPosition;
 
     // Braitenberg Vehicle specific data (for Love, Fear, Hate)
     private double leftLightStrength;
@@ -111,6 +112,10 @@ public class State {
     public void setHeading(double heading) {
         this.heading = heading;
     }
+
+    public void setDeltaPosition(double dPos) {this.deltaPosition = dPos; }
+
+    public double getDeltaPosition() { return deltaPosition; }
 
     /**
      *
