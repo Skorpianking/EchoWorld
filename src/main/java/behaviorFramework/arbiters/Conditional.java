@@ -37,6 +37,10 @@ public class Conditional extends ArbitrationUnit {
         locateMethod(); // Get a link to the State method named in condition
     }
 
+    public Conditional() {
+        super();
+    }
+
     public Action evaluate(Collection<Action> actionSet) {
         Action action = new Action();
         try {
@@ -57,6 +61,13 @@ public class Conditional extends ArbitrationUnit {
         }
 
         return action;
+    }
+
+    private boolean setCondition(String condition, State s) {
+        this.condition = condition;
+        state = s;
+        stateClassName = state.getClass().getName();
+        return locateMethod(); // Get a link to the State method named in condition
     }
 
     /**

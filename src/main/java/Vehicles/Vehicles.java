@@ -135,14 +135,14 @@ public class Vehicles extends SimulationFrame {
                     System.out.println("Homes must have a name!");
                     System.exit(0);
                 }
-                try{
+                try{ // TODO: instead of starting resource, turn this into the spawn threshold?
                     BigDecimal temp = (BigDecimal) (item.get("resource"));
                     resource = temp.doubleValue();
                 } catch (Exception e) {
-                    System.out.println("Homes having resources are optional?");
+                    System.out.println("Homes having starting resources are optional");
                 }
                 // Add the home to the Home List.
-                Home h = new Home();
+                Home h = new Home(this);
                 h.position = new Vector2(x,y);
                 h.name = homeName;
                 h.resource = resource;
@@ -352,6 +352,10 @@ public class Vehicles extends SimulationFrame {
         world.addBody(vehicle);
     }
 
+    public World<SimulationBody> getWorld() {
+        return this.world;
+    }
+
 
     /* (non-Javadoc)
      * @see org.dyn4j.samples.SimulationFrame#render(java.awt.Graphics2D, double)
@@ -370,6 +374,7 @@ public class Vehicles extends SimulationFrame {
      * @param args command line arguments
      */
     public static void main(String[] args) {
+        //TODO: Parse args to get World filename
         String filename = "data//world1.json";
 
         // Read in the JSON world file
@@ -428,16 +433,14 @@ public class Vehicles extends SimulationFrame {
             for (SimulationBody f : foodList) {
                 // Home Update
                 for (Home h : homeList) {
-                    if (h.position.distance(f.getTransform().getTranslation()) < 2.0 && f.getUserData().equals("Garbage")) {
-                        h.resource += 20.0;
-                        //f.translate(new Vector2(0, 6)); // Translation is in relation to current position.
-                        // put the food off-screen
+                    if (h.position.distance(f.getTransform().getTranslation()) < 2.5 && f.getUserData().equals("Garbage")) {
+                        h.resource += 20.0; // HARDCODE: resource gained from food.
+                        // put the food off-screen // Translation is in relation to current position.
                         f.translate(-(canvas.getWidth() + 10), -(canvas.getHeight() + 10));
-                        //f.setUserData("Food");
                         f.setLinearVelocity(0,0);
                         f.setMass(MassType.INFINITE);
                     }
-                    h.Step();
+                    h.Step(); // Update Home, includes Spawning new Vehicles
                 }
                 // Food Spawn
                 if (f.getUserData().equals("Garbage") && foodSpawnTimer <= 0) {
@@ -452,7 +455,7 @@ public class Vehicles extends SimulationFrame {
                 }
             }
             // Did not have a Food object to move and we have less than 20, create a new one.
-            if(foodSpawnTimer <= 0 && foodList.size() < 20) {
+            if(foodSpawnTimer <= 0 && foodList.size() < 20) { //HARDCODE: limit on total number of food
                 SimulationBody Food = new SimulationBody();
                 Food.setColor(Color.pink);
                 Food.addFixture(Geometry.createRectangle(0.5, 0.5));

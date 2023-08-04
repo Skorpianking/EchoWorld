@@ -1,0 +1,76 @@
+{
+  "vehicleName": "Agent3",
+  "color": [215, 240, 50],
+  "behaviorTree": [
+    {
+      "name": "behaviorFramework.arbiters.Conditional",
+      "arbiter": true,
+      "weights": [ 0.5, 0.5 ],
+      "condition": "isHolding",
+      "behaviorTree": [
+        {
+          "name": "behaviorFramework.arbiters.Conditional",
+          "arbiter": true,
+          "weights": [ 0.5, 0.5 ],
+          "condition": "isAtHome",
+          "behaviorTree": [
+            {
+              "name": "Sample.behaviors.Drop"
+            },
+            {
+               "name": "behaviorFramework.arbiters.HighestActivation",
+               "arbiter": true,
+               "weights": [ 0.2, 0.1, 0.1, 0.1 ],
+               "behaviorTree": [
+                 {
+                   "name": "Sample.behaviors.GetUnstuck"
+                 },
+                 {
+                   "name": "Sample.behaviors.GotoX",
+                   "parameters": ["Home"]
+                 },
+                 {
+                   "name": "Sample.behaviors.AvoidObstacle"
+                 },
+                 {
+                   "name": "Sample.behaviors.Wander"
+                 }
+               ]
+            }
+          ]
+        },
+        {
+          "name": "behaviorFramework.arbiters.SimplePriority",
+          "arbiter": true,
+          "weights": [ 0.5, 0.5 ],
+          "behaviorTree": [
+            {
+              "name": "Sample.behaviors.PickUp",
+              "parameters": ["Food"]
+            },
+            {
+              "name": "behaviorFramework.arbiters.HighestActivation",
+              "arbiter": true,
+              "weights": [ 0.2, 0.1, 0.1, 0.1 ],
+              "behaviorTree": [
+                {
+                  "name": "Sample.behaviors.GetUnstuck"
+                },
+                {
+                  "name": "Sample.behaviors.GotoX",
+                  "parameters": ["Food"]
+                },
+                {
+                  "name": "Sample.behaviors.AvoidObstacle"
+                },
+                {
+                  "name": "Sample.behaviors.Wander"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

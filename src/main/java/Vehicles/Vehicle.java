@@ -237,6 +237,9 @@ public class Vehicle extends SimulationBody {
 
                 obj = new SensedObject(heading, angle, distance, type, side, result.getRaycast().getPoint());
 
+                // HARDCODE: "Food" is considered an "Obstacle" if already holding something
+                // TODO: HARDCODE: Other entities considered as "Obstacle"?
+                // Sensing becomes Perception: Situation impacts processing: future work can we create these tags
                 if (obj.getType().equals("Food")) {
                     if (state.isHolding()) {
                         obj.setType(new String("Obstacle"));
@@ -473,10 +476,3 @@ public class Vehicle extends SimulationBody {
         this.home = home;
     }
 }
-
-
-
-
-
-
-

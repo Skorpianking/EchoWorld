@@ -2,7 +2,7 @@
   "pixels_per_meter": 10,
   "vehicles": [
     {
-      "name": "Sample.Callie",
+      "name": "Agent3",
       "position": [-5,-5],
       "draw_scan_lines": "true",
       "home": "Callie_s"

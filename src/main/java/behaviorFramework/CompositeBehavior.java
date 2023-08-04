@@ -27,8 +27,11 @@ public class CompositeBehavior extends Behavior {
 		// If the actionSet isEmpty return a noOp action 
 		if (behaviorSet.isEmpty()) return new Action();
 
-		for (Behavior b : behaviorSet)
-			actionSet.add(b.genAction(state));
+		Action a;
+		for (Behavior b : behaviorSet) {
+			a = b.genAction(state);
+			actionSet.add(a);
+		}
 		return arbiter.evaluate(actionSet);
 	}
 	
