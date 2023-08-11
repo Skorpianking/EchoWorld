@@ -46,6 +46,9 @@ public class Vehicle extends SimulationBody {
 
     private boolean drawScanLines = false;
 
+    protected double energy;
+    protected double energyUsage;
+
     public Vehicle() {
     }
 
@@ -178,6 +181,9 @@ public class Vehicle extends SimulationBody {
             state.setHolding(true);
         else
             state.setHolding(false);
+
+        //Decaying energy in sense because decideAction will be overloaded.
+        energy = energy - (energyUsage * 0.0025);
 
         return true;
     }
@@ -428,6 +434,11 @@ public class Vehicle extends SimulationBody {
                 food.setAtRest(true);
                 food.setMassType(MassType.INFINITE);
                 gripper = null;
+                //HARDCODED distance from home check here and in Vehicles on food collection.
+                //HARDCODED vehicle gains 20 energy from dropoff.
+                if (home.position.distance(food.getTransform().getTranslation()) < 3.32) {
+                    energy += 10;
+                }
                 // state.setHolding(false);
             } else {
                 System.out.println(this.getUserData() + ": Cannot Drop. Not holding anything");
@@ -475,4 +486,6 @@ public class Vehicle extends SimulationBody {
     void setHome(Home home) {
         this.home = home;
     }
+
+    double getEnergy() { return this.energy; }
 }

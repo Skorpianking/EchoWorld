@@ -10,7 +10,7 @@ import java.util.ArrayList;
 public class Home extends SimulationBody {
     String name;
     Vector2 position;
-    double resource;
+    double energy;
     SimulationBody body; // Just in case we want to modify the body in someway
     Vehicles vehicles;
 
@@ -26,12 +26,12 @@ public class Home extends SimulationBody {
      *
      */
     public void Step(){
-        // TODO: Changed Home's resource decay to 0 for testing. Value must be tuned to world
-        // resource *= 0.98;
-        // If resource exceeds 100, Spawn a new Vehicle
-        if (resource >= 100.0) {
+        // TODO: Changed Home's energy decay to 0 for testing. Value must be tuned to world
+        // energy *= 0.98;
+        // If energy exceeds 100, Spawn a new Vehicle
+        if (energy >= 100.0) {
             Spawn();
-            resource -= 50.0; // Each Vehicle costs 50 energy.
+            energy -= 50.0; // Each Vehicle costs 50 energy.
         }
     }
 
@@ -42,15 +42,32 @@ public class Home extends SimulationBody {
      * Add vehicle to world
      */
     public void Spawn() {
+
         // TODO: Connect to Knowledge Domain here to get a new vehicle.
         String fileName = "data//Agent3.json";
-        JSONVehicle vehicle = new JSONVehicle();
+        JSONVehicle vehicle =null;
+        boolean reused = false;
+
+        for (SimulationBody v: vehicles.myVehicles) {
+            if (v.getUserData().equals("Dead")) {
+                vehicle = ((JSONVehicle)v); // WARNING: If Spawning, all vehicles assumed to be JSON.
+                reused = true;
+                vehicle.energy = 100.0;
+                vehicle.translateToOrigin();
+                break;
+            }
+        }
+        if (vehicle == null && vehicles.myVehicles.size() <= vehicles.MAX_VEHICLE_COUNT)
+            vehicle = new JSONVehicle();
+        if (vehicle == null) // No dead Vehicles and reached max number don't spawn
+            return;
+
         vehicle.initialize(vehicles.getWorld(), fileName); // Halts on failure, needs world for State initialization
 
         // Not adding scan lines for new vehicles.
         vehicle.setDrawScanLines(false);
 
-        // Setting new position near Home location... hard coded to be within 6.0m of center
+        // Setting new position near Home location... HARDCODED to be within 6.0m of center
         double xSpawn = 0.0;
         double ySpawn = 0.0;
         while (xSpawn >= -2.0 && xSpawn <= 2.0)
@@ -64,7 +81,9 @@ public class Home extends SimulationBody {
         vehicle.setHome(this);
 
         // Need to add the new Vehicle to the myVehicle list.
-        vehicles.myVehicles.add(vehicle);
-        vehicles.getWorld().addBody(vehicle);
+        if (!reused) {
+            vehicles.myVehicles.add(vehicle);
+            vehicles.getWorld().addBody(vehicle);
+        }
     }
 }

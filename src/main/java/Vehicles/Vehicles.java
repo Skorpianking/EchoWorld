@@ -43,6 +43,9 @@ public class Vehicles extends SimulationFrame {
     private ArrayList<Vector2> foodLocationDistributionList;
     private ArrayList<Vector2> foodLocationList;
 
+    private int MAX_FOODLIST_COUNT = 20; //HARDCODE: limit on total number of food
+    public int MAX_VEHICLE_COUNT = 10;  //HARDCODE: limit on total number of vehicles
+
     // let each vehicle be set to draw or not.
 
     /**
@@ -120,7 +123,7 @@ public class Vehicles extends SimulationFrame {
 
             for (JsonObject item : homes) {
                 String homeName = null;
-                double resource = 0.0;
+                double energy = 0.0;
                 try {
                     position = (ArrayList<BigDecimal>) (item.get("position"));
                     x = position.get(0).doubleValue();
@@ -135,17 +138,17 @@ public class Vehicles extends SimulationFrame {
                     System.out.println("Homes must have a name!");
                     System.exit(0);
                 }
-                try{ // TODO: instead of starting resource, turn this into the spawn threshold?
-                    BigDecimal temp = (BigDecimal) (item.get("resource"));
-                    resource = temp.doubleValue();
+                try{ // TODO: instead of starting energy, turn this into the spawn threshold?
+                    BigDecimal temp = (BigDecimal) (item.get("energy"));
+                    energy = temp.doubleValue();
                 } catch (Exception e) {
-                    System.out.println("Homes having starting resources are optional");
+                    System.out.println("Homes having starting energys are optional");
                 }
                 // Add the home to the Home List.
                 Home h = new Home(this);
                 h.position = new Vector2(x,y);
                 h.name = homeName;
-                h.resource = resource;
+                h.energy = energy;
                 SimulationBody homeBody = new SimulationBody();
                 homeBody.setColor(Color.green);
                 homeBody.addFixture(Geometry.createUnitCirclePolygon(50, 1.5));
@@ -423,9 +426,21 @@ public class Vehicles extends SimulationFrame {
 
             // Now move vehicles
             for(SimulationBody v : myVehicles) {
-                ((Vehicle)v).sense(); // call to sense the world.
-                Action act = ((Vehicle)v).decideAction(); // must cast it so we can call the decideAction function.
-                ((Vehicle)v).act(act);
+                if ( !v.getUserData().equals("Dead") ) {
+                    ((Vehicle) v).sense(); // call to sense the world and decay energy
+                    Action act = ((Vehicle) v).decideAction(); // must cast it so we can call the decideAction function.
+                    ((Vehicle) v).act(act);
+                    double vEnergy = ((Vehicle)v).getEnergy();
+                    // Has the Vehicle run out of energy?
+                    if (vEnergy <= 0) {
+                        // Rename it Dead, and teleport it off the screen.
+                        v.setUserData("Dead");
+                        v.translate(-(canvas.getWidth() + 50), -(canvas.getHeight() + 50));
+                        v.setLinearVelocity(0,0);
+                        v.setMass(MassType.INFINITE);
+                        ((Vehicle)v).setDrawScanLines(false);
+                    }
+                }
             }
 
             /* Update Home and Food Spawn */
@@ -434,7 +449,7 @@ public class Vehicles extends SimulationFrame {
                 // Home Update
                 for (Home h : homeList) {
                     if (h.position.distance(f.getTransform().getTranslation()) < 2.5 && f.getUserData().equals("Garbage")) {
-                        h.resource += 20.0; // HARDCODE: resource gained from food.
+                        h.energy += 25.0; // HARDCODE: energy gained from food.
                         // put the food off-screen // Translation is in relation to current position.
                         f.translate(-(canvas.getWidth() + 10), -(canvas.getHeight() + 10));
                         f.setLinearVelocity(0,0);
@@ -454,8 +469,8 @@ public class Vehicles extends SimulationFrame {
                     foodSpawnTimer = foodSpawnTimerSetting;
                 }
             }
-            // Did not have a Food object to move and we have less than 20, create a new one.
-            if(foodSpawnTimer <= 0 && foodList.size() < 20) { //HARDCODE: limit on total number of food
+            // Did not have a Food object to move and we have less than MAX_FOODLIST_COUNT, create a new one.
+            if(foodSpawnTimer <= 0 && foodList.size() < MAX_FOODLIST_COUNT) {
                 SimulationBody Food = new SimulationBody();
                 Food.setColor(Color.pink);
                 Food.addFixture(Geometry.createRectangle(0.5, 0.5));

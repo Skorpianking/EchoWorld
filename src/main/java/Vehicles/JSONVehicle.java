@@ -31,6 +31,8 @@ public class JSONVehicle extends Vehicle {
 
     public JSONVehicle() {
         state = new State();
+        energyUsage = 0;
+        energy = 100;
     }
 
     /**
@@ -125,6 +127,7 @@ public class JSONVehicle extends Vehicle {
 
         array = (JsonArray) json.get("behaviorTree");
         for (Object item : array) {
+            energyUsage++;
             JsonObject jsonBehavior = (JsonObject) item;
             try {
                 arbiterB = (boolean) jsonBehavior.get("arbiter");
