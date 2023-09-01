@@ -67,6 +67,10 @@ public class Home extends SimulationBody {
         // Not adding scan lines for new vehicles.
         vehicle.setDrawScanLines(false);
 
+        //TODO: Will need an identifier from KDWorld
+        String newName = vehicle.getUserData() + Integer.toString(vehicles.timestep);
+        vehicle.setUserData(newName);
+
         // Setting new position near Home location... HARDCODED to be within 6.0m of center
         double xSpawn = 0.0;
         double ySpawn = 0.0;
@@ -85,5 +89,23 @@ public class Home extends SimulationBody {
             vehicles.myVehicles.add(vehicle);
             vehicles.getWorld().addBody(vehicle);
         }
+    }
+
+    /**
+     * Provides a comma delimited string for logging on this home's
+     * name, energy, and vehicle count
+     *
+     * @return status String
+     */
+    public String statusString() {
+        int vehicleCount = 0;
+
+        for(SimulationBody v:vehicles.myVehicles){
+            if (name.equals(((Vehicle)v).getHomeName())) {
+                vehicleCount++;
+            }
+        }
+        String result = new String(name+","+energy+","+vehicleCount+","+position.x+","+position.y);
+        return result;
     }
 }

@@ -16,8 +16,13 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +51,10 @@ public class Vehicles extends SimulationFrame {
     private int MAX_FOODLIST_COUNT = 20; //HARDCODE: limit on total number of food
     public int MAX_VEHICLE_COUNT = 10;  //HARDCODE: limit on total number of vehicles
 
+    public int timestep = 0;
+    private PrintWriter homeLogStream = null;
+    private PrintWriter vehicleLogStream = null;
+
     // let each vehicle be set to draw or not.
 
     /**
@@ -65,6 +74,8 @@ public class Vehicles extends SimulationFrame {
         KeyListener listener = new CustomKeyListener();
         this.addKeyListener(listener);
         this.canvas.addKeyListener(listener);
+
+        initializeLogFiles();
     }
 
 
@@ -325,6 +336,29 @@ public class Vehicles extends SimulationFrame {
         } // Food is optional
     }
 
+    private void initializeLogFiles() {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("uuuu-MM-dd HH_mm_ss");
+        LocalDateTime now = LocalDateTime.now();
+        try {
+            String homeName = "homeLog"+dtf.format(now)+".csv";
+            homeLogStream = new PrintWriter( new FileOutputStream(homeName, true));
+            homeLogStream.write("timestep,name,energy,vehicleCount,position_x,position_y" + "\n"); // writes header to csv file
+        }
+        catch (FileNotFoundException e){
+            System.out.println("Error opening the file: homeLog[time].csv"+e);
+            System.exit(0);
+        }
+        try {
+            String vehicleName = "vehicleLog"+dtf.format(now)+".csv";
+            vehicleLogStream = new PrintWriter( new FileOutputStream(vehicleName, true));
+            vehicleLogStream.write("timestep,name,energy,???" + "\n"); // writes header to csv file
+        }
+        catch (FileNotFoundException e){
+            System.out.println("Error opening the file: vehicleLog[time].csv");
+            System.exit(0);
+        }
+    }
+
     /**
      * Parse Vehicle details (draw_scan_lines and position) from the input
      * json and add the vehicle to the world and Vehicle pool.
@@ -405,6 +439,7 @@ public class Vehicles extends SimulationFrame {
     private class CustomStepListener implements StepListener {
         private int UPDATE_RATE = 3;
         private int updateCounter = 0;
+
         //private int foodSpawnTimer;
 
         @Override
@@ -424,6 +459,8 @@ public class Vehicles extends SimulationFrame {
             if ((updateCounter++)%UPDATE_RATE != 0)
                 return;
 
+            timestep++;
+
             // Now move vehicles
             for(SimulationBody v : myVehicles) {
                 if ( !v.getUserData().equals("Dead") ) {
@@ -431,6 +468,7 @@ public class Vehicles extends SimulationFrame {
                     Action act = ((Vehicle) v).decideAction(); // must cast it so we can call the decideAction function.
                     ((Vehicle) v).act(act);
                     double vEnergy = ((Vehicle)v).getEnergy();
+                    vehicleLogStream.println(timestep+","+((Vehicle)v).statusString());
                     // Has the Vehicle run out of energy?
                     if (vEnergy <= 0) {
                         // Rename it Dead, and teleport it off the screen.
@@ -455,7 +493,6 @@ public class Vehicles extends SimulationFrame {
                         f.setLinearVelocity(0,0);
                         f.setMass(MassType.INFINITE);
                     }
-                    h.Step(); // Update Home, includes Spawning new Vehicles
                 }
                 // Food Spawn
                 if (f.getUserData().equals("Garbage") && foodSpawnTimer <= 0) {
@@ -485,11 +522,16 @@ public class Vehicles extends SimulationFrame {
                 foodList.add(Food);
                 foodSpawnTimer = foodSpawnTimerSetting;
             }
+            for (Home h : homeList) {
+                h.Step(); // Update Home, includes Spawning new Vehicles
+                homeLogStream.println(timestep+","+h.statusString());
+            }
         }
 
         public void setUpdateRate(int rate) {
             UPDATE_RATE = rate;
         }
+
     }
 
     /**

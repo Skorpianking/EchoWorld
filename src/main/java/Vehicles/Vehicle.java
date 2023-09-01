@@ -488,4 +488,17 @@ public class Vehicle extends SimulationBody {
     }
 
     double getEnergy() { return this.energy; }
+
+    public String getHomeName() { return this.home.name; }
+
+    /**
+     * Provides vehicles status update in a string for logging
+     * name, energy, ___
+     * @return status String
+     */
+    public String statusString() {
+        String result = new String(this.getUserData()+","+energy+",treeName?");
+
+        return result;
+    }
 }
