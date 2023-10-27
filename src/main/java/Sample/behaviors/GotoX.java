@@ -108,7 +108,7 @@ public class GotoX extends Behavior {
         }
 
         // We don't see the TARGET now, but we saw it recently.
-        if (lastSeenCounter > 0 && action.getVote() == 0) {
+        else if (lastSeenCounter > 0 && action.getVote() == 0) {
             angle = lastSeenAngle;
             if (angle > 0) { // Light on Right
                 action.setRightWheelVelocity(0.9-Math.abs(((angle*Math.PI)/180)));

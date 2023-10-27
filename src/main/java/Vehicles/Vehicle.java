@@ -21,7 +21,7 @@ public class Vehicle extends SimulationBody {
 
     private final Vector2 leftWheelLocation = new Vector2(-0.5, -0.5);
     private final Vector2 rightWheelLocation = new Vector2( 0.5, -0.5);
-    private WeldJoint<SimulationBody> gripper;
+    protected WeldJoint<SimulationBody> gripper;
 
     protected final double MAX_VELOCITY = 2; // arbitrary right now
     protected final double MAX_ANGULAR_VELOCITY = 1; // how fast we can turn
@@ -30,9 +30,12 @@ public class Vehicle extends SimulationBody {
 
     protected final double K_p = 10;   // PID: Proportional Control Constant
 
-    private State state;
+    protected State state;
 
-    private Home home;
+    protected Home home;
+
+    protected String name;
+    protected String treeDesc;
 
     // array of values to "sweep" across -- hand jammed to get a reasonable sweep that doesn't eat too much processing time
     // -10 to 120 degrees in steps of 5 degrees (added +/- 7.5, +/- 2.5
@@ -44,12 +47,13 @@ public class Vehicle extends SimulationBody {
     // The World the vehicle is placed in
     protected World<SimulationBody> myWorld;
 
-    private boolean drawScanLines = false;
+    protected boolean drawScanLines = false;
 
     protected double energy;
     protected double energyUsage;
 
     public Vehicle() {
+        energy = 100;
     }
 
     private void bulkInit(World<SimulationBody> myWorld) {
@@ -134,8 +138,10 @@ public class Vehicle extends SimulationBody {
     public boolean sense() {
         state.tick();
 
-        if(home.body.getWorldCenter().x != -15.0)
-            System.out.println("HOME TELEPORTED!");
+//        if(home.body.getWorldCenter().x != -15.0) {
+//            System.out.println("HOME TELEPORTED!");
+//            System.exit(0);
+//        }
         state.setHeading(convertTransformToHeading());
 
         // Following code block draws Rays out from each sensor and stores returns in state
@@ -176,7 +182,6 @@ public class Vehicle extends SimulationBody {
 
         state.setDeltaPosition(this.getChangeInPosition().getMagnitude()+this.getChangeInOrientation());
 
-        state.updateLightStrengths();
         if (gripper != null)
             state.setHolding(true);
         else
@@ -322,19 +327,27 @@ public class Vehicle extends SimulationBody {
                         r,
                         r));
 
-                if (obj.getSide().equals( "Left")) {
-                    Vector2 v = this.getTransform().getTransformed(new Vector2(-0.5, 0.8));
+                if (obj.getType().equals("Home")) {
+                    Vector2 v = this.getTransform().getTranslation();
                     x = (int) (v.x * rayScale);
                     y = (int) (v.y * rayScale);
-                    g.setColor(Color.ORANGE);
+                    g.setColor(Color.BLUE);
                     g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
-                }
-                if (obj.getSide().equals("Right")) {
-                    Vector2 v = this.getTransform().getTransformed(new Vector2(0.5, 0.8));
-                    x = (int) (v.x * rayScale);
-                    y = (int) (v.y * rayScale);
-                    g.setColor(Color.MAGENTA);
-                    g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
+                } else {
+                    if (obj.getSide().equals("Left")) {
+                        Vector2 v = this.getTransform().getTransformed(new Vector2(-0.5, 0.8));
+                        x = (int) (v.x * rayScale);
+                        y = (int) (v.y * rayScale);
+                        g.setColor(Color.ORANGE);
+                        g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
+                    }
+                    if (obj.getSide().equals("Right")) {
+                        Vector2 v = this.getTransform().getTransformed(new Vector2(0.5, 0.8));
+                        x = (int) (v.x * rayScale);
+                        y = (int) (v.y * rayScale);
+                        g.setColor(Color.MAGENTA);
+                        g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
+                    }
                 }
             }
             Vector2 v = this.getWorldCenter();
@@ -435,9 +448,11 @@ public class Vehicle extends SimulationBody {
                 food.setMassType(MassType.INFINITE);
                 gripper = null;
                 //HARDCODED distance from home check here and in Vehicles on food collection.
-                //HARDCODED vehicle gains 20 energy from dropoff.
+                //HARDCODED vehicle gains 10 energy from dropoff.   
                 if (home.position.distance(food.getTransform().getTranslation()) < 3.32) {
                     energy += 10;
+                    // Dropoff and pickup path?
+                    state.dropAtHome( home );
                 }
                 // state.setHolding(false);
             } else {
@@ -497,7 +512,7 @@ public class Vehicle extends SimulationBody {
      * @return status String
      */
     public String statusString() {
-        String result = new String(this.getUserData()+","+energy+",treeName?");
+        String result = new String(this.getUserData()+","+energy+","+home.name+","+treeDesc);
 
         return result;
     }

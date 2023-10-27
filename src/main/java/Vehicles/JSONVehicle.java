@@ -5,6 +5,9 @@ import behaviorFramework.Behavior;
 import behaviorFramework.CompositeBehavior;
 
 import framework.SimulationBody;
+import org.dyn4j.geometry.Convex;
+import org.dyn4j.geometry.Geometry;
+import org.dyn4j.geometry.MassType;
 import org.dyn4j.world.World;
 
 import com.github.cliftonlabs.json_simple.*;
@@ -20,9 +23,7 @@ public class JSONVehicle extends Vehicle {
     /**
      * Using our own State object to store our vehicles personal data
      */
-    private State state;
     private behaviorFramework.Action action = new behaviorFramework.Action();
-    private String name;
 
     /**
      * The Behavior Tree that will be executed
@@ -30,7 +31,6 @@ public class JSONVehicle extends Vehicle {
     CompositeBehavior behaviorTree;
 
     public JSONVehicle() {
-        state = new State();
         energyUsage = 0;
         energy = 100;
     }
@@ -46,7 +46,24 @@ public class JSONVehicle extends Vehicle {
      * @param filename the json filename to load
      */
     public void initialize(World<SimulationBody> myWorld, String filename) {
-        super.initialize(myWorld, state);
+        // super.initialize(myWorld, state);
+        this.myWorld = myWorld;
+
+        //Create Vehicle Shape - This overrides the regular vehicle shape.
+        this.addFixture(Geometry.createEllipse(1, 1.5));
+        this.setMass(MassType.NORMAL);
+        this.setAngularDamping(ANGULAR_DAMPENING);
+        // -- grabbers
+        Convex leftGrabber = Geometry.createRectangle(.1, .2);
+        Convex rightGrabber = Geometry.createRectangle(.1, .2);
+        leftGrabber.translate(-.25,.8);
+        rightGrabber.translate(.25, .8);
+
+        this.addFixture(leftGrabber);
+        this.addFixture(rightGrabber);
+        // gripper
+        gripper = null;
+
         JsonObject deserialize = null;
 
         // Read in the vehicle's JSON file
@@ -69,8 +86,22 @@ public class JSONVehicle extends Vehicle {
             setColor(new Color(color.get(0).intValue(), color.get(1).intValue(), color.get(2).intValue()));
         } catch (Exception e) { } // Color wasn't set, use default
 
+        // Get vehicle state
+        try {
+            String name = (String) deserialize.get("state");
+            state = (State) Class.forName(new String(name)).newInstance();
+            System.out.println("State Name:" + state.getClass().getName());
+        } catch (ClassNotFoundException e) {
+            System.out.println(e);
+            System.exit(0);
+        }
+        catch (Exception e) { // State not set, use default state
+            state = new State();
+        }
+
         // Build behaviorTree
         try {
+            treeDesc = new String();
             behaviorTree = treeFromJSON(deserialize, null);
         } catch (Exception e) {
             e.printStackTrace();
@@ -109,6 +140,10 @@ public class JSONVehicle extends Vehicle {
         return action;
     }
 
+    @Override
+    public void render(Graphics2D g, double scale) {
+        super.render(g, scale);
+    }
 
     /**
      * Traverses the JSON behavior tree and loads each class into a behavior tree
@@ -161,14 +196,17 @@ public class JSONVehicle extends Vehicle {
                 if (condition != null) {
                     try{
                         arbiter = (ArbitrationUnit) Class.forName(new String(name)).getDeclaredConstructor(String.class, State.class).newInstance(condition, state);
+                        treeDesc = treeDesc.concat(new String("Composite_Conditional("+condition.toString()+")"));
                     } catch (Exception e) {
                         System.out.println("FAILED TO LOAD JSON: Conditional Arbiter with incorrect condition");
                         System.exit(0);
                     }
                 } else {
                     arbiter = (ArbitrationUnit) Class.forName(new String(name)).newInstance();
+                    treeDesc = treeDesc.concat(new String("Composite_"+name));
                 }
                 arbiter.setWeights(weights);
+                treeDesc = treeDesc.concat("["+ weights.toString().replace(","," ")+"];");
 
                 // Add arbiter to the tree
                 composite.setArbitrationUnit(arbiter);
@@ -188,6 +226,7 @@ public class JSONVehicle extends Vehicle {
                 try {
                     parameters = (ArrayList) jsonBehavior.get("parameters");
                     behavior.setParameters(parameters);
+                    treeDesc = treeDesc.concat(name+"("+parameters+");");
                 } catch (Exception e) { // Fall through, parameters are optional
                 }
             }

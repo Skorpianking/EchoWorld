@@ -11,10 +11,10 @@
 ##### User Input
 
 \<Space> pause/resume \
+Mouse click and drag moves the camera\
+<1, 2, 3, 4, 5> select object to move - must include binding in World json\
 <W, A, S, D> apply up, left, down, right force to the bound object\
 \<X> zero out the force\
-<1, 2, 3, 4, 5> select object to move
-Mouse click and drag moves the camera
 
 ##### World
 ```json
@@ -27,7 +27,7 @@ Mouse click and drag moves the camera
       "draw_scan_lines": "true" # optional, default to false
       "home": [5,5]             # optional, default to N/A
     },{
-      "name": "Marie",          # To load JSON need path to file
+      "name": "Marie",          # To load JSON this is filename in data folder
       "position": [5,5],
       "draw_scan_lines": "true"
     }
@@ -48,9 +48,13 @@ Mouse click and drag moves the camera
     }
   ],
   "food": [                 # Optional Array
-    {
-     "position": [-2,-2]    # Location (required)
-    }
+    "timer": 200,           # Number of steps between food respawns
+    "locations": [          # Required
+      {
+        "position": [-2,2],   # Required Center point of food spawn point
+        "distribution": [3,3] # Required size of food spawn point +/- around position
+      }
+    ]
   ]
 }
 ```
@@ -71,6 +75,7 @@ Key binding for light and obstacle moving is limited to 1 through 5.
 {
 	"vehicleName": "Marie",       # Required
 	"color": [188, 236, 51],      # Optional, default CYAN
+    "state": "Sample.MyState",    # Optional, read compile time notes in MyNoOp
 	"behaviorTree": [             # Required
 		{                         # Names must be full package paths
 			"name": "behaviorFramework.arbiters.SimplePriority",
@@ -136,3 +141,12 @@ Several arbitration strategies are already present in the behaviorFactory.
 |     Simple Priority       |     N         |     binary      |     selects the first action that has voted                                                                                                              |
 |     Utility Fusion        |     N         |     real        |     builds an action that selects each sub-action with      highest vote: (action.getVote)                                                               |
 |     Conditional           |     N         |     passthrough |     selects first action if state boolean true, second if false. Requires boolean method call parameter  highest vote: that action's vote                |
+
+##### Frame Reference
+
+![Vehicle Frames](images/VehicleFrames.png)
+
+Black is World Frame. [0,0] is at the center.
+Green is Vehicle Frame. All SensedObjects are pre-transformed to be in this frame. Types include: "Home", "Obstacle", and "Food".
+
+

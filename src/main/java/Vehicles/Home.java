@@ -6,6 +6,7 @@ import org.dyn4j.world.World;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Home extends SimulationBody {
     String name;
@@ -13,6 +14,7 @@ public class Home extends SimulationBody {
     double energy;
     SimulationBody body; // Just in case we want to modify the body in someway
     Vehicles vehicles;
+    int[] pathStore;
 
     /**
      * Constructor require link back to World domain to spawn new Vehicles
@@ -20,6 +22,8 @@ public class Home extends SimulationBody {
      */
     public Home(Vehicles v) {
         this.vehicles = v;
+        pathStore = new int[50];
+        Arrays.fill(pathStore,9);
     }
 
     /**
@@ -107,5 +111,13 @@ public class Home extends SimulationBody {
         }
         String result = new String(name+","+energy+","+vehicleCount+","+position.x+","+position.y);
         return result;
+    }
+
+    public int[] receivePath(int [] incomingPath) {
+        int [] sendPath;
+        sendPath = Arrays.copyOf(pathStore,50);
+        pathStore = Arrays.copyOf(incomingPath,50);
+
+        return sendPath;
     }
 }

@@ -351,7 +351,7 @@ public class Vehicles extends SimulationFrame {
         try {
             String vehicleName = "vehicleLog"+dtf.format(now)+".csv";
             vehicleLogStream = new PrintWriter( new FileOutputStream(vehicleName, true));
-            vehicleLogStream.write("timestep,name,energy,???" + "\n"); // writes header to csv file
+            vehicleLogStream.write("timestep,name,energy,home,trees_desc" + "\n"); // writes header to csv file
         }
         catch (FileNotFoundException e){
             System.out.println("Error opening the file: vehicleLog[time].csv");
@@ -412,7 +412,7 @@ public class Vehicles extends SimulationFrame {
      */
     public static void main(String[] args) {
         //TODO: Parse args to get World filename
-        String filename = "data//world1.json";
+        String filename = "data//world3.json";
 
         // Read in the JSON world file
         try (FileReader fileReader = new FileReader((filename))) {
@@ -507,7 +507,7 @@ public class Vehicles extends SimulationFrame {
                 }
             }
             // Did not have a Food object to move and we have less than MAX_FOODLIST_COUNT, create a new one.
-            if(foodSpawnTimer <= 0 && foodList.size() < MAX_FOODLIST_COUNT) {
+            if(foodSpawnTimer <= 0 && foodList.size() < MAX_FOODLIST_COUNT && foodLocationList != null) {
                 SimulationBody Food = new SimulationBody();
                 Food.setColor(Color.pink);
                 Food.addFixture(Geometry.createRectangle(0.5, 0.5));

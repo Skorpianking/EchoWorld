@@ -36,6 +36,10 @@ public class MyNoOp extends Behavior {
 
         // But if you want, you can still get and put things in your State for later
         // Don't forget the import ^^^
+        // AND, there is no way around being specific. The class must be present at compile.
+        // So, if you use a JSONVehicle, make sure that you include a 'state' attribute
+        // for this example is would be
+        //      state: "Sample.MyState"
         ((MyState)state).setMyMemory(45);
 
         // Make sure to vote if you want a chance to be picked.

@@ -19,24 +19,24 @@
               "name": "Sample.behaviors.Drop"
             },
             {
-               "name": "behaviorFramework.arbiters.HighestActivation",
-               "arbiter": true,
-               "weights": [ 0.2, 0.1, 0.1, 0.1 ],
-               "behaviorTree": [
-                 {
-                   "name": "Sample.behaviors.GetUnstuck"
-                 },
-                 {
-                   "name": "Sample.behaviors.GotoX",
-                   "parameters": ["Home"]
-                 },
-                 {
-                   "name": "Sample.behaviors.AvoidObstacle"
-                 },
-                 {
-                   "name": "Sample.behaviors.Wander"
-                 }
-               ]
+              "name": "behaviorFramework.arbiters.HighestActivation",
+              "arbiter": true,
+              "weights": [ 0.2, 0.1, 0.1, 0.1 ],
+              "behaviorTree": [
+                {
+                  "name": "Sample.behaviors.GetUnstuck"
+                },
+                {
+                  "name": "Sample.behaviors.GotoX",
+                  "parameters": ["Home"]
+                },
+                {
+                  "name": "Sample.behaviors.AvoidObstacle"
+                },
+                {
+                  "name": "Sample.behaviors.Wander"
+                }
+              ]
             }
           ]
         },
@@ -52,7 +52,7 @@
             {
               "name": "behaviorFramework.arbiters.HighestActivation",
               "arbiter": true,
-              "weights": [ 0.2, 0.1, 0.1, 0.1 ],
+              "weights": [ 0.3, 0.2, 0.1, 0.1, 0.1 ],
               "behaviorTree": [
                 {
                   "name": "Sample.behaviors.GetUnstuck"
@@ -60,6 +60,9 @@
                 {
                   "name": "Sample.behaviors.GotoX",
                   "parameters": ["Food"]
+                },
+                {
+                  "name": "Sample.behaviors.FollowPath"
                 },
                 {
                   "name": "Sample.behaviors.AvoidObstacle"

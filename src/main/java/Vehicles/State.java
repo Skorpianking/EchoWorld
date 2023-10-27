@@ -9,31 +9,33 @@ import java.util.List;
  * State object for vehicle's memory
  */
 public class State {
-    private ArrayList<SensedObject> sensedObjects = new ArrayList<SensedObject>();
-    private double heading;
-    private Vector2 velocity = new Vector2();
-    private double angularVelocity;
-    private double leftWheelVelocity;
-    private double rightWheelVelocity;
-    private boolean holding = false;
-    private boolean atHome = false;
-    private double deltaPosition;
+    protected ArrayList<SensedObject> sensedObjects = new ArrayList<SensedObject>();
+    protected double heading; // radians
+    protected Vector2 velocity = new Vector2();
+    protected double angularVelocity;
+    protected double leftWheelVelocity;
+    protected double rightWheelVelocity;
+    protected boolean holding = false;
+    protected boolean atHome = false;
+    protected double deltaPosition;
 
     // Braitenberg Vehicle specific data (for Love, Fear, Hate)
-    private double leftLightStrength;
-    private double rightLightStrength;
-    private int lightDecayLeft; // These decays provide persistence on light detection
-    private int lightDecayRight;// if a raycast misses between steps.
+    protected double leftLightStrength;
+    protected double rightLightStrength;
+    protected int lightDecayLeft; // These decays provide persistence on light detection
+    protected int lightDecayRight;// if a raycast misses between steps.
 
     public State() {
         leftLightStrength = rightLightStrength = 0.0;
     }
 
     /**
-     * Each clock tick, clear the ray cast detected objects.
+     * Each clock tick, clear the ray cast detected objects and update
+     * LightStrengths.
      */
     public void tick() {
         sensedObjects.clear();
+        updateLightStrengths();
     }
 
     public void setVelocity(Vector2 v) {
@@ -146,4 +148,8 @@ public class State {
     public void setAtHome(boolean aH) { atHome = aH; }
 
     public boolean isAtHome() { return atHome; }
+
+    public void dropAtHome(Home h) {
+        holding = false;
+    }
 }
