@@ -57,7 +57,7 @@ public class FollowPath extends Behavior {
 
         if (!((PathState)state).isFollowPathValid()) {
             action.setVote(0);
-            counter = 0;
+            counter = 10;
             pathIndex = -1;
         } else if (pathIndex == -1) {
             // Path is valid, want to wander away from home before following

@@ -16,10 +16,8 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.PrintWriter;
+import java.io.*;
+import java.util.logging.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -35,6 +33,7 @@ public class Vehicles extends SimulationFrame {
 
     public ArrayList<SimulationBody> myVehicles;
     public ArrayList<Home> homeList;
+    public String vehicleType;
 
     private Map<Integer, SimulationBody> keyBoundItemList;
     private SimulationBody keyBoundItem = null;
@@ -53,7 +52,7 @@ public class Vehicles extends SimulationFrame {
 
     public int timestep = 0;
     private PrintWriter homeLogStream = null;
-    private PrintWriter vehicleLogStream = null;
+    private Logger vehicleLogStream = null;
 
     // let each vehicle be set to draw or not.
 
@@ -95,7 +94,7 @@ public class Vehicles extends SimulationFrame {
         // Add bounding shapes to the world, these are the walls
         SimulationBody right = new SimulationBody();
         right.setColor(Color.black);
-        right.addFixture(Geometry.createRectangle(0.2, canvas.getHeight() / camera.scale));
+        right.addFixture(Geometry.createRectangle(0.5, canvas.getHeight() / camera.scale));
         right.setMass(MassType.INFINITE);
         right.translate((canvas.getWidth() / (2 * camera.scale)) - 0.1, 0);
         right.setUserData(new String("Obstacle"));
@@ -103,7 +102,7 @@ public class Vehicles extends SimulationFrame {
 
         SimulationBody left = new SimulationBody();
         left.setColor(Color.black);
-        left.addFixture(Geometry.createRectangle(0.2, canvas.getHeight() / camera.scale));
+        left.addFixture(Geometry.createRectangle(0.5, canvas.getHeight() / camera.scale));
         left.setMass(MassType.INFINITE);
         left.translate(-(canvas.getWidth() / (2 * camera.scale)) + 0.1, 0);
         left.setUserData(new String("Obstacle"));
@@ -111,7 +110,7 @@ public class Vehicles extends SimulationFrame {
 
         SimulationBody top = new SimulationBody();
         top.setColor(Color.black);
-        top.addFixture(Geometry.createRectangle(canvas.getWidth() / camera.scale, 0.2));
+        top.addFixture(Geometry.createRectangle(canvas.getWidth() / camera.scale, 0.5));
         top.setMass(MassType.INFINITE);
         top.translate(0, (canvas.getHeight() / (2 * camera.scale)) - 0.1);
         top.setUserData(new String("Obstacle"));
@@ -119,7 +118,7 @@ public class Vehicles extends SimulationFrame {
 
         SimulationBody bottom = new SimulationBody();
         bottom.setColor(Color.black);
-        bottom.addFixture(Geometry.createRectangle(canvas.getWidth() / camera.scale, 0.2));
+        bottom.addFixture(Geometry.createRectangle(canvas.getWidth() / camera.scale, 0.5));
         bottom.setMass(MassType.INFINITE);
         bottom.translate(0, -(canvas.getHeight() / (2 * camera.scale)) + 0.1);
         bottom.setUserData(new String("Obstacle"));
@@ -153,7 +152,7 @@ public class Vehicles extends SimulationFrame {
                     BigDecimal temp = (BigDecimal) (item.get("energy"));
                     energy = temp.doubleValue();
                 } catch (Exception e) {
-                    System.out.println("Homes having starting energys are optional");
+                    System.out.println("Homes having starting energy's are optional");
                 }
                 // Add the home to the Home List.
                 Home h = new Home(this);
@@ -162,7 +161,7 @@ public class Vehicles extends SimulationFrame {
                 h.energy = energy;
                 SimulationBody homeBody = new SimulationBody();
                 homeBody.setColor(Color.green);
-                homeBody.addFixture(Geometry.createUnitCirclePolygon(50, 1.5));
+                homeBody.addFixture(Geometry.createPolygonalEllipse(8,2,2));
                 homeBody.translate(new Vector2(x, y));
                 homeBody.setUserData(new String(homeName));
                 this.world.addBody(homeBody);
@@ -171,6 +170,13 @@ public class Vehicles extends SimulationFrame {
             }
         } catch (Exception e) { } // Homes are optional
 
+        // Get Vehicle Type
+        try {
+            vehicleType = (String) worldJSON.get("vehicle_type");
+        } catch (Exception e) {
+            System.out.println("World need a Vehicle Type {Braitenberg, Ant}!");
+            System.exit(0);
+        }
         // Add Vehicles
         ArrayList<JsonObject> vehicles = (ArrayList<JsonObject>) worldJSON.get("vehicles");
         String vehicleName = null;
@@ -183,16 +189,17 @@ public class Vehicles extends SimulationFrame {
             }
 
             // Get vehicle's home name (optional)
-            String vehicleHome = null;
+            String vehicleHome = "";
             try {
                 vehicleHome = (String) item.get("home");
-            } catch (Exception e) { } // Having a home is optional
+            } catch (Exception e) { }// Having a home is optional
+
 
             try {
                 // If the vehicle is a named class try and load the class
                 Vehicle vehicle = (Vehicle) Class.forName(new String(vehicleName)).newInstance();
                 System.out.println("Classname:" + vehicle.getClass().getName());
-                vehicle.initialize(this.world);
+                vehicle.initialize(this.world, vehicleType);
                 if (vehicleHome != null) {
                     // Find the home in the homeList
                     for(Home h : homeList){
@@ -207,7 +214,7 @@ public class Vehicles extends SimulationFrame {
                 // The name is likely a filename. Create a JSONVehicle and load the json file
                 String fileName = "data//" + vehicleName + ".json";
                 JSONVehicle vehicle = new JSONVehicle();
-                vehicle.initialize(this.world, fileName); // Halts on failure
+                vehicle.initialize(this.world, fileName, vehicleType); // Halts on failure
                 insertVehicle(vehicle, item);
                 if (vehicleHome != null) {
                     // Find the home in the homeList
@@ -311,8 +318,8 @@ public class Vehicles extends SimulationFrame {
                     foodLocationList.add(new Vector2(x,y));
 
                     SimulationBody Food = new SimulationBody();
-                    Food.setColor(Color.pink);
-                    Food.addFixture(Geometry.createRectangle(0.5, 0.5));
+                    Food.setColor(Color.red);
+                    Food.addFixture(Geometry.createEllipse(0.5, 0.5));
                     Food.translate(new Vector2(x, y));
                     Food.setUserData(new String("Food"));
                     this.world.addBody(Food);
@@ -339,8 +346,41 @@ public class Vehicles extends SimulationFrame {
     private void initializeLogFiles() {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("uuuu-MM-dd HH_mm_ss");
         LocalDateTime now = LocalDateTime.now();
+
+        LogManager logMan = LogManager.getLogManager();
+        vehicleLogStream = Logger.getLogger("Vehicle"); //logMan.getLogger("Vehicle");
+        vehicleLogStream.setLevel(Level.ALL);
+
+        // Suppress output to Console
+        Logger globalLogger = Logger.getLogger("");
+        Handler[] handlers = globalLogger.getHandlers();
+        for (Handler handler : handlers) {
+            globalLogger.removeHandler(handler);
+        }
+
+        try
+        {
+            //Create Handler and Set Formatter
+            FileHandler fh = new
+                FileHandler("logs//vehicleLog"+dtf.format(now)+".csv",
+                32000000, 20);
+            fh.setFormatter(new SimpleFormatter());
+            fh.setLevel(Level.FINE);
+
+            // Add the File Handler to Logger
+            vehicleLogStream.addHandler(fh);
+            vehicleLogStream.log(Level.INFO, "timestep, name, lastAction, energy, home, x, y, heading, " +
+                "leftWheelVelocity, rightWheelVelocity, isHolding, isAtHome, deltaPosition, trees_desc");
+        }
+        catch(IOException Ex)
+        {
+            System.out.println(Ex.getMessage());
+            System.out.println("ERROR: Unable to open Vehicle Log File");
+            System.exit(0);
+        }
+
         try {
-            String homeName = "homeLog"+dtf.format(now)+".csv";
+            String homeName = "logs//homeLog"+dtf.format(now)+".csv";
             homeLogStream = new PrintWriter( new FileOutputStream(homeName, true));
             homeLogStream.write("timestep,name,energy,vehicleCount,position_x,position_y" + "\n"); // writes header to csv file
         }
@@ -348,15 +388,18 @@ public class Vehicles extends SimulationFrame {
             System.out.println("Error opening the file: homeLog[time].csv"+e);
             System.exit(0);
         }
-        try {
-            String vehicleName = "vehicleLog"+dtf.format(now)+".csv";
+/*        try {
+            String vehicleName = "logs//vehicleLog"+dtf.format(now)+".csv";
             vehicleLogStream = new PrintWriter( new FileOutputStream(vehicleName, true));
-            vehicleLogStream.write("timestep,name,energy,home,trees_desc" + "\n"); // writes header to csv file
+            vehicleLogStream.write("timestep,name,lastAction, energy, home, x, y, heading, isHolding, isAtHome, " +
+                "deltaPosition, trees_desc" + "\n"); // writes header to csv file
         }
         catch (FileNotFoundException e){
             System.out.println("Error opening the file: vehicleLog[time].csv");
             System.exit(0);
         }
+
+ */
     }
 
     /**
@@ -440,8 +483,6 @@ public class Vehicles extends SimulationFrame {
         private int UPDATE_RATE = 3;
         private int updateCounter = 0;
 
-        //private int foodSpawnTimer;
-
         @Override
         public void begin(TimeStep timeStep, PhysicsWorld physicsWorld) {
         }
@@ -468,11 +509,25 @@ public class Vehicles extends SimulationFrame {
                     Action act = ((Vehicle) v).decideAction(); // must cast it so we can call the decideAction function.
                     ((Vehicle) v).act(act);
                     double vEnergy = ((Vehicle)v).getEnergy();
-                    vehicleLogStream.println(timestep+","+((Vehicle)v).statusString());
+                    //vehicleLogStream.println(timestep+","+((Vehicle)v).statusString());
+                    vehicleLogStream.log(Level.INFO,timestep+","+((Vehicle)v).statusString() );
                     // Has the Vehicle run out of energy?
                     if (vEnergy <= 0) {
+                        // If holding food, need to drop it.
+                        if(((Vehicle)v).state.isHolding()) {
+                            SimulationBody food = ((Vehicle)v).gripper.getBody2();
+                            world.removeJoint(((Vehicle)v).gripper);
+                            food.setUserData("Food"); // Renaming the object for testing.
+                            food.setAtRest(true);
+                            food.setMassType(MassType.INFINITE);
+                            ((Vehicle)v).gripper = null;
+                        }
+
                         // Rename it Dead, and teleport it off the screen.
                         v.setUserData("Dead");
+                        v.setAtRest(true);  // zero all forces, accelerations and torques
+                        v.setEnabled(false); // deactivate being part of collisions
+                        //TODO: need to find where vehicle is reused and make sure to setEnabled(true).
                         v.translate(-(canvas.getWidth() + 50), -(canvas.getHeight() + 50));
                         v.setLinearVelocity(0,0);
                         v.setMass(MassType.INFINITE);
@@ -509,8 +564,8 @@ public class Vehicles extends SimulationFrame {
             // Did not have a Food object to move and we have less than MAX_FOODLIST_COUNT, create a new one.
             if(foodSpawnTimer <= 0 && foodList.size() < MAX_FOODLIST_COUNT && foodLocationList != null) {
                 SimulationBody Food = new SimulationBody();
-                Food.setColor(Color.pink);
-                Food.addFixture(Geometry.createRectangle(0.5, 0.5));
+                Food.setColor(Color.red);
+                Food.addFixture(Geometry.createEllipse(0.5, 0.5));
                 Food.setUserData("Food");
 
                 int loc = (int)(Math.random()*foodLocationList.size());
@@ -523,8 +578,14 @@ public class Vehicles extends SimulationFrame {
                 foodSpawnTimer = foodSpawnTimerSetting;
             }
             for (Home h : homeList) {
-                h.Step(); // Update Home, includes Spawning new Vehicles
+                boolean colonyHealthy = h.Step(); // Update Home, includes Spawning new Vehicles
                 homeLogStream.println(timestep+","+h.statusString());
+                if (!colonyHealthy) {
+                    // Receive collapse signal and when all homes have collapsed
+                    // close logs end the simulation.
+                    homeLogStream.close();
+                    System.exit(0);
+                }
             }
         }
 

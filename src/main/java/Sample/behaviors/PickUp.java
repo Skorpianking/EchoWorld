@@ -14,6 +14,8 @@ import java.util.List;
  * output an action to pickup the object.</p>
  */
 public class PickUp extends Behavior {
+    private final double DISTANCE_TO_PICKUP = 0.3;       // Braitenburg = 0.4
+    private final double ANGLE_CONSIDERED_CENTER = 0.12; // Braitenburg = 15.0
     private String target;
 
     /**
@@ -56,7 +58,7 @@ public class PickUp extends Behavior {
             // Locate "Food" and return the hit closest to the centerline of the vehicle
             if (obj.getType().equals(target)) {
                 // If this is a hit from the center
-                if ( angle > -15.0 && angle < 15.0 ) {
+                if ( angle > -ANGLE_CONSIDERED_CENTER && angle < ANGLE_CONSIDERED_CENTER ) {
                     // And it is the closest
                     if (obj.getDistance() < bestObj.getDistance())
                         bestObj = obj;
@@ -65,8 +67,8 @@ public class PickUp extends Behavior {
         }
 
         // We will pickup the food if it is within 1.0 meter, and is in the middle (not on the sides)
-        if (bestObj.getDistance() < 0.4) {
-            System.out.println("Pick It UP!!!!!");
+        if (bestObj.getDistance() <= DISTANCE_TO_PICKUP) {
+            //System.out.println("Pick It UP!!!!!");
             action.setPickup(bestObj.getBody());
             action.setVote(1);
         }

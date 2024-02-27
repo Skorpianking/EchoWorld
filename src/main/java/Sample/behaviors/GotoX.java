@@ -18,7 +18,6 @@ public class GotoX extends Behavior {
     private int lastSeenCounter = 0; // Set to 5 when seen
     private String target;
 
-
     // Vote = 1
     // Angle limit = 90 deg
     // motor outputs are 0.9 and 0.9 - angle in radians
@@ -77,32 +76,29 @@ public class GotoX extends Behavior {
 
             // Locate the TARGET return that is closest to the centerline of the vehicle
             if (obj.getType().equals(target)) {
-                if (Math.abs(angle) < Math.abs(bestAngle))
+                if (Math.abs(angle) < Math.abs(bestAngle)) {
                     bestAngle = angle;
-                bestObj = obj;
+                    bestObj = obj;
+                }
             }
         }
 
-        double bestHeading = Math.toRadians(bestAngle);
-
         if (bestObj != null) {
-            if (Math.abs(bestHeading - state.getHeading()) < 0.05 || bestObj.getSide().equals("Center")) { // Object is directly ahead.
+            double bestHeading = bestObj.getAngle();
+            if (Math.abs(bestHeading) < 0.07 || bestObj.getSide().equals("Center")) { // Object is directly ahead.
                 action.setRightWheelVelocity(0.9);
                 action.setLeftWheelVelocity(0.9);
-            } else if (bestAngle > 0  && bestObj.getSide() == "Right") { // Object on Right
-                action.setRightWheelVelocity(0.6 - Math.abs(bestObj.getAngle()));
-                action.setLeftWheelVelocity(0.9);
-            } else if (bestAngle < 0  && bestObj.getSide() == "Left") { // Object on Left
+            } else if (bestHeading > 2.8 || bestHeading < -2.8) { // directly behind, go left
                 action.setRightWheelVelocity(0.9);
-                action.setLeftWheelVelocity(0.6 - Math.abs(bestObj.getAngle()));
-            } else if ( bestAngle > 0 && bestObj.getSide() == "Left" ) { // Middle Left
-                action.setRightWheelVelocity(0.9);
-                action.setLeftWheelVelocity(0.6 - Math.abs(bestObj.getAngle()) / 3);
-            } else if ( bestAngle < 0 && bestObj.getSide() == "Right" ) { // Middle Right
-                action.setRightWheelVelocity(0.6 - Math.abs(bestObj.getAngle()) / 3);
+                action.setLeftWheelVelocity(0.5 - Math.abs(bestObj.getAngle()));
+            } else if (bestAngle > 0.0) {
+                action.setRightWheelVelocity(0.5 - Math.abs(bestObj.getAngle()));
                 action.setLeftWheelVelocity(0.9);
+            } else if (bestAngle < 0.0) { // Object on Left
+                action.setRightWheelVelocity(0.9);
+                action.setLeftWheelVelocity(0.5 - Math.abs(bestObj.getAngle()));
             }
-            action.setVote(Math.max(1, 2-bestObj.getDistance()));
+            action.setVote(Math.max(1.1, 2-bestObj.getDistance()));
             lastSeenCounter = 5;
             lastSeenAngle = bestAngle;
         }

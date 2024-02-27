@@ -2,10 +2,6 @@ package Vehicles;
 
 import framework.SimulationBody;
 import org.dyn4j.geometry.Vector2;
-import org.dyn4j.world.World;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Home extends SimulationBody {
@@ -15,6 +11,7 @@ public class Home extends SimulationBody {
     SimulationBody body; // Just in case we want to modify the body in someway
     Vehicles vehicles;
     int[] pathStore;
+    private int vehicleCount;
 
     /**
      * Constructor require link back to World domain to spawn new Vehicles
@@ -29,14 +26,28 @@ public class Home extends SimulationBody {
     /**
      *
      */
-    public void Step(){
+    public boolean Step(){
         // TODO: Changed Home's energy decay to 0 for testing. Value must be tuned to world
-        // energy *= 0.98;
+        // energy *= 0.99;
         // If energy exceeds 100, Spawn a new Vehicle
         if (energy >= 100.0) {
             Spawn();
             energy -= 50.0; // Each Vehicle costs 50 energy.
         }
+
+        vehicleCount = 0;
+        for(SimulationBody v:vehicles.myVehicles){
+            if (name.equals(((Vehicle)v).getHomeName()) && !v.getUserData().equals("Dead")) {
+                vehicleCount++;
+            }
+        }
+        if (vehicleCount ==0) {
+            System.out.println("COLONY COLLAPSE!");
+            System.out.println("Timestep: " + this.vehicles.timestep);
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -48,7 +59,7 @@ public class Home extends SimulationBody {
     public void Spawn() {
 
         // TODO: Connect to Knowledge Domain here to get a new vehicle.
-        String fileName = "data//Agent3.json";
+        String fileName = "data//Agent4.json";
         JSONVehicle vehicle =null;
         boolean reused = false;
 
@@ -66,7 +77,7 @@ public class Home extends SimulationBody {
         if (vehicle == null) // No dead Vehicles and reached max number don't spawn
             return;
 
-        vehicle.initialize(vehicles.getWorld(), fileName); // Halts on failure, needs world for State initialization
+        vehicle.initialize(vehicles.getWorld(), fileName, "Ant"); // Halts on failure, needs world for State initialization
 
         // Not adding scan lines for new vehicles.
         vehicle.setDrawScanLines(false);
@@ -84,6 +95,7 @@ public class Home extends SimulationBody {
             ySpawn = Math.random()*(2*6.0)-6.0;
 
         vehicle.translate(position.x+xSpawn,position.y+ySpawn);
+        vehicle.setEnabled(true); // reactivate being part of collisions
 
         // Set this vehicles Home.
         vehicle.setHome(this);
@@ -102,14 +114,8 @@ public class Home extends SimulationBody {
      * @return status String
      */
     public String statusString() {
-        int vehicleCount = 0;
-
-        for(SimulationBody v:vehicles.myVehicles){
-            if (name.equals(((Vehicle)v).getHomeName())) {
-                vehicleCount++;
-            }
-        }
         String result = new String(name+","+energy+","+vehicleCount+","+position.x+","+position.y);
+
         return result;
     }
 

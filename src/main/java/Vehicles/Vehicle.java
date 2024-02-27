@@ -19,16 +19,20 @@ import java.util.List;
 
 public class Vehicle extends SimulationBody {
 
-    private final Vector2 leftWheelLocation = new Vector2(-0.5, -0.5);
-    private final Vector2 rightWheelLocation = new Vector2( 0.5, -0.5);
+    private Vector2 leftWheelLocation = new Vector2(-0.5, -0.5);
+    private Vector2 rightWheelLocation = new Vector2( 0.5, -0.5);
+    private Vector2 leftSensorLocation = new Vector2( -0.27, 0.86);
+    private Vector2 rightSensorLocation = new Vector2( 0.27, 0.86);
     protected WeldJoint<SimulationBody> gripper;
 
-    protected final double MAX_VELOCITY = 2; // arbitrary right now
-    protected final double MAX_ANGULAR_VELOCITY = 1; // how fast we can turn
+    protected final double MAX_VELOCITY = 5; // arbitrary right now
+    protected final double MAX_ANGULAR_VELOCITY = 2; // how fast we can turn
     protected final int SENSOR_RANGE = 20; // how far the line casts go
-    protected final double ANGULAR_DAMPENING = 0.1;
+    protected final double ANGULAR_DAMPENING = 1;
 
-    protected final double K_p = 10;   // PID: Proportional Control Constant
+    protected double K_p = 10;   // PID: Proportional Control Constant
+    protected double K_i = 0.0;
+    protected double K_d = 0.0;
 
     protected State state;
 
@@ -36,6 +40,8 @@ public class Vehicle extends SimulationBody {
 
     protected String name;
     protected String treeDesc;
+
+    protected String lastAction;
 
     // array of values to "sweep" across -- hand jammed to get a reasonable sweep that doesn't eat too much processing time
     // -10 to 120 degrees in steps of 5 degrees (added +/- 7.5, +/- 2.5
@@ -119,13 +125,22 @@ public class Vehicle extends SimulationBody {
 */
     }
 
-    public void initialize(World<SimulationBody> myWorld) {
-        bulkInit(myWorld);
+    public void initialize(World<SimulationBody> myWorld, String vehicleType) {
+        this.myWorld = myWorld;
+        if (vehicleType.equals("Ant"))
+            initAntVehicle();
+        else
+            initBraitenbergVehicle();
+
         state = new State();
     }
 
-    public void initialize(World<SimulationBody> myWorld,  State s) {
-        bulkInit(myWorld);
+    public void initialize(World<SimulationBody> myWorld,  State s, String vehicleType) {
+        this.myWorld = myWorld;
+        if (vehicleType.equals("Braitenberg"))
+            initBraitenbergVehicle();
+        else
+            initAntVehicle();
         state = s;
     }
 
@@ -138,15 +153,11 @@ public class Vehicle extends SimulationBody {
     public boolean sense() {
         state.tick();
 
-//        if(home.body.getWorldCenter().x != -15.0) {
-//            System.out.println("HOME TELEPORTED!");
-//            System.exit(0);
-//        }
         state.setHeading(convertTransformToHeading());
 
         // Following code block draws Rays out from each sensor and stores returns in state
-        rayCasting(-0.50, 0.8, 0); // left sensor
-        rayCasting(0.50, 0.8, 1); // right sensor
+        rayCasting( leftSensorLocation.x, leftSensorLocation.y, 0); // left sensor
+        rayCasting( rightSensorLocation.x, rightSensorLocation.y, 1); // right sensor
 
         // One scan from front of vehicle
         Vector2 start = this.getTransform().getTransformed(new Vector2(0.0, 0.8));// this.getWorldCenter();
@@ -155,9 +166,12 @@ public class Vehicle extends SimulationBody {
 
         List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.raycast(ray, SENSOR_RANGE/2, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
         for (RaycastResult<SimulationBody, BodyFixture> result : results) {
-            // First check if this is our Home. If so, do not add it because it is added separately.
-            if (result.getBody().getUserData().equals(home.name))
-                break;
+            // First check if this is our Home and if we are Holding something.
+            // If so, do not add it because it is added separately and we don't want to treat it like an obstacle.
+            if (home != null) {
+                if (result.getBody().getUserData().equals(home.name) && state.isHolding())
+                    break;
+            }
             // Get the direction between the center of the vehicle and the impact point
             Vector2 heading = new Vector2(this.getWorldCenter(), result.getRaycast().getPoint());
             double angle = heading.getAngleBetween(state.getHeading()); // baseVehicle.getLinearVelocity()); // radians
@@ -166,6 +180,10 @@ public class Vehicle extends SimulationBody {
             if (result.getBody().getUserData() != null) { // If not set, will be UNKNOWN
                 type = result.getBody().getUserData().toString();
             }
+            if (home != null ) {
+                if (type.equals(home.name)) // Not holding anything treat home like an obstacle.
+                    type = "Obstacle";
+            }
             obj = new SensedObject(heading, angle, distance, type, "Center", result.getRaycast().getPoint());
             if (obj.getType().equals("Food")) {
                 obj.setBody(result.getBody());
@@ -173,9 +191,9 @@ public class Vehicle extends SimulationBody {
             state.addSensedObject(obj);
         }
 
-
         // Add this vehicle's home to the list of SensedObjects. Also, set 'atHome' if next to it.
-        state.addSensedObject(senseHome());
+        if (home != null)
+            state.addSensedObject(senseHome());
 
         state.setVelocity(this.getLinearVelocity()); // LinearVelocity captures heading and speed
         state.setAngularVelocity(this.getAngularVelocity());
@@ -189,6 +207,8 @@ public class Vehicle extends SimulationBody {
 
         //Decaying energy in sense because decideAction will be overloaded.
         energy = energy - (energyUsage * 0.0025);
+
+        state.updateLightStrengths();
 
         return true;
     }
@@ -226,27 +246,39 @@ public class Vehicle extends SimulationBody {
             Ray ray = new Ray(start,(i + state.getHeading())); //baseVehicle.getLinearVelocity().getDirection()));
 
             List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.raycast(ray, length, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
+            if (results.size() == 0)
+                continue;
+
+            RaycastResult<SimulationBody, BodyFixture> closest=results.get(0);
             for (RaycastResult<SimulationBody, BodyFixture> result : results) {
-                // First check if this is our Home. If so, do not add it because it is added separately.
-                if (result.getBody().getUserData().equals(home.name))
-                    break;
+                if (result.getRaycast().getDistance() < closest.getRaycast().getDistance())
+                    closest = result;
+            }
+
+                // First check if this is our Home and if we are holding something do not add it because it is added separately.
+                if (home != null) {
+                    if (closest.getBody().getUserData().equals(home.name) && state.isHolding())
+                        break;
+                }
                 // Get the direction between the center of the vehicle and the impact point
-                Vector2 heading = new Vector2(this.getWorldCenter(), result.getRaycast().getPoint());
+                Vector2 heading = new Vector2(this.getWorldCenter(), closest.getRaycast().getPoint());
                 double angle = heading.getAngleBetween(state.getHeading()); // baseVehicle.getLinearVelocity()); // radians
-                double distance = result.getRaycast().getDistance();
+                double distance = closest.getRaycast().getDistance();
                 String type = "UNKNOWN";
-                if (result.getBody().getUserData() != null) { // If not set, will be UNKNOWN
-                    type = result.getBody().getUserData().toString();
+                if (closest.getBody().getUserData() != null) { // If not set, will be UNKNOWN
+                    type = closest.getBody().getUserData().toString();
+                }
+                if (home != null) {
+                    if (type.equals(home.name))
+                        type = "Obstacle";
                 }
 
                 String side = "Left";
                 if (sensor_x > 0.0) {
                     side = "Right";
                 }
-//                if (type.equals(home.name)) // Skip our home
-//                    type = null;
 
-                obj = new SensedObject(heading, angle, distance, type, side, result.getRaycast().getPoint());
+                obj = new SensedObject(heading, angle, distance, type, side, closest.getRaycast().getPoint());
 
                 // HARDCODE: "Food" is considered an "Obstacle" if already holding something
                 // TODO: HARDCODE: Other entities considered as "Obstacle"?
@@ -255,14 +287,12 @@ public class Vehicle extends SimulationBody {
                     if (state.isHolding()) {
                         obj.setType(new String("Obstacle"));
                     } else
-                    // If this is a hit from the center
-//                    if (( angle > 0 && obj.getSide() == "Left" ) || (angle < 0 && obj.getSide() == "Right")) {
-                        obj.setBody(result.getBody());
-//                    }
+                        // If this is a hit from the center
+                        obj.setBody(closest.getBody());
                 }
 
                 state.addSensedObject(obj);
-            }
+
         }
     }
 
@@ -274,18 +304,18 @@ public class Vehicle extends SimulationBody {
     private SensedObject senseHome() {
         SensedObject obj;
 
-        double deltaX = home.position.x-this.getTransform().getTranslationX();
+         double deltaX = home.position.x-this.getTransform().getTranslationX();
         double deltaY = home.position.y-this.getTransform().getTranslationY();
         double angle = Math.atan2(deltaY, deltaX);
         double distance = Math.sqrt((deltaX*deltaX)+(deltaY*deltaY));
         double offsetAngle = Math.atan2(Math.sin(angle-state.getHeading()), Math.cos(angle-state.getHeading()));
         String side = "Left";
-            if (offsetAngle < 0.0)
-        side = "Right";
-        obj = new SensedObject(null, angle, distance, "Home", side, home.position);
+        if (offsetAngle < 0.0)
+            side = "Right";
+        obj = new SensedObject(null, -offsetAngle, distance, "Home", side, home.position);
 
         // If vehicle is within 3.32m, set atHome
-        if (distance <= 3.32)
+        if (distance <= 3.15) // Was 3.32 for Braitenberg
             state.setAtHome(true);
         else
             state.setAtHome(false);
@@ -312,6 +342,12 @@ public class Vehicle extends SimulationBody {
     public void render(Graphics2D g, double scale) {
         super.render(g, scale);
 
+        Vector2 start = this.getTransform().getTransformed(leftSensorLocation);
+        g.setColor(Color.black);
+        g.drawOval((int)(start.x*scale),(int)(start.y*scale),2,2);
+        start = this.getTransform().getTransformed(rightSensorLocation);
+        g.drawOval((int)(start.x*scale),(int)(start.y*scale),2,2);
+
         if (drawScanLines) {
             // draw the sensor intersections
             final double r = 4.0;
@@ -335,14 +371,14 @@ public class Vehicle extends SimulationBody {
                     g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
                 } else {
                     if (obj.getSide().equals("Left")) {
-                        Vector2 v = this.getTransform().getTransformed(new Vector2(-0.5, 0.8));
+                        Vector2 v = this.getTransform().getTransformed(leftSensorLocation);
                         x = (int) (v.x * rayScale);
                         y = (int) (v.y * rayScale);
                         g.setColor(Color.ORANGE);
                         g.drawLine((int) (point.x * rayScale), (int) (point.y * rayScale), x, y);
                     }
                     if (obj.getSide().equals("Right")) {
-                        Vector2 v = this.getTransform().getTransformed(new Vector2(0.5, 0.8));
+                        Vector2 v = this.getTransform().getTransformed(rightSensorLocation);
                         x = (int) (v.x * rayScale);
                         y = (int) (v.y * rayScale);
                         g.setColor(Color.MAGENTA);
@@ -373,9 +409,13 @@ public class Vehicle extends SimulationBody {
         double left = a.getLeftWheelVelocity();
         double right = a.getRightWheelVelocity();
 
-        state.setLeftWheelVelocity(left);
-        state.setRightWheelVelocity(right);
+        state.setLeftWheelVelocity(left*MAX_VELOCITY);
+        state.setRightWheelVelocity(right*MAX_VELOCITY);
 
+        if(Double.isNaN(this.getTransform().getTranslationY()))
+            System.out.println("NaN");
+        if (Math.abs(this.getTransform().getTranslationX()) > 40 || Math.abs(this.getTransform().getTranslationY()) >20)
+            System.out.println("Offscreen");
         // Calculate Torque
         Vector2 applyLeft = new Vector2(0.0, 1.0);
         applyLeft.multiply(left);
@@ -429,7 +469,10 @@ public class Vehicle extends SimulationBody {
                     gripper = new WeldJoint(this, food, new Vector2(0.0, 0.75));
                     this.myWorld.addJoint(gripper);
                     food.setMass(MassType.NORMAL);
+                    food.getFixture(0).setDensity(0.5); // Density is default to 1.0. This halves the density and mass.
+                    food.updateMass();
                     food.setUserData("PickedUpFood"); // This will make it so that other vehicles won't target it
+                    state.setHolding(true);
                 } else {
                     System.out.println(this.getUserData() + ": Cannot Pickup, too far away!");
                 }
@@ -448,7 +491,7 @@ public class Vehicle extends SimulationBody {
                 food.setMassType(MassType.INFINITE);
                 gripper = null;
                 //HARDCODED distance from home check here and in Vehicles on food collection.
-                //HARDCODED vehicle gains 10 energy from dropoff.   
+                //HARDCODED vehicle gains 10 energy from dropoff.
                 if (home.position.distance(food.getTransform().getTranslation()) < 3.32) {
                     energy += 10;
                     // Dropoff and pickup path?
@@ -512,8 +555,116 @@ public class Vehicle extends SimulationBody {
      * @return status String
      */
     public String statusString() {
-        String result = new String(this.getUserData()+","+energy+","+home.name+","+treeDesc);
+        String result ="";
+        if (home != null) {
+            result = new String(this.getUserData() + "," + lastAction + "," + energy + "," + home.name + "," +
+                this.getTransform().getTranslationX() + "," + this.getTransform().getTranslationY() + "," +
+                state.getHeading() + "," + state.getLeftWheelVelocity() + "," + state.getRightWheelVelocity() + "," +
+                state.isHolding() + "," + state.isAtHome() + "," + state.getDeltaPosition()); //+","+treeDesc);
+        }
+        else {
+            result = new String(this.getUserData() + "," + lastAction + "," + energy + "," +
+                this.getTransform().getTranslationX() + "," + this.getTransform().getTranslationY() + "," +
+                state.getHeading() + "," + state.getLeftWheelVelocity() + "," + state.getRightWheelVelocity() + "," +
+                state.isHolding() + "," + state.isAtHome() + "," + state.getDeltaPosition()); //+","+treeDesc);
+        }
+
 
         return result;
+    }
+
+    private void initBraitenbergVehicle() {
+        leftWheelLocation = new Vector2(-0.5, -0.5);
+        rightWheelLocation = new Vector2( 0.5, -0.5);
+        leftSensorLocation = new Vector2( -0.50, 0.80);
+        rightSensorLocation = new Vector2( 0.50, 0.80);
+
+        // Create our vehicle
+        this.addFixture(Geometry.createRectangle(1.0, 1.5));
+        this.addFixture(Geometry.createCircle(0.35));
+        this.setMass(MassType.NORMAL);
+        this.setAngularDamping(ANGULAR_DAMPENING);
+
+        // -- grabbers
+        Convex leftGrabber = Geometry.createRectangle(.1, .2);
+        Convex rightGrabber = Geometry.createRectangle(.1, .2);
+        leftGrabber.translate(-.25,.8);
+        rightGrabber.translate(.25, .8);
+
+        // -- sensors
+        Convex leftSensor = Geometry.createCircle(0.1);
+        Convex rightSensor = Geometry.createCircle(0.1);
+        leftSensor.translate(-.50,.8);
+        rightSensor.translate(.50, .8);
+
+        // -- "wheels"
+        Convex leftWheel = Geometry.createRectangle(.33, .5);
+        Convex rightWheel = Geometry.createRectangle(.33, .5);
+        // if we add these as-is to the body they will both be positioned at the center, so we have to offset them
+        leftWheel.translate(leftWheelLocation);
+        rightWheel.translate(rightWheelLocation);
+
+        // add to the vehicle -- note: these are like the portholes on a '57 chevy, they are just for looks
+        this.addFixture(leftGrabber);
+        this.addFixture(rightGrabber);
+        this.addFixture(leftSensor);
+        this.addFixture(rightSensor);
+        this.addFixture(leftWheel);
+        this.addFixture(rightWheel);
+        this.setColor(Color.CYAN);
+
+        // gripper
+        gripper = null;
+/*        // -- "wheels"
+        leftWheel = new SimulationBody();
+        leftWheel.addFixture(Geometry.createRectangle(.33, .5));
+        rightWheel = new SimulationBody();
+        rightWheel.addFixture(Geometry.createRectangle(.33, .5));
+        // if we add these as-is to the body they will both be positioned at the center, so we have to offset them
+        leftWheel.translate(-.5,-.50);
+        rightWheel.translate(.5, -.50);
+        // Set their mass to be light so that they move with the vehicle
+        leftWheel.setMass(MassType.NORMAL);
+        rightWheel.setMass(MassType.NORMAL);
+
+        myWorld.addBody(leftWheel);
+        myWorld.addBody(rightWheel);
+
+        // Add weld joints between wheels and body so that everything moves together
+        WeldJoint<SimulationBody> lw = new WeldJoint<>(baseVehicle, leftWheel, leftWheelLocation);
+        this.myWorld.addJoint(lw);
+
+        WeldJoint<SimulationBody> rw = new WeldJoint<>(baseVehicle, rightWheel, rightWheelLocation);
+        this.myWorld.addJoint(rw);
+*/
+    }
+
+    private void initAntVehicle() {
+        leftWheelLocation = new Vector2(-0.5, -0.5);
+        rightWheelLocation = new Vector2( 0.5, -0.5);
+        leftSensorLocation = new Vector2( -0.27, 0.86);
+        rightSensorLocation = new Vector2( 0.27, 0.86);
+
+        // Create our vehicle
+        this.addFixture(Geometry.createEllipse(1, 1.5));
+        this.setMass(MassType.NORMAL);
+        this.setAngularDamping(ANGULAR_DAMPENING);
+
+        // -- grabbers
+        Convex leftGrabber = Geometry.createRectangle(.1, .2);
+        Convex rightGrabber = Geometry.createRectangle(.1, .2);
+        leftGrabber.translate(-.22,.75);
+        rightGrabber.translate(.22, .75);
+
+        this.addFixture(leftGrabber);
+        this.addFixture(rightGrabber);
+        this.setColor(Color.CYAN);
+
+        // gripper
+        gripper = null;
+    }
+
+    private void initSphereVehicle() {
+
     }
 }

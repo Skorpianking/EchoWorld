@@ -54,8 +54,8 @@ public class Callie extends Vehicle {
      *
      * @param myWorld the simulation world passed to Vehicle to maintain connection
      */
-    public void initialize(World<SimulationBody> myWorld) {
-        super.initialize(myWorld, state);
+    public void initialize(World<SimulationBody> myWorld, String vehicleType) {
+        super.initialize(myWorld, state, vehicleType);
         setColor(new Color(206,81,156));
         setUserData(getClass().getName());
 
@@ -165,7 +165,9 @@ public class Callie extends Vehicle {
         // Get an action from the behaviorTree
         action = behaviorTree.genAction(state);
 
-        System.out.println(getClass().getName() + ": " + action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
+//        System.out.println(getClass().getName() + ": " + action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
+
+        lastAction = action.name;
 
         return action;
     }

@@ -15,13 +15,13 @@ public class AvoidObstacle extends Behavior {
     /**
      * Activation threshold (distance < DISTANCE_LIMIT)
      */
-    private final int DISTANCE_LIMIT = 2;
+    private final int DISTANCE_LIMIT = 3;
     /**
      * Limit the angles of concern to those in front
      */
     private final int ANGLE_LIMIT = 75;
     // Vote = 1
-    // Motor outs are 0.7 and 0.05
+    // Motor outs are 0.8 and 0.05
 
     /**
      * <p>Turn away from an obstacle if it is too close. <br>
@@ -42,18 +42,21 @@ public class AvoidObstacle extends Behavior {
         action.name = new String("AvoidObstacle");
 
         double angle = 0;
+        double smallestDistance = DISTANCE_LIMIT;
         for (SensedObject obj : sensedObjects) {
             if (obj.getType().equals("Obstacle")) {
                 angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
 
-                if (obj.getSide() == "Right" && angle >= 0 && angle < ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on right
-                    action.setRightWheelVelocity(0.7);
+                if (angle >= 0 && angle < ANGLE_LIMIT && obj.getDistance() < smallestDistance) { // Obstacle on right
+                    action.setRightWheelVelocity(0.8);
                     action.setLeftWheelVelocity(-0.05);
                     action.setVote(1);
-                } else if (obj.getSide() == "Left" && angle < 0 && angle > -ANGLE_LIMIT && obj.getDistance() < DISTANCE_LIMIT) { // Obstacle on left
+                    smallestDistance = obj.getDistance();
+                } else if (angle < 0 && angle > -ANGLE_LIMIT && obj.getDistance() < smallestDistance) { // Obstacle on left
                     action.setRightWheelVelocity(-0.05);
-                    action.setLeftWheelVelocity(0.7);
+                    action.setLeftWheelVelocity(0.8);
                     action.setVote(1);
+                    smallestDistance = obj.getDistance();
                 }
             }
         }

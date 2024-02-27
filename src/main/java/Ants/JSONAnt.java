@@ -45,8 +45,8 @@ public class JSONAnt extends Ant {
      * @param myWorld the simulation world passed to Vehicle to maintain connection
      * @param filename the json filename to load
      */
-    public void initialize(World<SimulationBody> myWorld, String filename) {
-        super.initialize(myWorld, state);
+    public void initialize(World<SimulationBody> myWorld, String filename, String vehicleType) {
+        super.initialize(myWorld, state, vehicleType);
         JsonObject deserialize = null;
 
         // Read in the vehicle's JSON file

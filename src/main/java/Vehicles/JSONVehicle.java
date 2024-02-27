@@ -5,9 +5,6 @@ import behaviorFramework.Behavior;
 import behaviorFramework.CompositeBehavior;
 
 import framework.SimulationBody;
-import org.dyn4j.geometry.Convex;
-import org.dyn4j.geometry.Geometry;
-import org.dyn4j.geometry.MassType;
 import org.dyn4j.world.World;
 
 import com.github.cliftonlabs.json_simple.*;
@@ -45,9 +42,9 @@ public class JSONVehicle extends Vehicle {
      * @param myWorld the simulation world passed to Vehicle to maintain connection
      * @param filename the json filename to load
      */
-    public void initialize(World<SimulationBody> myWorld, String filename) {
-        // super.initialize(myWorld, state);
-        this.myWorld = myWorld;
+    public void initialize(World<SimulationBody> myWorld, String filename, String vehicleType) {
+        super.initialize(myWorld, state, vehicleType);
+        /*this.myWorld = myWorld;
 
         //Create Vehicle Shape - This overrides the regular vehicle shape.
         this.addFixture(Geometry.createEllipse(1, 1.5));
@@ -56,14 +53,14 @@ public class JSONVehicle extends Vehicle {
         // -- grabbers
         Convex leftGrabber = Geometry.createRectangle(.1, .2);
         Convex rightGrabber = Geometry.createRectangle(.1, .2);
-        leftGrabber.translate(-.25,.8);
-        rightGrabber.translate(.25, .8);
+        leftGrabber.translate(-.22,.75);
+        rightGrabber.translate(.22, .75);
 
         this.addFixture(leftGrabber);
         this.addFixture(rightGrabber);
         // gripper
         gripper = null;
-
+*/
         JsonObject deserialize = null;
 
         // Read in the vehicle's JSON file
@@ -135,7 +132,8 @@ public class JSONVehicle extends Vehicle {
         // Get an action from the behaviorTree
         action = behaviorTree.genAction(state);
 
-        System.out.println(name + ": " + action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
+//        System.out.println(name + ": " + action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
+        lastAction = action.name;
 
         return action;
     }
@@ -162,7 +160,7 @@ public class JSONVehicle extends Vehicle {
 
         array = (JsonArray) json.get("behaviorTree");
         for (Object item : array) {
-            energyUsage++;
+            energyUsage+=0.25;
             JsonObject jsonBehavior = (JsonObject) item;
             try {
                 arbiterB = (boolean) jsonBehavior.get("arbiter");
