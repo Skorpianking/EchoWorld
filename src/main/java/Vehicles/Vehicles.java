@@ -527,7 +527,6 @@ public class Vehicles extends SimulationFrame {
                         v.setUserData("Dead");
                         v.setAtRest(true);  // zero all forces, accelerations and torques
                         v.setEnabled(false); // deactivate being part of collisions
-                        //TODO: need to find where vehicle is reused and make sure to setEnabled(true).
                         v.translate(-(canvas.getWidth() + 50), -(canvas.getHeight() + 50));
                         v.setLinearVelocity(0,0);
                         v.setMass(MassType.INFINITE);

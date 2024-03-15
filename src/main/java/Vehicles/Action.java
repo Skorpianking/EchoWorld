@@ -1,6 +1,11 @@
 package Vehicles;
 
+import Sample.behaviors.PickUp;
+import com.github.cliftonlabs.json_simple.JsonObject;
 import framework.SimulationBody;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
 
 /**
  * The action includes all of the vehicles actuators.
@@ -66,4 +71,23 @@ public class Action {
     public void setDrop(boolean p) { drop = p;}
 
     public boolean getDrop() { return drop; }
+
+    public void fromJson(JsonObject json) {
+
+        try {
+            leftWheelVelocity = ((BigDecimal)json.get("leftWheelVelocity")).doubleValue();
+            rightWheelVelocity = ((BigDecimal)json.get("rightWheelVelocity")).doubleValue();
+            if (((String)json.get("drop")).equals("true"))
+                drop = true;
+            else
+                drop = false;
+            // TODO: Can't execute a pickup because of how I wrote Vehicles and PickUp()
+            // need to get a SimulationBody or duplicate the code in PickUp here or in Vehicles...
+        } catch (Exception e) {
+            System.out.println("Malformed action: " + json.toJson());
+            leftWheelVelocity = rightWheelVelocity = 0.0;
+            drop = false;
+            pickup = null;
+        }
+    }
 }

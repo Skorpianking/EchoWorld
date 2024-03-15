@@ -1,5 +1,6 @@
 package Vehicles;
 
+import com.github.cliftonlabs.json_simple.JsonObject;
 import framework.SimulationBody;
 import org.dyn4j.geometry.Vector2;
 
@@ -62,4 +63,15 @@ public class SensedObject {
     }
 
     public void setType(String ty) {this.type = ty;}
+
+    public JsonObject toJson() {
+        final JsonObject json = new JsonObject();
+
+        json.put("angle", String.valueOf(angle));
+        json.put("distance", String.valueOf(distance));
+        json.put("type", type);
+        json.put("side", side);
+
+        return json;
+    }
 }

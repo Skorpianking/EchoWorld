@@ -90,13 +90,13 @@ public class GotoX extends Behavior {
                 action.setLeftWheelVelocity(0.9);
             } else if (bestHeading > 2.8 || bestHeading < -2.8) { // directly behind, go left
                 action.setRightWheelVelocity(0.9);
-                action.setLeftWheelVelocity(0.5 - Math.abs(bestObj.getAngle()));
+                action.setLeftWheelVelocity(0.0 - Math.abs(bestObj.getAngle()));
             } else if (bestAngle > 0.0) {
-                action.setRightWheelVelocity(0.5 - Math.abs(bestObj.getAngle()));
+                action.setRightWheelVelocity(0.0 - Math.abs(bestObj.getAngle()));
                 action.setLeftWheelVelocity(0.9);
             } else if (bestAngle < 0.0) { // Object on Left
                 action.setRightWheelVelocity(0.9);
-                action.setLeftWheelVelocity(0.5 - Math.abs(bestObj.getAngle()));
+                action.setLeftWheelVelocity(0.0 - Math.abs(bestObj.getAngle()));
             }
             action.setVote(Math.max(1.1, 2-bestObj.getDistance()));
             lastSeenCounter = 5;

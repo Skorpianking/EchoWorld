@@ -4,6 +4,7 @@ import org.dyn4j.geometry.Vector2;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.github.cliftonlabs.json_simple.*;
 
 /**
  * State object for vehicle's memory
@@ -151,5 +152,32 @@ public class State {
 
     public void dropAtHome(Home h) {
         holding = false;
+    }
+
+    public JsonObject toJson() {
+        /* Since this example matches the JsonObject format we're just using the JsonObject's implementation. */
+        final JsonObject json = new JsonObject();
+
+        json.put("heading", String.valueOf(heading));
+        json.put("velocity", String.valueOf(velocity));
+        json.put("angularVelocity", String.valueOf(angularVelocity));
+        json.put("leftWheelVelocity", String.valueOf(leftWheelVelocity));
+        json.put("rightWheelVelocity", String.valueOf(rightWheelVelocity));
+        json.put("holding", String.valueOf(holding));
+        json.put("atHome", String.valueOf(atHome));
+        json.put("deltaPosition", String.valueOf(deltaPosition));
+
+        json.put("leftLightStrength", String.valueOf(leftLightStrength));
+        json.put("rightLightStrength", String.valueOf(rightLightStrength));
+
+        JsonArray objectsJson = new JsonArray();
+        for (SensedObject obj : sensedObjects) {
+            objectsJson.addChain(obj.toJson());
+        }
+        json.put("sensedObjects",objectsJson);
+
+        System.out.println(json.toJson());
+
+        return json;
     }
 }
