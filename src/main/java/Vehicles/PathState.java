@@ -1,7 +1,5 @@
 package Vehicles;
 
-import com.sun.org.apache.xalan.internal.xsltc.util.IntegerArray;
-
 import java.util.Arrays;
 
 /**
@@ -125,8 +123,7 @@ public class PathState extends State {
     }
 
     public String recordedPathToString() {
-        IntegerArray rtn = new IntegerArray(pathRecord);
-        return rtn.toString();
+        return Arrays.toString(pathRecord);
     }
 
     public boolean isPathing() {return pathing;}

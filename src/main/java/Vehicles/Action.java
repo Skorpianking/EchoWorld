@@ -23,6 +23,7 @@ public class Action {
     private SimulationBody pickup;
     private boolean drop;
 
+
     public Action() {
         leftWheelVelocity = rightWheelVelocity = 0.0;
         pickup = null;
@@ -81,8 +82,11 @@ public class Action {
                 drop = true;
             else
                 drop = false;
-            // TODO: Can't execute a pickup because of how I wrote Vehicles and PickUp()
-            // need to get a SimulationBody or duplicate the code in PickUp here or in Vehicles...
+            // TODO: Can't execute a pickup because of how I wrote Vehicles and PickUp().
+            //  Pickup is currently a SimulationObject that is a Food. And Action has no way
+            //  to identify what food is closest.
+            //  Fixing is a potential refactor of code throughout. Pickup becomes boolean,
+            //  and the update in Vehicle.java has to identify the closest food to be picked up.
         } catch (Exception e) {
             System.out.println("Malformed action: " + json.toJson());
             leftWheelVelocity = rightWheelVelocity = 0.0;

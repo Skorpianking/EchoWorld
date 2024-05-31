@@ -1,0 +1,33 @@
+{
+  "pixels_per_meter": 20,
+  "vehicle_type": "Ant",
+  "vehicles": [
+    {
+      "name": "Frye",
+      "position": [-5,5],
+      "draw_scan_lines": "false",
+      "home": "Callie_s",
+      "network": "true"
+    }
+  ],
+  "food": {
+    "timer": 200,
+    "locations": [
+      {
+        "position": [-10,10],
+        "distribution": [1,1]
+      },
+      {
+        "position": [10,-10],
+        "distribution": [1,1]
+      }
+    ]
+  },
+  "homes": [
+    {
+      "name": "Callie_s",
+      "position": [1,1],
+      "resource": 20
+    }
+  ]
+}

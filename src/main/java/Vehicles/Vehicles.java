@@ -174,7 +174,7 @@ public class Vehicles extends SimulationFrame {
         try {
             vehicleType = (String) worldJSON.get("vehicle_type");
         } catch (Exception e) {
-            System.out.println("World need a Vehicle Type {Braitenberg, Ant}!");
+            System.out.println("World need a Vehicle Type {Braitenberg, Ant, Boid}!");
             System.exit(0);
         }
         // Add Vehicles
@@ -194,10 +194,22 @@ public class Vehicles extends SimulationFrame {
                 vehicleHome = (String) item.get("home");
             } catch (Exception e) { }// Having a home is optional
 
+            boolean networking = false;
+            try {
+                String vehicleNetwork = "";
+                vehicleNetwork = (String) item.get("network");
+                if (vehicleNetwork.equals("true"))
+                    networking = true;
+            } catch (Exception e) {} // networking flag is only required if true
+
 
             try {
-                // If the vehicle is a named class try and load the class
-                Vehicle vehicle = (Vehicle) Class.forName(new String(vehicleName)).newInstance();
+                Vehicle vehicle = null;
+                if (networking) {
+                    vehicle = (Vehicle) Class.forName("Vehicles.NetworkVehicle").newInstance();
+                    vehicle.setName(vehicleName);
+                } else // If the vehicle is a named class try and load the class
+                    vehicle = (Vehicle) Class.forName(new String(vehicleName)).newInstance();
                 System.out.println("Classname:" + vehicle.getClass().getName());
                 vehicle.initialize(this.world, vehicleType);
                 if (vehicleHome != null) {
@@ -455,7 +467,7 @@ public class Vehicles extends SimulationFrame {
      */
     public static void main(String[] args) {
         //TODO: Parse args to get World filename
-        String filename = "data//world3.json";
+        String filename = "data//world4.json";
 
         // Read in the JSON world file
         try (FileReader fileReader = new FileReader((filename))) {
@@ -522,7 +534,6 @@ public class Vehicles extends SimulationFrame {
                             food.setMassType(MassType.INFINITE);
                             ((Vehicle)v).gripper = null;
                         }
-
                         // Rename it Dead, and teleport it off the screen.
                         v.setUserData("Dead");
                         v.setAtRest(true);  // zero all forces, accelerations and torques
@@ -588,10 +599,24 @@ public class Vehicles extends SimulationFrame {
             }
         }
 
+        public SimulationBody getClosestFood(Vehicle v) {
+            SimulationBody food = null;
+            double closest = 50000;
+
+            for (SimulationBody f : foodList) {
+                double dist = v.getWorldCenter().distance(f.getTransform().getTranslation());
+                if (dist < closest) {
+                    closest = dist;
+                    food = f;
+                }
+            }
+
+            return food;
+        }
+
         public void setUpdateRate(int rate) {
             UPDATE_RATE = rate;
         }
-
     }
 
     /**

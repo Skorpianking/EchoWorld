@@ -129,6 +129,8 @@ public class Vehicle extends SimulationBody {
         this.myWorld = myWorld;
         if (vehicleType.equals("Ant"))
             initAntVehicle();
+        else if (vehicleType.equals("Boid"))
+            initBoidVehicle();
         else
             initBraitenbergVehicle();
 
@@ -292,7 +294,6 @@ public class Vehicle extends SimulationBody {
                 }
 
                 state.addSensedObject(obj);
-
         }
     }
 
@@ -304,7 +305,7 @@ public class Vehicle extends SimulationBody {
     private SensedObject senseHome() {
         SensedObject obj;
 
-         double deltaX = home.position.x-this.getTransform().getTranslationX();
+        double deltaX = home.position.x-this.getTransform().getTranslationX();
         double deltaY = home.position.y-this.getTransform().getTranslationY();
         double angle = Math.atan2(deltaY, deltaX);
         double distance = Math.sqrt((deltaX*deltaX)+(deltaY*deltaY));
@@ -458,27 +459,7 @@ public class Vehicle extends SimulationBody {
 
         // pickup an object only if not already holding something
         if (a.getPickup() != null) {
-            if (this.gripper == null) {
-
-                SimulationBody food = a.getPickup();
-
-                // Am I close enough to pickup the object?
-                double dist = this.getTransform().getTranslation().distance(food.getTransform().getTranslation());
-                if (dist < 1.5) {
-                    // Create a joint between the vehicle and the object, and change the object's mass so we can move it
-                    gripper = new WeldJoint(this, food, new Vector2(0.0, 0.75));
-                    this.myWorld.addJoint(gripper);
-                    food.setMass(MassType.NORMAL);
-                    food.getFixture(0).setDensity(0.5); // Density is default to 1.0. This halves the density and mass.
-                    food.updateMass();
-                    food.setUserData("PickedUpFood"); // This will make it so that other vehicles won't target it
-                    state.setHolding(true);
-                } else {
-                    System.out.println(this.getUserData() + ": Cannot Pickup, too far away!");
-                }
-            } else {
-                System.out.println(this.getUserData() + ": Cannot Pickup. Already holding an object: " + gripper.getBody2().getUserData());
-            }
+            attemptPickup(a);
         }
 
         // drop the object being held
@@ -501,6 +482,29 @@ public class Vehicle extends SimulationBody {
             } else {
                 System.out.println(this.getUserData() + ": Cannot Drop. Not holding anything");
             }
+        }
+    }
+
+    private void attemptPickup(Action a) {
+        if (this.gripper == null) {
+            SimulationBody food = a.getPickup();
+
+            // Am I close enough to pickup the object?
+            double dist = this.getTransform().getTranslation().distance(food.getTransform().getTranslation());
+            if (dist < 1.5) {
+                // Create a joint between the vehicle and the object, and change the object's mass so we can move it
+                gripper = new WeldJoint(this, food, new Vector2(0.0, 0.75));
+                this.myWorld.addJoint(gripper);
+                food.setMass(MassType.NORMAL);
+                food.getFixture(0).setDensity(0.5); // Density is default to 1.0. This halves the density and mass.
+                food.updateMass();
+                food.setUserData("PickedUpFood"); // This will make it so that other vehicles won't target it
+                state.setHolding(true);
+            } else {
+                System.out.println(this.getUserData() + ": Cannot Pickup, too far away!");
+            }
+        } else {
+            System.out.println(this.getUserData() + ": Cannot Pickup. Already holding an object: " + gripper.getBody2().getUserData());
         }
     }
 
@@ -666,5 +670,35 @@ public class Vehicle extends SimulationBody {
 
     private void initSphereVehicle() {
 
+    }
+
+    private void initBoidVehicle() {
+        leftWheelLocation = new Vector2(-0.5, -0.5);
+        rightWheelLocation = new Vector2( 0.5, -0.5);
+        leftSensorLocation = new Vector2( -0.17, 0.89);
+        rightSensorLocation = new Vector2( 0.17, 0.89);
+
+        // Create our vehicle
+        this.addFixture(Geometry.createIsoscelesTriangle(1, 1.5));
+        this.setMass(MassType.NORMAL);
+        this.setAngularDamping(ANGULAR_DAMPENING);
+
+        // -- grabbers - not adding these to Boid
+        // Convex leftGrabber = Geometry.createRectangle(.1, .2);
+        // Convex rightGrabber = Geometry.createRectangle(.1, .2);
+        // leftGrabber.translate(-.17,.75);
+        // rightGrabber.translate(.17, .75);
+
+        // this.addFixture(leftGrabber);
+        // this.addFixture(rightGrabber);
+        this.setColor(Color.CYAN);
+
+        // gripper
+        gripper = null;
+    }
+
+    public void setName(String vehicleName) {
+        name = vehicleName;
+        setUserData(name);
     }
 }

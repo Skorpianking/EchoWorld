@@ -7,6 +7,8 @@
 - [dyn4j-4.2.0](https://dyn4j.org/)
 - [json-simple-4.0.1](https://cliftonlabs.github.io/json-simple/)
 
+###### Networking
+- [Apache ActiveMQ 6.1 (classic)](https://activemq.apache.org/)
 
 ##### User Input
 
@@ -149,4 +151,9 @@ Several arbitration strategies are already present in the behaviorFactory.
 Black is World Frame. [0,0] is at the center.
 Green is Vehicle Frame. All SensedObjects are pre-transformed to be in this frame. Types include: "Home", "Obstacle", and "Food".
 
+##### Networked Vehicles
+
+Networking leverages Apache ActiveMQ. See the user_guide.html file in the activeMQ docs folder for execution instructions. The server must be started prior to agents connecting.
+
+Vehicles sends json strings via that STOMP protocol. STOMP is well supported in both Java and Python.
 

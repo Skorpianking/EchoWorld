@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>edu.afit.vehicles</groupId>
@@ -28,6 +28,16 @@
       <groupId>org.dyn4j</groupId>
       <artifactId>dyn4j</artifactId>
       <version>4.2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.jms</groupId>
+      <artifactId>jakarta.jms-api</artifactId>
+      <version>3.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.hyte.stompjms</groupId>
+      <artifactId>stompjms-client</artifactId>
+      <version>3.1.0</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -87,6 +97,17 @@
         <plugin>
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>3.0.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.fusesource.mvnplugins</groupId>
+          <artifactId>maven-uberize-plugin</artifactId>
+          <version>1.14</version>
+          <executions>
+            <execution>
+              <phase>package</phase>
+              <goals><goal>uberize</goal></goals>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>
