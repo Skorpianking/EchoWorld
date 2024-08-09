@@ -1,0 +1,35 @@
+World Size in pixels: 1200 x 600           SimulationFrame constructor
+Scale (pixels per meter): 12          // already exposed in world JSON file
+Tick: 50 ms or 20 Hz
+
+Vehicle start energy = 100.0          // Home.Step() and JSONVehicle.treeFromJSON()
+Vehicle energy decay: energyUsage * 0.0025 : energyUsage = \Sum_{1}^{behavior tree size} 0.25 \\in Vehicle.sense()
+         Agent 4 has 12 behavior nodes and so energyUsage = 3
+		 decay ends up at 0.0075 per tick
+
+ FOOD_ENERGY = 35                     // Vehicles.java
+ ENERGY_REWARD = 10
+ ENERGY_REWARD_MAX = 20
+ ENERGY_REWARD_STEP = 1000
+Drop off:                             // Vehicles CustomStepListener.end()
+   Vehicle reward: ENERGY_REWARD = 10 + 1 every ENERGY_REWARD_STEP ticks capped at ENERGY_REWARD_MAX
+   Home receives FOOD_ENERGY - ENERGY_REWARD
+   
+Agent Spawn    // Home.Step()
+  Home energy > 100.0
+    Create new Agent with energy 100.0
+    Home energy = home energy - 50.0     <==== THIS INCREASES SYSTEM ENERGY
+  Home energy decay = 0.0
+  
+Food Spawn
+ MAX_FOODLIST_COUNT = 20          <===== Means that food energy is capped at 20 * 35 = 700
+ food_spawn_timer = 200 (ticks)      // already exposed in world JSON file
+ starts with 2 locations and 2 food  // already exposed in world JSON file
+ 
+Food Spawn Locations
+  Currently 14.2m from home - no obstacles // already exposed in world JSON file
+  
+Vehicle top speed: 5 // Vehicle.java
+ From the logs it looks like this is 1.08 m/s
+ 0.054 each tick, 20 hz = 0.054*20 = 1.08
+ -- Looks like the deltaPosition field can't be relied upon. There are some values that are very large periodically.

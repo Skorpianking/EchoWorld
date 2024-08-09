@@ -50,6 +50,11 @@ public class Vehicles extends SimulationFrame {
     private int MAX_FOODLIST_COUNT = 20; //HARDCODE: limit on total number of food
     public int MAX_VEHICLE_COUNT = 10;  //HARDCODE: limit on total number of vehicles
 
+    public int ENERGY_REWARD = 10;
+    public int ENERGY_REWARD_MAX = 20;
+    public int ENERGY_REWARD_STEP = 1000;
+    public int FOOD_ENERGY = 35;
+
     public int timestep = 0;
     private PrintWriter homeLogStream = null;
     private Logger vehicleLogStream = null;
@@ -211,7 +216,7 @@ public class Vehicles extends SimulationFrame {
                 } else // If the vehicle is a named class try and load the class
                     vehicle = (Vehicle) Class.forName(new String(vehicleName)).newInstance();
                 System.out.println("Classname:" + vehicle.getClass().getName());
-                vehicle.initialize(this.world, vehicleType);
+                vehicle.initialize(this, vehicleType);
                 if (vehicleHome != null) {
                     // Find the home in the homeList
                     for(Home h : homeList){
@@ -226,7 +231,7 @@ public class Vehicles extends SimulationFrame {
                 // The name is likely a filename. Create a JSONVehicle and load the json file
                 String fileName = "data//" + vehicleName + ".json";
                 JSONVehicle vehicle = new JSONVehicle();
-                vehicle.initialize(this.world, fileName, vehicleType); // Halts on failure
+                vehicle.initialize(this, fileName, vehicleType); // Halts on failure
                 insertVehicle(vehicle, item);
                 if (vehicleHome != null) {
                     // Find the home in the homeList
@@ -410,7 +415,6 @@ public class Vehicles extends SimulationFrame {
             System.out.println("Error opening the file: vehicleLog[time].csv");
             System.exit(0);
         }
-
  */
     }
 
@@ -448,6 +452,28 @@ public class Vehicles extends SimulationFrame {
         return this.world;
     }
 
+    public SimulationBody getClosestFood(Vehicle v) {
+        SimulationBody food = null;
+        double closest = 50000;
+
+        for (SimulationBody f : foodList) {
+            double dist = v.getWorldCenter().distance(f.getTransform().getTranslation());
+            // Get the direction between the center of the vehicle and the impact point
+            Vector2 heading = new Vector2(v.getTransform().getTranslation(),f.getTransform().getTranslation());
+            double angle = heading.getDirection();
+            angle = angle - v.state.getHeading();
+//            double angle =  v.getTransform().getTranslation().getAngleBetween(f.getTransform().getTranslation());
+//            angle = angle - v.state.getHeading();
+            if ( Math.abs(angle) < 0.225 ) {
+                if (dist < closest) {
+                    closest = dist;
+                    food = f;
+                }
+            }
+        }
+
+        return food;
+    }
 
     /* (non-Javadoc)
      * @see org.dyn4j.samples.SimulationFrame#render(java.awt.Graphics2D, double)
@@ -467,7 +493,7 @@ public class Vehicles extends SimulationFrame {
      */
     public static void main(String[] args) {
         //TODO: Parse args to get World filename
-        String filename = "data//world4.json";
+        String filename = "data//world3.json";
 
         // Read in the JSON world file
         try (FileReader fileReader = new FileReader((filename))) {
@@ -514,6 +540,11 @@ public class Vehicles extends SimulationFrame {
 
             timestep++;
 
+            if (timestep%ENERGY_REWARD_STEP == 0 && ENERGY_REWARD < ENERGY_REWARD_MAX) {
+                ENERGY_REWARD++;
+                System.out.println(ENERGY_REWARD);
+            }
+
             // Now move vehicles
             for(SimulationBody v : myVehicles) {
                 if ( !v.getUserData().equals("Dead") ) {
@@ -552,7 +583,7 @@ public class Vehicles extends SimulationFrame {
                 // Home Update
                 for (Home h : homeList) {
                     if (h.position.distance(f.getTransform().getTranslation()) < 2.5 && f.getUserData().equals("Garbage")) {
-                        h.energy += 25.0; // HARDCODE: energy gained from food.
+                        h.energy += FOOD_ENERGY-ENERGY_REWARD; // 25.0; // HARDCODE: energy gained from food.
                         // put the food off-screen // Translation is in relation to current position.
                         f.translate(-(canvas.getWidth() + 10), -(canvas.getHeight() + 10));
                         f.setLinearVelocity(0,0);
@@ -597,21 +628,6 @@ public class Vehicles extends SimulationFrame {
                     System.exit(0);
                 }
             }
-        }
-
-        public SimulationBody getClosestFood(Vehicle v) {
-            SimulationBody food = null;
-            double closest = 50000;
-
-            for (SimulationBody f : foodList) {
-                double dist = v.getWorldCenter().distance(f.getTransform().getTranslation());
-                if (dist < closest) {
-                    closest = dist;
-                    food = f;
-                }
-            }
-
-            return food;
         }
 
         public void setUpdateRate(int rate) {

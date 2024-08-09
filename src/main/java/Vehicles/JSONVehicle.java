@@ -42,7 +42,7 @@ public class JSONVehicle extends Vehicle {
      * @param myWorld the simulation world passed to Vehicle to maintain connection
      * @param filename the json filename to load
      */
-    public void initialize(World<SimulationBody> myWorld, String filename, String vehicleType) {
+    public void initialize(Vehicles myWorld, String filename, String vehicleType) {
         super.initialize(myWorld, state, vehicleType);
         /*this.myWorld = myWorld;
 

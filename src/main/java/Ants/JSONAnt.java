@@ -2,7 +2,7 @@ package Ants;
 
 import Vehicles.Action;
 import Vehicles.State;
-import Vehicles.Vehicle;
+import Vehicles.Vehicles;
 import behaviorFramework.ArbitrationUnit;
 import behaviorFramework.Behavior;
 import behaviorFramework.CompositeBehavior;
@@ -45,7 +45,7 @@ public class JSONAnt extends Ant {
      * @param myWorld the simulation world passed to Vehicle to maintain connection
      * @param filename the json filename to load
      */
-    public void initialize(World<SimulationBody> myWorld, String filename, String vehicleType) {
+    public void initialize(Vehicles myWorld, String filename, String vehicleType) {
         super.initialize(myWorld, state, vehicleType);
         JsonObject deserialize = null;
 

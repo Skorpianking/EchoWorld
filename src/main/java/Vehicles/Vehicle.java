@@ -51,7 +51,7 @@ public class Vehicle extends SimulationBody {
             1.5707,  1.6580, 1.7453, 1.8325, 1.9198, 2.0071, 2.0944};
 
     // The World the vehicle is placed in
-    protected World<SimulationBody> myWorld;
+    protected Vehicles myWorld;
 
     protected boolean drawScanLines = false;
 
@@ -62,7 +62,7 @@ public class Vehicle extends SimulationBody {
         energy = 100;
     }
 
-    private void bulkInit(World<SimulationBody> myWorld) {
+    private void bulkInit(Vehicles myWorld) {
         this.myWorld = myWorld;
 
         // Create our vehicle
@@ -125,7 +125,7 @@ public class Vehicle extends SimulationBody {
 */
     }
 
-    public void initialize(World<SimulationBody> myWorld, String vehicleType) {
+    public void initialize(Vehicles myWorld, String vehicleType) {
         this.myWorld = myWorld;
         if (vehicleType.equals("Ant"))
             initAntVehicle();
@@ -137,7 +137,7 @@ public class Vehicle extends SimulationBody {
         state = new State();
     }
 
-    public void initialize(World<SimulationBody> myWorld,  State s, String vehicleType) {
+    public void initialize(Vehicles myWorld,  State s, String vehicleType) {
         this.myWorld = myWorld;
         if (vehicleType.equals("Braitenberg"))
             initBraitenbergVehicle();
@@ -166,7 +166,7 @@ public class Vehicle extends SimulationBody {
         SensedObject obj;
         Ray ray = new Ray(start,(state.getHeading())); //baseVehicle.getLinearVelocity().getDirection()));
 
-        List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.raycast(ray, SENSOR_RANGE/2, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
+        List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.getWorld().raycast(ray, SENSOR_RANGE/2, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
         for (RaycastResult<SimulationBody, BodyFixture> result : results) {
             // First check if this is our Home and if we are Holding something.
             // If so, do not add it because it is added separately and we don't want to treat it like an obstacle.
@@ -247,7 +247,7 @@ public class Vehicle extends SimulationBody {
             }
             Ray ray = new Ray(start,(i + state.getHeading())); //baseVehicle.getLinearVelocity().getDirection()));
 
-            List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.raycast(ray, length, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
+            List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.getWorld().raycast(ray, length, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
             if (results.size() == 0)
                 continue;
 
@@ -393,7 +393,7 @@ public class Vehicle extends SimulationBody {
             g.setColor(Color.BLACK);
 
             Ray ray = new Ray(v, (state.getHeading())); //baseVehicle.getLinearVelocity().getDirection()));
-            List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.raycast(ray, SENSOR_RANGE / 2, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
+            List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.getWorld().raycast(ray, SENSOR_RANGE / 2, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
             for (RaycastResult<SimulationBody, BodyFixture> result : results) {
                 g.drawLine((int) (result.getRaycast().getPoint().x * rayScale), (int) (result.getRaycast().getPoint().y * rayScale), x, y);
             }
@@ -415,8 +415,10 @@ public class Vehicle extends SimulationBody {
 
         if(Double.isNaN(this.getTransform().getTranslationY()))
             System.out.println("NaN");
-        if (Math.abs(this.getTransform().getTranslationX()) > 40 || Math.abs(this.getTransform().getTranslationY()) >20)
-            System.out.println("Offscreen");
+//      These were for the collision detection. If an agent enters into an object it would get teleported.
+//        However, the numbers are hardcoded for one screen-size and scale.
+//        if (Math.abs(this.getTransform().getTranslationX()) > 40 || Math.abs(this.getTransform().getTranslationY()) >20)
+//            System.out.println("Offscreen");
         // Calculate Torque
         Vector2 applyLeft = new Vector2(0.0, 1.0);
         applyLeft.multiply(left);
@@ -466,7 +468,7 @@ public class Vehicle extends SimulationBody {
         if (a.getDrop()) {
             if (gripper != null) {
                 SimulationBody food = gripper.getBody2();
-                this.myWorld.removeJoint(gripper);
+                this.myWorld.getWorld().removeJoint(gripper);
                 food.setUserData("Garbage"); // Renaming the object for testing.
                 food.setAtRest(true);
                 food.setMassType(MassType.INFINITE);
@@ -474,7 +476,7 @@ public class Vehicle extends SimulationBody {
                 //HARDCODED distance from home check here and in Vehicles on food collection.
                 //HARDCODED vehicle gains 10 energy from dropoff.
                 if (home.position.distance(food.getTransform().getTranslation()) < 3.32) {
-                    energy += 10;
+                    energy += myWorld.ENERGY_REWARD;
                     // Dropoff and pickup path?
                     state.dropAtHome( home );
                 }
@@ -486,15 +488,20 @@ public class Vehicle extends SimulationBody {
     }
 
     private void attemptPickup(Action a) {
+        SimulationBody food = this.myWorld.getClosestFood(this);
+
+        if (food == null)
+            return;
+
         if (this.gripper == null) {
-            SimulationBody food = a.getPickup();
+            // SimulationBody food = a.getPickup();
 
             // Am I close enough to pickup the object?
             double dist = this.getTransform().getTranslation().distance(food.getTransform().getTranslation());
             if (dist < 1.5) {
                 // Create a joint between the vehicle and the object, and change the object's mass so we can move it
                 gripper = new WeldJoint(this, food, new Vector2(0.0, 0.75));
-                this.myWorld.addJoint(gripper);
+                this.myWorld.getWorld().addJoint(gripper);
                 food.setMass(MassType.NORMAL);
                 food.getFixture(0).setDensity(0.5); // Density is default to 1.0. This halves the density and mass.
                 food.updateMass();

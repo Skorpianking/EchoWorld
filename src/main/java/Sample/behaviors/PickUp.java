@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class PickUp extends Behavior {
     private final double DISTANCE_TO_PICKUP = 0.3;       // Braitenburg = 0.4
-    private final double ANGLE_CONSIDERED_CENTER = 0.12; // Braitenburg = 15.0
+    private final double ANGLE_CONSIDERED_CENTER = 0.09; // Braitenburg = 15.0
     private String target;
 
     /**

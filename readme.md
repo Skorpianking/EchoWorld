@@ -155,5 +155,5 @@ Green is Vehicle Frame. All SensedObjects are pre-transformed to be in this fram
 
 Networking leverages Apache ActiveMQ. See the user_guide.html file in the activeMQ docs folder for execution instructions. The server must be started prior to agents connecting.
 
-Vehicles sends json strings via that STOMP protocol. STOMP is well supported in both Java and Python.
+NetworkVehicle sends state json strings via STOMP protocol to ActiveMQ server and receives an action. STOMP is supported in both Java and Python.
 

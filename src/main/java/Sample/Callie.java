@@ -3,6 +3,7 @@ package Sample;
 import Sample.behaviors.*;
 import Vehicles.Action;
 import Vehicles.Vehicle;
+import Vehicles.Vehicles;
 import behaviorFramework.ArbitrationUnit;
 import behaviorFramework.CompositeBehavior;
 import behaviorFramework.arbiters.HighestActivation;
@@ -54,7 +55,7 @@ public class Callie extends Vehicle {
      *
      * @param myWorld the simulation world passed to Vehicle to maintain connection
      */
-    public void initialize(World<SimulationBody> myWorld, String vehicleType) {
+    public void initialize(Vehicles myWorld, String vehicleType) {
         super.initialize(myWorld, state, vehicleType);
         setColor(new Color(206,81,156));
         setUserData(getClass().getName());

@@ -1,0 +1,48 @@
+Options:
+
+a) write a GotoHome() behavior
+ - pro: easy
+ - con: should really use GotoX(Home)
+        result can be a flat tree
+
+b) write a Holding() behavior that votes high when holding
+ - pro: easy
+        would result in a fusion node over the GotoX(Home) behavior so 2 subtrees
+ - con: not really a behavior more like a signal or condition behavior
+ 
+c) Add composites (Selector, Sequencer) based on video game behavior trees
+ reminders: Sequencer - run each node in turn until full success of all or failure of one
+    Selector - run each child in order until one runs successfully Running while one of the child nodes runs. Not sure why called selector, because it executes the nodes in order.
+	The also include conditional leaves (like the 'Holding()' behavior in b.
+ - pro: extends behavior framework to include the current hot programming behavior based system
+ - con: Success, Failure, Running message returns (not action + vote return) or a real cludge 
+     still has a condition behavior
+ 
+d) Add a Sequencer
+ - pro: Moves us closer to a full robot control architecture
+        Allows for extending domain complexity and engages conditionals into the Vehicle behavior
+ - con: Additional JSON parsing for (Sequence with Trees and Signals)
+        Code for the sequencer and signals
+		Trees won't be very complex because some of the complexity moves into the Sequencer
+		
+e) A fusion of c & d
+   Add a 'Sequencer' behavior that executes sub-trees in order and a 'Signal' leaf that are conditionals on state data (if ~Holding then execute)
+   Alternate implementation: just make a 'Conditional' behavior (JSON parsing could be messy) That takes the input from a sub-tree and checks it against a tree or step sequence.
+ -pro: Gets us the missing Behavior Tree structure
+         more complex trees
+ -con: There is a choice to be made, and then some fiddling with the best design structure (single conditional, case, how to handle a full chain sequence, do we include plan repair like a real sequencer, ...)
+   
+https://distill.pub/2020/growing-ca/
+https://distill.pub/2020/communicating-with-interactive-articles/
+
+
+
+#Python Stomp json parsing
+ import json
+ 
+ jsonMsg = {'leftMotor':0.9, 'rightMotor':0.5, 'pickup':'false', 'drop':'false'}
+ stringMsg = json.dumps(jsonMsg)  # Convert json object to text
+ 
+ 
+ jsonObj = json.loads(stringMsg)   # Parse text to json object
+ print(jsonObj['pickup'))          # Pull datafield

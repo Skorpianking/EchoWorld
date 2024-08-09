@@ -77,7 +77,7 @@ public class Home extends SimulationBody {
         if (vehicle == null) // No dead Vehicles and reached max number don't spawn
             return;
 
-        vehicle.initialize(vehicles.getWorld(), fileName, "Ant"); // Halts on failure, needs world for State initialization
+        vehicle.initialize(vehicles, fileName, "Ant"); // Halts on failure, needs world for State initialization
 
         // Not adding scan lines for new vehicles.
         vehicle.setDrawScanLines(false);
