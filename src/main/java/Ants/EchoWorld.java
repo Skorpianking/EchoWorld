@@ -41,7 +41,7 @@ public class EchoWorld extends SimulationFrame {
 
     // Vars for running the sim:  where the file goes, timesteps, etc.
     static int tLength = 1; // update Ant.java to mirror this tag length
-    static int timeSteps = 10000; // how long the simulation will last.  S & B did 10^6, we are doing 10^3 right now
+    static int timeSteps = 10000000; // how long the simulation will last.  S & B did 10^6, we are doing 10^3 right now
     static double mutationRate = 0.0001; // probability of changing part of the genome
     static int runNum = 1; // sim run number you are about to fire off
     static String directory = System.getProperty("user.dir");
@@ -281,11 +281,11 @@ public class EchoWorld extends SimulationFrame {
     protected void render(Graphics2D g, double elapsedTime) {
         super.render(g, elapsedTime);
         // Paint resources as dots on the screen
-        for(Resource res : resources) {
-            Vector2 point = res.location;
-            g.setColor(res.color);
-            g.fillRect((int)(point.x*this.camera.scale),(int)(point.y*this.camera.scale),3,3);
-        }
+//        for(Resource res : resources) {
+//            Vector2 point = res.location;
+//            g.setColor(res.color);
+//            g.fillRect((int)(point.x*this.camera.scale),(int)(point.y*this.camera.scale),3,3);
+//        }
     }
 
 
@@ -305,13 +305,14 @@ public class EchoWorld extends SimulationFrame {
             if(timeSteps <= 0) {
                 smoothClose();
             }
-            try {
+/*            try {
                 writeToFile(); // Before we do anything, we will write out all the ants to a file
             }
             catch (Exception e) {
                 System.out.println("Check file location?");
                 smoothClose();
             }
+*/
             generation++; // increment our generation counter
             timeSteps--; // time steps go down :-)
             addResources(); // adds resources to the world with a small probability

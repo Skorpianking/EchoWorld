@@ -31,11 +31,9 @@ public class State {
     }
 
     /**
-     * Each clock tick, clear the ray cast detected objects and update
-     * LightStrengths.
+     * Each clock tick, update LightStrengths.
      */
     public void tick() {
-        sensedObjects.clear();
         updateLightStrengths();
     }
 

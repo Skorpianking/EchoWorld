@@ -1,0 +1,24 @@
+{
+  "pixels_per_meter": 10,
+  "vehicle_type": "Boid",
+  "vehicles": [
+    {
+      "name": "Boid.Boid",
+      "position": [-5,-5],
+      "draw_scan_lines": "true",
+      "resource": "001"
+    },
+    {
+      "name": "Boid.Boid",
+      "position": [-3,-5],
+      "draw_scan_lines": "true",
+      "resource": "002"
+    }
+  ],
+  "obstacles": [
+    {
+      "position": [-10,-10],
+      "size": [2,4]
+    }
+  ]
+}

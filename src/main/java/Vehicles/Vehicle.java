@@ -5,7 +5,6 @@ import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.dynamics.joint.WeldJoint;
 import org.dyn4j.geometry.*;
 import org.dyn4j.world.DetectFilter;
-import org.dyn4j.world.World;
 import org.dyn4j.world.result.RaycastResult;
 
 import java.awt.*;
@@ -25,7 +24,7 @@ public class Vehicle extends SimulationBody {
     private Vector2 rightSensorLocation = new Vector2( 0.27, 0.86);
     protected WeldJoint<SimulationBody> gripper;
 
-    protected final double MAX_VELOCITY = 5; // arbitrary right now
+    protected final double MAX_VELOCITY = 1; // arbitrary right now
     protected final double MAX_ANGULAR_VELOCITY = 2; // how fast we can turn
     protected final int SENSOR_RANGE = 20; // how far the line casts go
     protected final double ANGULAR_DAMPENING = 1;
@@ -33,6 +32,8 @@ public class Vehicle extends SimulationBody {
     protected double K_p = 10;   // PID: Proportional Control Constant
     protected double K_i = 0.0;
     protected double K_d = 0.0;
+
+    protected boolean steerDrive = false; // false = differential drive, true = steer+thrust drive
 
     protected State state;
 
@@ -42,6 +43,8 @@ public class Vehicle extends SimulationBody {
     protected String treeDesc;
 
     protected String lastAction;
+
+    protected BlackBoard blackBoard;
 
     // array of values to "sweep" across -- hand jammed to get a reasonable sweep that doesn't eat too much processing time
     // -10 to 120 degrees in steps of 5 degrees (added +/- 7.5, +/- 2.5
@@ -127,23 +130,28 @@ public class Vehicle extends SimulationBody {
 
     public void initialize(Vehicles myWorld, String vehicleType) {
         this.myWorld = myWorld;
+        state = new State();
+
         if (vehicleType.equals("Ant"))
             initAntVehicle();
-        else if (vehicleType.equals("Boid"))
+        else if (vehicleType.equals("Boid")) {
             initBoidVehicle();
-        else
+            steerDrive = true;
+        } else
             initBraitenbergVehicle();
-
-        state = new State();
     }
 
     public void initialize(Vehicles myWorld,  State s, String vehicleType) {
         this.myWorld = myWorld;
+        state = s;
+
         if (vehicleType.equals("Braitenberg"))
             initBraitenbergVehicle();
-        else
+        else if (vehicleType.equals("Boid")) {
+            initBoidVehicle();
+            steerDrive = true;
+        } else
             initAntVehicle();
-        state = s;
     }
 
     /**
@@ -153,7 +161,7 @@ public class Vehicle extends SimulationBody {
      * @return boolean success/failure
      */
     public boolean sense() {
-        state.tick();
+        state.sensedObjects.clear();
 
         state.setHeading(convertTransformToHeading());
 
@@ -210,7 +218,7 @@ public class Vehicle extends SimulationBody {
         //Decaying energy in sense because decideAction will be overloaded.
         energy = energy - (energyUsage * 0.0025);
 
-        state.updateLightStrengths();
+        state.tick();
 
         return true;
     }
@@ -407,6 +415,9 @@ public class Vehicle extends SimulationBody {
      * @param a Action being applied to the vehicle
      */
     public void act(Action a) {
+        double baseTorque = 0.0;
+        double baseThrust = 0.0;
+
         double left = a.getLeftWheelVelocity();
         double right = a.getRightWheelVelocity();
 
@@ -419,27 +430,34 @@ public class Vehicle extends SimulationBody {
 //        However, the numbers are hardcoded for one screen-size and scale.
 //        if (Math.abs(this.getTransform().getTranslationX()) > 40 || Math.abs(this.getTransform().getTranslationY()) >20)
 //            System.out.println("Offscreen");
-        // Calculate Torque
-        Vector2 applyLeft = new Vector2(0.0, 1.0);
-        applyLeft.multiply(left);
-        Vector2 applyRight = new Vector2(0.0,1.0);
-        applyRight.multiply(right);
-        double torqueL = leftWheelLocation.cross(applyLeft);
-        double torqueR = rightWheelLocation.cross(applyRight);
-        double baseTorque = torqueL + torqueR;
+        if (steerDrive == false) {
+            // Calculate Torque
+            Vector2 applyLeft = new Vector2(0.0, 1.0);
+            applyLeft.multiply(left);
+            Vector2 applyRight = new Vector2(0.0, 1.0);
+            applyRight.multiply(right);
+            double torqueL = leftWheelLocation.cross(applyLeft);
+            double torqueR = rightWheelLocation.cross(applyRight);
+            baseTorque = torqueL + torqueR;
+        } else
+            baseTorque = left;
 
         // Proportional Controller
         double error = baseTorque - this.getAngularVelocity(); // SetPoint - ProcessVariable (e(t) = r(t)-y(t))
         double u = K_p * error; // Control variable
 
-        // Apply Torque
+        // Apply Torque\
         this.applyTorque(u);
 
         // System.out.println("Current: " + baseVehicle.getAngularVelocity() + "; Applied: " + u + "; Target: " + baseTorque);
 
         // Apply the forces in the direction the baseVehicle is facing
+        if ( steerDrive == false)
+            baseThrust = left+right;
+        else
+            baseThrust = right;
         Vector2 baseNormal = this.getTransform().getTransformedR(new Vector2(0.0,1.0));
-        baseNormal.multiply(left+right);
+        baseNormal.multiply(baseThrust*MAX_VELOCITY);
         this.setLinearVelocity(baseNormal);
 
         // Constrain the vehicle to prevent spinning out of control
@@ -680,10 +698,12 @@ public class Vehicle extends SimulationBody {
     }
 
     private void initBoidVehicle() {
+        blackBoard = myWorld.blackBoard;
+
         leftWheelLocation = new Vector2(-0.5, -0.5);
         rightWheelLocation = new Vector2( 0.5, -0.5);
-        leftSensorLocation = new Vector2( -0.17, 0.89);
-        rightSensorLocation = new Vector2( 0.17, 0.89);
+        leftSensorLocation = new Vector2( -0.16, 0.89);
+        rightSensorLocation = new Vector2( 0.16, 0.89);
 
         // Create our vehicle
         this.addFixture(Geometry.createIsoscelesTriangle(1, 1.5));

@@ -218,7 +218,7 @@ public class AntWorld extends SimulationFrame {
 
     private void gameLoop() {
         try {
-            writeToFile(); // Before we do anything, we will write out all the ants to a file
+//            writeToFile(); // Before we do anything, we will write out all the ants to a file
         }
         catch (Exception e) {
             System.out.println("Check file location?");

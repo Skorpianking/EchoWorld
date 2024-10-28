@@ -69,13 +69,20 @@ public class CommandFusion extends ArbitrationUnit {
 			}
 			actionIndex++;
 		}
-		
+
 		action.setVote(maxVote);
-		action.setLeftWheelVelocity(leftWheel/uLeftWheel);
-		action.setRightWheelVelocity(rightWheel/uRightWheel);
+		if(uLeftWheel > 0.0)
+			action.setLeftWheelVelocity(leftWheel/uLeftWheel);
+		if(uRightWheel > 0.0)
+			action.setRightWheelVelocity(rightWheel/uRightWheel);
 		action.setPickup(pickup);
 		if (drop)
 			action.setDrop(true);
+
+		action.name = new String("CommandFusion"+Math.max(uLeftWheel,uRightWheel));
+
+		if(action.getLeftWheelVelocity() == Double.NaN || action.getRightWheelVelocity() == Double.NaN)
+			System.out.println("WHAT?");
 
 		return action;
 	}

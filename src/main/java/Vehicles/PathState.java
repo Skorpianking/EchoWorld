@@ -35,7 +35,6 @@ public class PathState extends State {
      * path.
      */
     public void tick() {
-        sensedObjects.clear();
         if (isHolding() && !isPathing())
             startPathing();
         if (!isHolding() && isPathing()) {

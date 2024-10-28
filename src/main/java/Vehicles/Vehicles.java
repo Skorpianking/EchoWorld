@@ -34,6 +34,7 @@ public class Vehicles extends SimulationFrame {
     public ArrayList<SimulationBody> myVehicles;
     public ArrayList<Home> homeList;
     public String vehicleType;
+    public BlackBoard blackBoard;
 
     private Map<Integer, SimulationBody> keyBoundItemList;
     private SimulationBody keyBoundItem = null;
@@ -182,6 +183,9 @@ public class Vehicles extends SimulationFrame {
             System.out.println("World need a Vehicle Type {Braitenberg, Ant, Boid}!");
             System.exit(0);
         }
+        if (vehicleType.equals("Boid"))
+            blackBoard = new BlackBoard();
+
         // Add Vehicles
         ArrayList<JsonObject> vehicles = (ArrayList<JsonObject>) worldJSON.get("vehicles");
         String vehicleName = null;
@@ -207,6 +211,11 @@ public class Vehicles extends SimulationFrame {
                     networking = true;
             } catch (Exception e) {} // networking flag is only required if true
 
+            String vehicleID = new String();
+            try {
+                String vehicleNetwork = "";
+                vehicleID = (String) item.get("resource");
+            } catch (Exception e) {} // resource only becomes an ID if added
 
             try {
                 Vehicle vehicle = null;
@@ -217,6 +226,7 @@ public class Vehicles extends SimulationFrame {
                     vehicle = (Vehicle) Class.forName(new String(vehicleName)).newInstance();
                 System.out.println("Classname:" + vehicle.getClass().getName());
                 vehicle.initialize(this, vehicleType);
+                vehicle.setUserData(((String)vehicle.getUserData()).concat(vehicleID));
                 if (vehicleHome != null) {
                     // Find the home in the homeList
                     for(Home h : homeList){
@@ -233,6 +243,8 @@ public class Vehicles extends SimulationFrame {
                 JSONVehicle vehicle = new JSONVehicle();
                 vehicle.initialize(this, fileName, vehicleType); // Halts on failure
                 insertVehicle(vehicle, item);
+                if( vehicleID != null)
+                    vehicle.setUserData(((String)vehicle.getUserData()).concat(vehicleID));
                 if (vehicleHome != null) {
                     // Find the home in the homeList
                     for(Home h : homeList){

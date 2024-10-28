@@ -84,6 +84,8 @@ public class Ant extends Vehicle {
     private double GRAB_RANGE = 1; // how far "off" the target can be, allows us to home in on a target
     private final int SENSOR_RANGE = 3; // how far the line casts go
 
+    private World<SimulationBody> myWorld;
+
     // All taken from the cue class template
     final double ballRadius = 0.25; //0.1; //0.028575;
     final double ballDensity = 217.97925;
@@ -219,11 +221,11 @@ public class Ant extends Vehicle {
     }
 
     public boolean sense() {
-        state.tick();
         state.setHeading(convertTransformToHeading());
         state.setVelocity(this.getLinearVelocity()); // LinearVelocity captures heading and speed
         state.setAngularVelocity(this.getAngularVelocity());
         state.updateLightStrengths();
+        state.tick();
         return true;
     }
 

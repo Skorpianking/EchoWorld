@@ -91,7 +91,7 @@ public abstract class ArbitrationUnit {
 
 		w.clear();
 		for (double d : weights) {
-			w.add(weights.indexOf(d), d/sum);
+			w.add(d/sum);
 		}
 	}
 	public abstract Action evaluate(Collection<Action> ActionSet);
