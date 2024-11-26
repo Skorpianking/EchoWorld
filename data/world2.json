@@ -1,5 +1,6 @@
 {
-  "pixels_per_meter": 20,
+  "pixels_per_meter": 15,
+  "vehicle_type": "Braitenberg",
   "vehicles": [
     {
       "name": "Sample.Callie",

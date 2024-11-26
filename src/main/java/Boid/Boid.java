@@ -1,9 +1,6 @@
 package Boid;
 
-import Boid.behaviors.BoidAlign;
-import Boid.behaviors.BoidAvoidObstacle;
-import Boid.behaviors.BoidCohesion;
-import Boid.behaviors.BoidWander;
+import Boid.behaviors.*;
 import Vehicles.Action;
 import Vehicles.Vehicle;
 import Vehicles.Vehicles;
@@ -74,20 +71,23 @@ public class Boid extends Vehicle {
         // Set arbiter
         ArrayList<Double> weights = new ArrayList<Double>();
         weights.add(0.2);
-        weights.add(0.4);
-        weights.add(0.2);
+        weights.add(0.3);
+        weights.add(0.35);
+        weights.add(0.1);
         weights.add(0.1);
         ArbitrationUnit arbiter = new CommandFusion(weights);
         behaviorTree.setArbitrationUnit(arbiter);
 
         BoidAlign ba = new BoidAlign();
         BoidCohesion bc = new BoidCohesion();
+        BoidSeparate bs = new BoidSeparate();
         BoidAvoidObstacle ao = new BoidAvoidObstacle();
         BoidWander w = new BoidWander();
         //GetUnstuck gu = new GetUnstuck();
 
         behaviorTree.add(ba);
         behaviorTree.add(bc);
+        behaviorTree.add(bs);
         behaviorTree.add(ao);
         behaviorTree.add(w);
     }
@@ -103,7 +103,7 @@ public class Boid extends Vehicle {
     public boolean sense(){
         // Send our message
         ID = Integer.parseInt(((String)this.userData).substring(((String)this.userData).length() - 3, ((String)this.userData).length()));
-        blackBoard.setMessage(ID,this.getLinearVelocity());
+        blackBoard.setMessage(ID,this.getTransform().getTranslation());
 
         // Must update the base sensors first
         super.sense();

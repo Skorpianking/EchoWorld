@@ -84,17 +84,17 @@ public class GotoX extends Behavior {
         }
 
         if (bestObj != null) {
-            double bestHeading = bestObj.getAngle();
+               double bestHeading = bestObj.getAngle();
             if (Math.abs(bestHeading) < 0.07 || bestObj.getSide().equals("Center")) { // Object is directly ahead.
                 action.setRightWheelVelocity(0.9);
                 action.setLeftWheelVelocity(0.9);
             } else if (bestHeading > 2.8 || bestHeading < -2.8) { // directly behind, go left
                 action.setRightWheelVelocity(0.9);
                 action.setLeftWheelVelocity(0.0 - Math.abs(bestObj.getAngle()));
-            } else if (bestAngle > 0.0) {
+            } else if (bestAngle < 0.0) {
                 action.setRightWheelVelocity(0.0 - Math.abs(bestObj.getAngle()));
                 action.setLeftWheelVelocity(0.9);
-            } else if (bestAngle < 0.0) { // Object on Left
+            } else if (bestAngle > 0.0) { // Object on Left
                 action.setRightWheelVelocity(0.9);
                 action.setLeftWheelVelocity(0.0 - Math.abs(bestObj.getAngle()));
             }
@@ -106,11 +106,11 @@ public class GotoX extends Behavior {
         // We don't see the TARGET now, but we saw it recently.
         else if (lastSeenCounter > 0 && action.getVote() == 0) {
             angle = lastSeenAngle;
-            if (angle > 0) { // Light on Right
+            if (angle < 0) { // Light on Right
                 action.setRightWheelVelocity(0.9-Math.abs(((angle*Math.PI)/180)));
                 action.setLeftWheelVelocity(0.9);
                 action.setVote(1);
-            } else if (angle < 0) { // Light on Left
+            } else if (angle > 0) { // Light on Left
                 action.setRightWheelVelocity(0.9);
                 action.setLeftWheelVelocity(0.9-Math.abs(((angle*Math.PI)/180)));
                 action.setVote(1);

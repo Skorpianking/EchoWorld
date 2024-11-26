@@ -24,10 +24,10 @@ public class Vehicle extends SimulationBody {
     private Vector2 rightSensorLocation = new Vector2( 0.27, 0.86);
     protected WeldJoint<SimulationBody> gripper;
 
-    protected final double MAX_VELOCITY = 1; // arbitrary right now
+    protected final double MAX_VELOCITY = 1.2; // arbitrary right now
     protected final double MAX_ANGULAR_VELOCITY = 2; // how fast we can turn
     protected final int SENSOR_RANGE = 20; // how far the line casts go
-    protected final double ANGULAR_DAMPENING = 1;
+    protected final double ANGULAR_DAMPENING = 2;
 
     protected double K_p = 10;   // PID: Proportional Control Constant
     protected double K_i = 0.0;
@@ -163,14 +163,15 @@ public class Vehicle extends SimulationBody {
     public boolean sense() {
         state.sensedObjects.clear();
 
-        state.setHeading(convertTransformToHeading());
+        //state.setHeading(convertTransformToHeading());
+        state.setHeading(this.getTransform().getRotationAngle());
 
         // Following code block draws Rays out from each sensor and stores returns in state
         rayCasting( leftSensorLocation.x, leftSensorLocation.y, 0); // left sensor
         rayCasting( rightSensorLocation.x, rightSensorLocation.y, 1); // right sensor
 
         // One scan from front of vehicle
-        Vector2 start = this.getTransform().getTransformed(new Vector2(0.0, 0.8));// this.getWorldCenter();
+        Vector2 start = this.getTransform().getTransformed(new Vector2(0.8, 0.0));// this.getWorldCenter();
         SensedObject obj;
         Ray ray = new Ray(start,(state.getHeading())); //baseVehicle.getLinearVelocity().getDirection()));
 
@@ -271,8 +272,13 @@ public class Vehicle extends SimulationBody {
                         break;
                 }
                 // Get the direction between the center of the vehicle and the impact point
+                double transformedAngle = this.getTransform().getRotationAngle();
+                Rotation selfRotation = new Rotation(transformedAngle);
                 Vector2 heading = new Vector2(this.getWorldCenter(), closest.getRaycast().getPoint());
+                transformedAngle = selfRotation.getRotationBetween(heading).toRadians();
+
                 double angle = heading.getAngleBetween(state.getHeading()); // baseVehicle.getLinearVelocity()); // radians
+                angle = heading.getDirection() - state.getHeading();
                 double distance = closest.getRaycast().getDistance();
                 String type = "UNKNOWN";
                 if (closest.getBody().getUserData() != null) { // If not set, will be UNKNOWN
@@ -284,11 +290,11 @@ public class Vehicle extends SimulationBody {
                 }
 
                 String side = "Left";
-                if (sensor_x > 0.0) {
+                if (sensor_dir == 1) {
                     side = "Right";
                 }
 
-                obj = new SensedObject(heading, angle, distance, type, side, closest.getRaycast().getPoint());
+                obj = new SensedObject(heading, transformedAngle, distance, type, side, closest.getRaycast().getPoint());
 
                 // HARDCODE: "Food" is considered an "Obstacle" if already holding something
                 // TODO: HARDCODE: Other entities considered as "Obstacle"?
@@ -313,15 +319,19 @@ public class Vehicle extends SimulationBody {
     private SensedObject senseHome() {
         SensedObject obj;
 
-        double deltaX = home.position.x-this.getTransform().getTranslationX();
-        double deltaY = home.position.y-this.getTransform().getTranslationY();
-        double angle = Math.atan2(deltaY, deltaX);
-        double distance = Math.sqrt((deltaX*deltaX)+(deltaY*deltaY));
-        double offsetAngle = Math.atan2(Math.sin(angle-state.getHeading()), Math.cos(angle-state.getHeading()));
+        Vector2 position = this.getTransform().getTranslation();
+        Vector2 homeVector = new Vector2(this.getTransform().getTranslation(), home.position);
+        double transformedAngle = this.getTransform().getRotationAngle();
+        double angle = homeVector.getDirection();
+        double distance = homeVector.getMagnitude();
+        Rotation homeRotation = new Rotation(angle);
+        Rotation selfRotation = new Rotation(transformedAngle);
+        transformedAngle = selfRotation.getRotationBetween(homeRotation).toRadians();
+
         String side = "Left";
-        if (offsetAngle < 0.0)
+        if (transformedAngle < 0.0)
             side = "Right";
-        obj = new SensedObject(null, -offsetAngle, distance, "Home", side, home.position);
+        obj = new SensedObject(null, transformedAngle, distance, "Home", side, home.position);
 
         // If vehicle is within 3.32m, set atHome
         if (distance <= 3.15) // Was 3.32 for Braitenberg
@@ -424,17 +434,21 @@ public class Vehicle extends SimulationBody {
         state.setLeftWheelVelocity(left*MAX_VELOCITY);
         state.setRightWheelVelocity(right*MAX_VELOCITY);
 
-        if(Double.isNaN(this.getTransform().getTranslationY()))
+        // Vehicle has ended up in a state outside of the world (usually due to getting stuck in an object)
+        // Set energy to 0, it will be set to Dead.
+        if(Double.isNaN(this.getTransform().getTranslationY())) {
+            energy = -1.0;
             System.out.println("NaN");
+        }
 //      These were for the collision detection. If an agent enters into an object it would get teleported.
 //        However, the numbers are hardcoded for one screen-size and scale.
 //        if (Math.abs(this.getTransform().getTranslationX()) > 40 || Math.abs(this.getTransform().getTranslationY()) >20)
 //            System.out.println("Offscreen");
         if (steerDrive == false) {
             // Calculate Torque
-            Vector2 applyLeft = new Vector2(0.0, 1.0);
+            Vector2 applyLeft = new Vector2(1.0, 0.0);
             applyLeft.multiply(left);
-            Vector2 applyRight = new Vector2(0.0, 1.0);
+            Vector2 applyRight = new Vector2(1.0, 0.0);
             applyRight.multiply(right);
             double torqueL = leftWheelLocation.cross(applyLeft);
             double torqueR = rightWheelLocation.cross(applyRight);
@@ -456,13 +470,13 @@ public class Vehicle extends SimulationBody {
             baseThrust = left+right;
         else
             baseThrust = right;
-        Vector2 baseNormal = this.getTransform().getTransformedR(new Vector2(0.0,1.0));
+        Vector2 baseNormal = this.getTransform().getTransformedR(new Vector2(1.0,0.0));
         baseNormal.multiply(baseThrust*MAX_VELOCITY);
         this.setLinearVelocity(baseNormal);
 
         // Constrain the vehicle to prevent spinning out of control
         // Get the linear velocity in the direction of the baseVehicle's front
-        Vector2 clamp = this.getTransform().getTransformedR(new Vector2(0.0, 1.0));
+        Vector2 clamp = this.getTransform().getTransformedR(new Vector2(1.0, 0.0));
         double defl = this.getLinearVelocity().dot(clamp);
 
         // clamp the velocity
@@ -516,9 +530,9 @@ public class Vehicle extends SimulationBody {
 
             // Am I close enough to pickup the object?
             double dist = this.getTransform().getTranslation().distance(food.getTransform().getTranslation());
-            if (dist < 1.5) {
+            if (dist < 1.6) {
                 // Create a joint between the vehicle and the object, and change the object's mass so we can move it
-                gripper = new WeldJoint(this, food, new Vector2(0.0, 0.75));
+                gripper = new WeldJoint(this, food, new Vector2(0.75, 0.0));
                 this.myWorld.getWorld().addJoint(gripper);
                 food.setMass(MassType.NORMAL);
                 food.getFixture(0).setDensity(0.5); // Density is default to 1.0. This halves the density and mass.
@@ -603,13 +617,13 @@ public class Vehicle extends SimulationBody {
     }
 
     private void initBraitenbergVehicle() {
-        leftWheelLocation = new Vector2(-0.5, -0.5);
-        rightWheelLocation = new Vector2( 0.5, -0.5);
-        leftSensorLocation = new Vector2( -0.50, 0.80);
-        rightSensorLocation = new Vector2( 0.50, 0.80);
+        leftWheelLocation = new Vector2(-0.5, 0.5);
+        rightWheelLocation = new Vector2( -0.5, -0.5);
+        leftSensorLocation = new Vector2( 0.80, 0.50);
+        rightSensorLocation = new Vector2( 0.80, -0.50);
 
         // Create our vehicle
-        this.addFixture(Geometry.createRectangle(1.0, 1.5));
+        this.addFixture(Geometry.createRectangle(1.5, 1.0));
         this.addFixture(Geometry.createCircle(0.35));
         this.setMass(MassType.NORMAL);
         this.setAngularDamping(ANGULAR_DAMPENING);
@@ -617,14 +631,14 @@ public class Vehicle extends SimulationBody {
         // -- grabbers
         Convex leftGrabber = Geometry.createRectangle(.1, .2);
         Convex rightGrabber = Geometry.createRectangle(.1, .2);
-        leftGrabber.translate(-.25,.8);
-        rightGrabber.translate(.25, .8);
+        leftGrabber.translate(0.80,0.25);
+        rightGrabber.translate(0.80, -0.25);
 
         // -- sensors
         Convex leftSensor = Geometry.createCircle(0.1);
         Convex rightSensor = Geometry.createCircle(0.1);
-        leftSensor.translate(-.50,.8);
-        rightSensor.translate(.50, .8);
+        leftSensor.translate(0.80, 0.50);
+        rightSensor.translate(0.80, -0.50);
 
         // -- "wheels"
         Convex leftWheel = Geometry.createRectangle(.33, .5);
@@ -669,21 +683,21 @@ public class Vehicle extends SimulationBody {
     }
 
     private void initAntVehicle() {
-        leftWheelLocation = new Vector2(-0.5, -0.5);
-        rightWheelLocation = new Vector2( 0.5, -0.5);
-        leftSensorLocation = new Vector2( -0.27, 0.86);
-        rightSensorLocation = new Vector2( 0.27, 0.86);
+        leftWheelLocation = new Vector2(-0.5, 0.5);
+        rightWheelLocation = new Vector2( -0.5, -0.5);
+        leftSensorLocation = new Vector2( 0.86, 0.27);
+        rightSensorLocation = new Vector2( 0.86, -0.27);
 
         // Create our vehicle
-        this.addFixture(Geometry.createEllipse(1, 1.5));
+        this.addFixture(Geometry.createEllipse(1.5, 1));
         this.setMass(MassType.NORMAL);
         this.setAngularDamping(ANGULAR_DAMPENING);
 
         // -- grabbers
         Convex leftGrabber = Geometry.createRectangle(.1, .2);
         Convex rightGrabber = Geometry.createRectangle(.1, .2);
-        leftGrabber.translate(-.22,.75);
-        rightGrabber.translate(.22, .75);
+        leftGrabber.translate(0.75, 0.22);
+        rightGrabber.translate(0.75, -0.22);
 
         this.addFixture(leftGrabber);
         this.addFixture(rightGrabber);
@@ -700,13 +714,14 @@ public class Vehicle extends SimulationBody {
     private void initBoidVehicle() {
         blackBoard = myWorld.blackBoard;
 
-        leftWheelLocation = new Vector2(-0.5, -0.5);
-        rightWheelLocation = new Vector2( 0.5, -0.5);
-        leftSensorLocation = new Vector2( -0.16, 0.89);
-        rightSensorLocation = new Vector2( 0.16, 0.89);
+        leftWheelLocation = new Vector2(-0.5, 0.5);
+        rightWheelLocation = new Vector2( -0.5, -0.5);
+        leftSensorLocation = new Vector2( 0.89, 0.16);
+        rightSensorLocation = new Vector2( 0.89, -0.16);
 
         // Create our vehicle
-        this.addFixture(Geometry.createIsoscelesTriangle(1, 1.5));
+        Triangle body = new Triangle(new Vector2(1.0,0), new Vector2(-0.5,0.5), new Vector2(-0.5, -0.5));;
+        this.addFixture(body);
         this.setMass(MassType.NORMAL);
         this.setAngularDamping(ANGULAR_DAMPENING);
 

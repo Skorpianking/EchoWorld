@@ -86,15 +86,13 @@ public class Home extends SimulationBody {
         String newName = vehicle.getUserData() + Integer.toString(vehicles.timestep);
         vehicle.setUserData(newName);
 
-        // Setting new position near Home location... HARDCODED to be within 6.0m of center
-        double xSpawn = 0.0;
-        double ySpawn = 0.0;
-        while (xSpawn >= -2.0 && xSpawn <= 2.0)
-            xSpawn = Math.random()*(2*6.0)-6.0;
-        while (ySpawn >= -2.0 && ySpawn <= 2.0)
-            ySpawn = Math.random()*(2*6.0)-6.0;
+        // Setting new position near Home location...
+        double distance = 2.6;
+        double rotation = 0.0;
+        rotation = Math.random()*(2*Math.PI)-Math.PI;
 
-        vehicle.translate(position.x+xSpawn,position.y+ySpawn);
+        vehicle.translate(distance, 0.0);
+        vehicle.rotate(rotation, position.x, position.y);
         vehicle.setEnabled(true); // reactivate being part of collisions
 
         // Set this vehicles Home.

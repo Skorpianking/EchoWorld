@@ -15,7 +15,7 @@ public class AvoidObstacle extends Behavior {
     /**
      * Activation threshold (distance < DISTANCE_LIMIT)
      */
-    private final int DISTANCE_LIMIT = 3;
+    private final int DISTANCE_LIMIT = 2;
     /**
      * Limit the angles of concern to those in front
      */
@@ -47,14 +47,14 @@ public class AvoidObstacle extends Behavior {
             if (obj.getType().equals("Obstacle")) {
                 angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
 
-                if (angle >= 0 && angle < ANGLE_LIMIT && obj.getDistance() < smallestDistance) { // Obstacle on right
-                    action.setRightWheelVelocity(0.8);
+                if (angle <= 0 && angle > -ANGLE_LIMIT && obj.getDistance() < smallestDistance) { // Obstacle on right
+                    action.setRightWheelVelocity(0.9);
                     action.setLeftWheelVelocity(-0.05);
                     action.setVote(1);
                     smallestDistance = obj.getDistance();
-                } else if (angle < 0 && angle > -ANGLE_LIMIT && obj.getDistance() < smallestDistance) { // Obstacle on left
+                } else if (angle > 0 && angle < ANGLE_LIMIT && obj.getDistance() < smallestDistance) { // Obstacle on left
                     action.setRightWheelVelocity(-0.05);
-                    action.setLeftWheelVelocity(0.8);
+                    action.setLeftWheelVelocity(0.9);
                     action.setVote(1);
                     smallestDistance = obj.getDistance();
                 }

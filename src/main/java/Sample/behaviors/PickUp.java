@@ -14,8 +14,8 @@ import java.util.List;
  * output an action to pickup the object.</p>
  */
 public class PickUp extends Behavior {
-    private final double DISTANCE_TO_PICKUP = 0.3;       // Braitenburg = 0.4
-    private final double ANGLE_CONSIDERED_CENTER = 0.09; // Braitenburg = 15.0
+    private final double DISTANCE_TO_PICKUP = 0.29;       // Braitenburg = 0.4
+    private final double ANGLE_CONSIDERED_CENTER = 0.12; // Braitenburg = 15.0
     private String target;
 
     /**
@@ -53,10 +53,9 @@ public class PickUp extends Behavior {
         SensedObject bestObj = new SensedObject(null, 0, 1000, null, null, null);
 
         for (SensedObject obj : sensedObjects) {
-            angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
-
             // Locate "Food" and return the hit closest to the centerline of the vehicle
             if (obj.getType().equals(target)) {
+                angle = (obj.getAngle() * 180) / Math.PI; // conversion from radians to degrees
                 // If this is a hit from the center
                 if ( angle > -ANGLE_CONSIDERED_CENTER && angle < ANGLE_CONSIDERED_CENTER ) {
                     // And it is the closest

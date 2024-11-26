@@ -7,12 +7,8 @@ import Vehicles.Vehicles;
 import behaviorFramework.ArbitrationUnit;
 import behaviorFramework.CompositeBehavior;
 import behaviorFramework.arbiters.HighestActivation;
-import behaviorFramework.arbiters.HighestPriority;
 import behaviorFramework.arbiters.SimplePriority;
 import behaviorFramework.arbiters.Conditional;
-import behaviorFramework.behaviors.NoOp;
-import framework.SimulationBody;
-import org.dyn4j.world.World;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -166,7 +162,7 @@ public class Callie extends Vehicle {
         // Get an action from the behaviorTree
         action = behaviorTree.genAction(state);
 
-//        System.out.println(getClass().getName() + ": " + action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
+        System.out.println(getClass().getName() + ": " + action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
 
         lastAction = action.name;
 

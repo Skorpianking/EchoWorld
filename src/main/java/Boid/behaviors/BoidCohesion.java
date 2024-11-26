@@ -42,28 +42,25 @@ public class BoidCohesion extends Behavior {
         Action action = new Action();
         List<SensedObject> sensedObjects = state.getSensedObjects();
 
-        action.name = new String("BoidSeparation");
+        action.name = new String("BoidCohesion");
         action.setVote(0);
 
-        Vector2 CoM = new Vector2(); // This is also us (0,0).
+        Vector2 CoM = new Vector2(); // This is (0,0).
 
         // Iterate through our Neighbors and calculate Center of Mass
-        int count = ((BoidState)state).neighborList.size() + 1;
+        int count = ((BoidState)state).neighborList.size();
         for(Map.Entry<Integer, BoidState.Neighbor> neighbor: ((BoidState)state).neighborList.entrySet() ) {
-            Vector2 nVec = new Vector2(neighbor.getValue().angle);
-            double angle = (neighbor.getValue().angle * 180) / Math.PI; // conversion from radians to degrees
-            nVec.multiply(neighbor.getValue().distance);
+            Vector2 nVec = Vector2.create(neighbor.getValue().distance, neighbor.getValue().angle);
             CoM.add(nVec);
         }
 
         double thrust = state.getVelocity().getMagnitude();
-        double steer = state.getAngularVelocity();
-        if(count > 1) { // Only if there are neighbors
+        double steer = state.getHeading();
+        if(count > 0) { // Only if there are neighbors
             CoM.divide(count);
             thrust = CoM.getMagnitude();
-            double direction = CoM.getDirection();
-            steer = -direction;
-            //System.out.println(CoM +", " + thrust + ", " + direction + ", " + state.getHeading() + ", " + steer);
+            steer = CoM.getDirection();
+//            System.out.println(CoM +", " + thrust + ", " + steer + ", " + state.getHeading());
             action.setVote(1);
         }
 

@@ -43,19 +43,28 @@ public class BoidAlign extends Behavior {
         action.setVote(0);
 
         Vector2 alignedAngle = new Vector2();
+        double targetAngle = 0.0;
+        double targetVelocity = 0.0;
+        int neighborCount = 0;
 
         // Iterate through our Neighbors
-        int count = ((BoidState)state).neighborList.size();
         for(Map.Entry<Integer, BoidState.Neighbor> neighbor: ((BoidState)state).neighborList.entrySet() ) {
-            Vector2 nVec = neighbor.getValue().velocity;
+            Vector2 nVec = neighbor.getValue().transform;
+            targetAngle += nVec.getDirection();
+            targetVelocity += nVec.getMagnitude();
+            neighborCount++;
             alignedAngle.dot(nVec);
         }
+
         double thrust = state.getVelocity().getMagnitude();
         double steer = state.getAngularVelocity();
-        if(count > 0) {
-            alignedAngle.divide(count);
-            thrust = alignedAngle.getMagnitude();
-            steer = alignedAngle.getAngleBetween(state.getVelocity());
+        if(neighborCount > 0) {
+            targetAngle = targetAngle/neighborCount;
+            targetVelocity = targetVelocity/neighborCount;
+
+            alignedAngle.divide(neighborCount);
+            thrust = targetVelocity;
+            steer = state.getHeading() - targetAngle;
             action.setVote(1);
         }
 

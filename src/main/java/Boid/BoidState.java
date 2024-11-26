@@ -57,12 +57,12 @@ public class BoidState extends State {
      public class Neighbor {
         public double distance;
         public double angle;
-        public Vector2 velocity;
+        public Vector2 transform;
 
         public Neighbor( double dist, double ang, Vector2 vec) {
           distance = dist;
           angle = ang;
-          velocity = vec.copy();
+          transform = vec.copy();
         }
      }
 }

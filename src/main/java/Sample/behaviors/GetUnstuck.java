@@ -33,7 +33,8 @@ public class GetUnstuck extends Behavior {
         action.name = new String("GetUnstuck");
 
         if ((Math.abs(state.getVelocity().x) < 0.05 && Math.abs(state.getVelocity().y) < 0.05 && Math.abs(state.getAngularVelocity()) < 0.05)
-            || Math.abs(state.getDeltaPosition()) < 0.002) {
+            || Math.abs(state.getDeltaPosition()) < 0.002) { // Ants need the value to be larger
+//        if (Math.abs(state.getDeltaPosition()) < 0.0002) { // Braitenberg works best with just the deltapos < 0.0002             .
             stuckCounter++;
         } else
             stuckCounter = 0;

@@ -168,6 +168,7 @@ public class Vehicles extends SimulationFrame {
                 SimulationBody homeBody = new SimulationBody();
                 homeBody.setColor(Color.green);
                 homeBody.addFixture(Geometry.createPolygonalEllipse(8,2,2));
+                homeBody.translateToOrigin();
                 homeBody.translate(new Vector2(x, y));
                 homeBody.setUserData(new String(homeName));
                 this.world.addBody(homeBody);
@@ -215,7 +216,8 @@ public class Vehicles extends SimulationFrame {
             try {
                 String vehicleNetwork = "";
                 vehicleID = (String) item.get("resource");
-            } catch (Exception e) {} // resource only becomes an ID if added
+            } catch (Exception e) {
+            } // resource only becomes an ID if added
 
             try {
                 Vehicle vehicle = null;
@@ -226,7 +228,8 @@ public class Vehicles extends SimulationFrame {
                     vehicle = (Vehicle) Class.forName(new String(vehicleName)).newInstance();
                 System.out.println("Classname:" + vehicle.getClass().getName());
                 vehicle.initialize(this, vehicleType);
-                vehicle.setUserData(((String)vehicle.getUserData()).concat(vehicleID));
+                if (vehicleID != null)
+                    vehicle.setUserData(((String)vehicle.getUserData()).concat(vehicleID));
                 if (vehicleHome != null) {
                     // Find the home in the homeList
                     for(Home h : homeList){
@@ -449,6 +452,7 @@ public class Vehicles extends SimulationFrame {
             ArrayList<BigDecimal> position = (ArrayList<BigDecimal>) (item.get("position"));
             double x = position.get(0).doubleValue();
             double y = position.get(1).doubleValue();
+            vehicle.translateToOrigin();
             vehicle.translate(x, y);
         } catch (Exception e) { // Position will be random if not given
             int max = (int)(canvas.getHeight()/ (2* camera.scale) - 2);
@@ -456,6 +460,13 @@ public class Vehicles extends SimulationFrame {
             vehicle.translate(Math.floor(Math.random()*(max-min+1)+min),Math.floor(Math.random()*(max-min+1)+min));
         }
 
+        try {
+            BigDecimal rotation = (BigDecimal) (item.get("orientation"));
+            double theta = rotation.doubleValue();
+            vehicle.rotateAboutCenter(theta);
+        } catch (Exception e) { // Position will be random if not given
+            vehicle.rotate(Math.random()*(Math.PI));
+        }
         myVehicles.add(vehicle);
         world.addBody(vehicle);
     }
@@ -504,8 +515,13 @@ public class Vehicles extends SimulationFrame {
      * @param args command line arguments
      */
     public static void main(String[] args) {
-        //TODO: Parse args to get World filename
-        String filename = "data//world3.json";
+        // Parse args to get World filename
+        if (args.length != 1) {
+            System.out.println("usage: world_filename");
+            System.exit(0);
+        }
+
+        String filename = "data//" + args[0]; //world3.json";
 
         // Read in the JSON world file
         try (FileReader fileReader = new FileReader((filename))) {
@@ -522,7 +538,7 @@ public class Vehicles extends SimulationFrame {
             Vehicles simulation = new Vehicles(scale.intValue());
             simulation.run();
         } catch(Exception e) {
-            System.out.println("FAILURE in Main():" + e);
+            System.out.println("FAILURE in World Loading and Starting Main():" + e);
         }
     }
 
@@ -604,30 +620,29 @@ public class Vehicles extends SimulationFrame {
                 }
                 // Food Spawn
                 if (f.getUserData().equals("Garbage") && foodSpawnTimer <= 0) {
-                    f.setUserData("Food");
-                    f.translateToOrigin();
-                    int loc = (int)(Math.random()*foodLocationList.size());
-                    double xSpawn = Math.random()*(2*foodLocationDistributionList.get(loc).x)-foodLocationDistributionList.get(loc).x;
-                    double ySpawn = Math.random()*(2*foodLocationDistributionList.get(loc).y)-foodLocationDistributionList.get(loc).y;
-
-                    f.translate(foodLocationList.get(loc).x+xSpawn, foodLocationList.get(loc).y+ySpawn);
+                    Vector2 spawnLocation = getFoodSpawnLocation();
+                    if (spawnLocation.getXComponent().x != 0.0) {
+                        f.setUserData("Food");
+                        f.translateToOrigin();
+                        f.translate(spawnLocation);
+                    }
                     foodSpawnTimer = foodSpawnTimerSetting;
                 }
             }
             // Did not have a Food object to move and we have less than MAX_FOODLIST_COUNT, create a new one.
             if(foodSpawnTimer <= 0 && foodList.size() < MAX_FOODLIST_COUNT && foodLocationList != null) {
-                SimulationBody Food = new SimulationBody();
-                Food.setColor(Color.red);
-                Food.addFixture(Geometry.createEllipse(0.5, 0.5));
-                Food.setUserData("Food");
 
-                int loc = (int)(Math.random()*foodLocationList.size());
-                double xSpawn = Math.random()*(2*foodLocationDistributionList.get(loc).x)-foodLocationDistributionList.get(loc).x;
-                double ySpawn = Math.random()*(2*foodLocationDistributionList.get(loc).y)-foodLocationDistributionList.get(loc).y;
-                Food.translate(foodLocationList.get(loc).x+xSpawn, foodLocationList.get(loc).y+ySpawn);
+                Vector2 spawnLocation = getFoodSpawnLocation();
+                if (spawnLocation.getXComponent().x != 0.0) {
+                    SimulationBody Food = new SimulationBody();
+                    Food.setColor(Color.red);
+                    Food.addFixture(Geometry.createEllipse(0.5, 0.5));
+                    Food.setUserData("Food");
+                    Food.translate(spawnLocation);
+                    world.addBody(Food);
+                    foodList.add(Food);
+                }
 
-                world.addBody(Food);
-                foodList.add(Food);
                 foodSpawnTimer = foodSpawnTimerSetting;
             }
             for (Home h : homeList) {
@@ -645,6 +660,34 @@ public class Vehicles extends SimulationFrame {
         public void setUpdateRate(int rate) {
             UPDATE_RATE = rate;
         }
+    }
+
+    private Vector2 getFoodSpawnLocation() {
+        Vector2 spawnLocation = new Vector2();
+
+        int loc = (int)(Math.random()*foodLocationList.size());
+        boolean separate = false;
+        double xSpawn = 0.0;
+        double ySpawn = 0.0;
+        int attemptCounter = 0;
+        while (!separate && attemptCounter < 4) {
+            xSpawn = Math.random() * (2 * foodLocationDistributionList.get(loc).x) - foodLocationDistributionList.get(loc).x;
+            ySpawn = Math.random() * (2 * foodLocationDistributionList.get(loc).y) - foodLocationDistributionList.get(loc).y;
+            xSpawn += foodLocationList.get(loc).x;
+            ySpawn += foodLocationList.get(loc).y;
+            separate = true;
+            for (SimulationBody foodIter : foodList) {
+                Vector2 loc_test = foodIter.getWorldCenter();
+                if (foodIter.getWorldCenter().distance(xSpawn, ySpawn) <= 0.75) {
+                    separate = false;
+                    attemptCounter++;
+                    xSpawn = ySpawn = 0.0;
+                }
+            }
+        }
+        spawnLocation.set(xSpawn, ySpawn);
+
+        return spawnLocation;
     }
 
     /**

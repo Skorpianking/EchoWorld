@@ -33,9 +33,9 @@ public class Love extends Behavior {
 
         if (left > 0.0 || right > 0.0) {
             double maintainDistance = Math.min(left, right);
-            if (left > 0.0 && right > 0.0 && maintainDistance < 18.0) { // Light is in the Middle
-                action.setLeftWheelVelocity(0.75*maintainDistance);
-                action.setRightWheelVelocity(0.75*maintainDistance);
+            if (left > 0.0 && right > 0.0 && maintainDistance < 18.25) { // Light is in the Middle
+                action.setLeftWheelVelocity(0.75);
+                action.setRightWheelVelocity(0.75);
             } else if (left > 0.0 && right > 0.0 && maintainDistance >= 18.0) { // Light is in front of us
                 action.setLeftWheelVelocity(0.0);
                 action.setRightWheelVelocity(0.0);

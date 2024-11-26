@@ -1,5 +1,8 @@
 package Vehicles;
 
+import org.dyn4j.geometry.Rotation;
+import org.dyn4j.geometry.Vector2;
+
 import java.util.Arrays;
 
 /**
@@ -18,6 +21,8 @@ public class PathState extends State {
     private int pathFIndex = 0;
     private boolean followPathValid = false;
     private boolean pathing = false;
+    private double distanceFromHome = 0.0;
+    private double angleFromHome = 0.0;
     private int timestep;
     private double[] rawPath;
 
@@ -156,6 +161,22 @@ public class PathState extends State {
         return rtn;
     }
 
+    public void setHolding(boolean holding) {
+        // Capture the relative location of our pickup location to home
+        if(this.holding == false && holding) {
+            for (SensedObject obj : sensedObjects) {
+                if (obj.getType().equals("Home")) {
+                    distanceFromHome = obj.getDistance();
+                    double angle = obj.getAngle();
+                    Rotation rot = new Rotation(angle);
+                    angleFromHome = rot.rotate180().toRadians();
+//                    System.out.println("Pickup: " + distanceFromHome + ", " + angleFromHome);
+                    break;
+                }
+            }
+        }
+        super.setHolding(holding);
+    }
     public boolean isFollowPathValid() {
         return followPathValid;
     }

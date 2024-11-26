@@ -71,10 +71,10 @@ public class FollowPath extends Behavior {
                 if (Math.abs(targetHeading[step] - state.getHeading()) < 0.1 ) { // Headed in the correct direction
                     action.setRightWheelVelocity(0.9);
                     action.setLeftWheelVelocity(0.9);
-                } else if ((targetHeading[step] - state.getHeading()) > 0 ) { // Need to turn Right
+                } else if ((targetHeading[step] - state.getHeading()) < 0 ) { // Need to turn Right
                     action.setRightWheelVelocity(0.2);
                     action.setLeftWheelVelocity(0.9);
-                } else if ((targetHeading[step] - state.getHeading()) < 0 ) { // Need to turn Left
+                } else if ((targetHeading[step] - state.getHeading()) > 0 ) { // Need to turn Left
                     action.setRightWheelVelocity(0.9);
                     action.setLeftWheelVelocity(0.2);
                 }

@@ -132,7 +132,7 @@ public class JSONVehicle extends Vehicle {
         // Get an action from the behaviorTree
         action = behaviorTree.genAction(state);
 
-//        System.out.println(name + ": " + action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity());
+        System.out.println(name + ": " + action.name + " " + action.getLeftWheelVelocity() + " " + action.getRightWheelVelocity() + " " + this.getTransform().getRotationAngle());
         lastAction = action.name;
 
         return action;
