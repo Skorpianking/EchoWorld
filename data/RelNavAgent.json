@@ -1,0 +1,21 @@
+{
+  "vehicleName": "Agent4",
+  "color": [215, 240, 50],
+  "state": "Vehicles.PathState",
+  "behaviorTree": [
+    {
+      "name": "behaviorFramework.arbiters.HighestActivation",
+      "arbiter": true,
+      "weights": [ 0.8, 0.2 ],
+      "behaviorTree": [
+        {
+          "name": "Sample.behaviors.GotoRelNav",
+          "parameters": ["15.0, 0.0"]
+        },
+        {
+          "name": "Sample.behaviors.Wander"
+        }
+      ]
+    }
+  ]
+}

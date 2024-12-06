@@ -16,6 +16,7 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.geom.Ellipse2D;
 import java.io.*;
 import java.util.logging.*;
 import java.math.BigDecimal;
@@ -104,6 +105,7 @@ public class Vehicles extends SimulationFrame {
         right.setMass(MassType.INFINITE);
         right.translate((canvas.getWidth() / (2 * camera.scale)) - 0.1, 0);
         right.setUserData(new String("Obstacle"));
+        right.getFixture(0).setFilter(Categories.ROOT);
         this.world.addBody(right);
 
         SimulationBody left = new SimulationBody();
@@ -112,6 +114,7 @@ public class Vehicles extends SimulationFrame {
         left.setMass(MassType.INFINITE);
         left.translate(-(canvas.getWidth() / (2 * camera.scale)) + 0.1, 0);
         left.setUserData(new String("Obstacle"));
+        left.getFixture(0).setFilter(Categories.ROOT);
         this.world.addBody(left);
 
         SimulationBody top = new SimulationBody();
@@ -120,6 +123,7 @@ public class Vehicles extends SimulationFrame {
         top.setMass(MassType.INFINITE);
         top.translate(0, (canvas.getHeight() / (2 * camera.scale)) - 0.1);
         top.setUserData(new String("Obstacle"));
+        top.getFixture(0).setFilter(Categories.ROOT);
         this.world.addBody(top);
 
         SimulationBody bottom = new SimulationBody();
@@ -128,6 +132,7 @@ public class Vehicles extends SimulationFrame {
         bottom.setMass(MassType.INFINITE);
         bottom.translate(0, -(canvas.getHeight() / (2 * camera.scale)) + 0.1);
         bottom.setUserData(new String("Obstacle"));
+        bottom.getFixture(0).setFilter(Categories.ROOT);
         this.world.addBody(bottom);
 
         // Get list of Homes
@@ -154,7 +159,7 @@ public class Vehicles extends SimulationFrame {
                     System.out.println("Homes must have a name!");
                     System.exit(0);
                 }
-                try{ // TODO: instead of starting energy, turn this into the spawn threshold?
+                try{ // TODO: Currently have a starting energy. Should we add a spawn threshold parameter?
                     BigDecimal temp = (BigDecimal) (item.get("energy"));
                     energy = temp.doubleValue();
                 } catch (Exception e) {
@@ -165,12 +170,15 @@ public class Vehicles extends SimulationFrame {
                 h.position = new Vector2(x,y);
                 h.name = homeName;
                 h.energy = energy;
+                h.color = Color.green;
+
                 SimulationBody homeBody = new SimulationBody();
                 homeBody.setColor(Color.green);
                 homeBody.addFixture(Geometry.createPolygonalEllipse(8,2,2));
                 homeBody.translateToOrigin();
                 homeBody.translate(new Vector2(x, y));
                 homeBody.setUserData(new String(homeName));
+                homeBody.getFixture(0).setFilter(Categories.HOMES);
                 this.world.addBody(homeBody);
                 h.body = homeBody;
                 homeList.add(h);
@@ -235,6 +243,7 @@ public class Vehicles extends SimulationFrame {
                     for(Home h : homeList){
                         if (vehicleHome.equals(h.name)) {
                             vehicle.setHome(h);
+                            h.color =vehicle.getColor();
                             h.body.setColor(vehicle.getColor());
                         }
                     }
@@ -253,6 +262,7 @@ public class Vehicles extends SimulationFrame {
                     for(Home h : homeList){
                         if (vehicleHome.equals(h.name)) {
                             vehicle.setHome(h);
+                            h.color =vehicle.getColor();
                             h.body.setColor(vehicle.getColor());
                         }
                     }
@@ -279,6 +289,7 @@ public class Vehicles extends SimulationFrame {
                 Light.translate(new Vector2(x, y));
                 Light.setMass(MassType.NORMAL);
                 Light.setUserData(new String("Light"));
+                Light.getFixture(0).setFilter(Categories.WORLD);
                 try {
                     BigDecimal key = (BigDecimal) item.get("bound_key");
                     if (key.intValue() >= 1 && key.intValue() <= 5) {
@@ -314,21 +325,22 @@ public class Vehicles extends SimulationFrame {
                     System.exit(0);
                 }
 
-                SimulationBody Obstacle = new SimulationBody();
-                Obstacle.setColor(Color.black);
-                Obstacle.addFixture(Geometry.createRectangle(width, height));
-                Obstacle.translate(new Vector2(x, y));
-                Obstacle.setUserData("Obstacle");
+                SimulationBody obstacle = new SimulationBody();
+                obstacle.setColor(Color.black);
+                obstacle.addFixture(Geometry.createRectangle(width, height));
+                obstacle.translate(new Vector2(x, y));
+                obstacle.setUserData("Obstacle");
+                obstacle.getFixture(0).setFilter(Categories.WORLD);
                 try {
                     BigDecimal key = (BigDecimal) item.get("bound_key");
                     if (key.intValue() >= 1 && key.intValue() <= 5) {
-                        keyBoundItemList.put(key.intValue(), Obstacle);
+                        keyBoundItemList.put(key.intValue(), obstacle);
                     }
-                    Obstacle.setMass(MassType.NORMAL);
+                    obstacle.setMass(MassType.NORMAL);
                 } catch (Exception e) { // It is optional to have a key binding for an obstacle.
-                    Obstacle.setMass(MassType.INFINITE); // Default to immovable
+                    obstacle.setMass(MassType.INFINITE); // Default to immovable
                 }
-                this.world.addBody(Obstacle);
+                this.world.addBody(obstacle);
             }
         } catch (Exception e) {
         } // Obstacles are optional
@@ -354,6 +366,7 @@ public class Vehicles extends SimulationFrame {
                     Food.addFixture(Geometry.createEllipse(0.5, 0.5));
                     Food.translate(new Vector2(x, y));
                     Food.setUserData(new String("Food"));
+                    Food.getFixture(0).setFilter(Categories.FOOD);
                     this.world.addBody(Food);
                     foodList.add(Food);
 
@@ -503,6 +516,12 @@ public class Vehicles extends SimulationFrame {
      */
     protected void render(Graphics2D g, double elapsedTime) {
         super.render(g, elapsedTime);
+
+//        for(Home h : homeList) {
+//            g.setColor(h.color);
+//            g.fillOval((int)(h.position.x*camera.scale),(int)(h.position.y*camera.scale),(int)(2*camera.scale),(int)(2*camera.scale));
+//        }
+
         if (drawScanLines) {
             for (SimulationBody v : myVehicles) {
                 ((Vehicle) v).render(g, camera.scale);
@@ -639,6 +658,7 @@ public class Vehicles extends SimulationFrame {
                     Food.addFixture(Geometry.createEllipse(0.5, 0.5));
                     Food.setUserData("Food");
                     Food.translate(spawnLocation);
+                    Food.getFixture(0).setFilter(Categories.FOOD);
                     world.addBody(Food);
                     foodList.add(Food);
                 }

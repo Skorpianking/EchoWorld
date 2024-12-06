@@ -1,7 +1,10 @@
 package Vehicles;
 
 import framework.SimulationBody;
+import org.dyn4j.dynamics.contact.ForceCollisionTimeOfImpactSolver;
 import org.dyn4j.geometry.Vector2;
+
+import java.awt.*;
 import java.util.Arrays;
 
 public class Home extends SimulationBody {
@@ -10,7 +13,9 @@ public class Home extends SimulationBody {
     double energy;
     SimulationBody body; // Just in case we want to modify the body in someway
     Vehicles vehicles;
+    Color color;
     int[] pathStore;
+    Vector2 storeRelNav;
     private int vehicleCount;
 
     /**
@@ -21,6 +26,7 @@ public class Home extends SimulationBody {
         this.vehicles = v;
         pathStore = new int[50];
         Arrays.fill(pathStore,9);
+        storeRelNav = new Vector2();
     }
 
     /**
@@ -41,7 +47,7 @@ public class Home extends SimulationBody {
                 vehicleCount++;
             }
         }
-        if (vehicleCount ==0) {
+        if (vehicleCount == 0) {
             System.out.println("COLONY COLLAPSE!");
             System.out.println("Timestep: " + this.vehicles.timestep);
             return false;
@@ -123,5 +129,12 @@ public class Home extends SimulationBody {
         pathStore = Arrays.copyOf(incomingPath,50);
 
         return sendPath;
+    }
+
+    public Vector2 receiveRelativePoint( Vector2 rel) {
+        Vector2 sendRelNav = new Vector2(storeRelNav);
+        storeRelNav.set(rel);
+
+        return sendRelNav;
     }
 }

@@ -93,12 +93,13 @@ public class Callie extends Vehicle {
 
         GetUnstuck gu = new GetUnstuck();
         AvoidObstacle ao = new AvoidObstacle();
-        Wander w = new Wander();
+        Wander w1 = new Wander();
+        Wander w2 = new Wander();
 
         goHome.add(gu);
         goHome.add(ao);
         goHome.add(new GotoX("Home"));
-        goHome.add(w);
+        goHome.add(w1);
 
         CompositeBehavior comp = new CompositeBehavior(); // isHolding == false
         comp.setArbitrationUnit(new HighestActivation(new ArrayList<Double>(Arrays.asList(0.5,0.2,0.1,0.1,0.1))));
@@ -108,7 +109,7 @@ public class Callie extends Vehicle {
         comp.add(gu);
         comp.add(ao);
         comp.add(new GotoX("Food"));
-        comp.add(w);
+        comp.add(w2);
 
         // Add behaviors
         //GotoXX gotox = new GotoXX();

@@ -1,6 +1,8 @@
 package Vehicles;
 
 import framework.SimulationBody;
+import org.dyn4j.collision.CategoryFilter;
+import org.dyn4j.collision.TypeFilter;
 import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.dynamics.joint.WeldJoint;
 import org.dyn4j.geometry.*;
@@ -175,7 +177,7 @@ public class Vehicle extends SimulationBody {
         SensedObject obj;
         Ray ray = new Ray(start,(state.getHeading())); //baseVehicle.getLinearVelocity().getDirection()));
 
-        List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.getWorld().raycast(ray, SENSOR_RANGE/2, new DetectFilter<SimulationBody, BodyFixture>(true, true, null));
+        List<RaycastResult<SimulationBody, BodyFixture>> results = myWorld.getWorld().raycast(ray, SENSOR_RANGE/2, new DetectFilter<SimulationBody, BodyFixture>(false, true, null));
         for (RaycastResult<SimulationBody, BodyFixture> result : results) {
             // First check if this is our Home and if we are Holding something.
             // If so, do not add it because it is added separately and we don't want to treat it like an obstacle.
@@ -284,10 +286,11 @@ public class Vehicle extends SimulationBody {
                 if (closest.getBody().getUserData() != null) { // If not set, will be UNKNOWN
                     type = closest.getBody().getUserData().toString();
                 }
-                if (home != null) {
-                    if (type.equals(home.name))
-                        type = "Obstacle";
-                }
+                // Removing this modification, vehicles can now get the home names.
+//                if (home != null) {
+//                    if (type.equals(home.name))
+//                        type = "Obstacle";
+//                }
 
                 String side = "Left";
                 if (sensor_dir == 1) {
@@ -624,13 +627,13 @@ public class Vehicle extends SimulationBody {
 
         // Create our vehicle
         this.addFixture(Geometry.createRectangle(1.5, 1.0));
-        this.addFixture(Geometry.createCircle(0.35));
         this.setMass(MassType.NORMAL);
         this.setAngularDamping(ANGULAR_DAMPENING);
+        this.getFixture(0).setFilter(Categories.WORLD);
 
         // -- grabbers
-        Convex leftGrabber = Geometry.createRectangle(.1, .2);
-        Convex rightGrabber = Geometry.createRectangle(.1, .2);
+        Convex leftGrabber = Geometry.createRectangle(.2, .1);
+        Convex rightGrabber = Geometry.createRectangle(.2, .1);
         leftGrabber.translate(0.80,0.25);
         rightGrabber.translate(0.80, -0.25);
 
@@ -655,6 +658,10 @@ public class Vehicle extends SimulationBody {
         this.addFixture(leftWheel);
         this.addFixture(rightWheel);
         this.setColor(Color.CYAN);
+        for (int i = 1; i < 7; i++) {
+            this.getFixture(i).setSensor(true); // This removes the appendages from collision detection responses
+            this.getFixture(i).setFilter(Categories.WORLD);
+        }
 
         // gripper
         gripper = null;
@@ -692,6 +699,7 @@ public class Vehicle extends SimulationBody {
         this.addFixture(Geometry.createEllipse(1.5, 1));
         this.setMass(MassType.NORMAL);
         this.setAngularDamping(ANGULAR_DAMPENING);
+        this.getFixture(0).setFilter(Categories.WORLD);
 
         // -- grabbers
         Convex leftGrabber = Geometry.createRectangle(.1, .2);
@@ -702,6 +710,10 @@ public class Vehicle extends SimulationBody {
         this.addFixture(leftGrabber);
         this.addFixture(rightGrabber);
         this.setColor(Color.CYAN);
+        for (int i = 1; i < 3; i++) {
+            this.getFixture(i).setSensor(true); // This removes the appendages from collision detection responses
+            this.getFixture(i).setFilter(Categories.WORLD);
+        }
 
         // gripper
         gripper = null;
@@ -724,6 +736,7 @@ public class Vehicle extends SimulationBody {
         this.addFixture(body);
         this.setMass(MassType.NORMAL);
         this.setAngularDamping(ANGULAR_DAMPENING);
+        this.getFixture(0).setFilter(Categories.WORLD);
 
         // -- grabbers - not adding these to Boid
         // Convex leftGrabber = Geometry.createRectangle(.1, .2);

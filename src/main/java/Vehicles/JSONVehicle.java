@@ -4,9 +4,6 @@ import behaviorFramework.ArbitrationUnit;
 import behaviorFramework.Behavior;
 import behaviorFramework.CompositeBehavior;
 
-import framework.SimulationBody;
-import org.dyn4j.world.World;
-
 import com.github.cliftonlabs.json_simple.*;
 
 import java.awt.*;
@@ -44,23 +41,7 @@ public class JSONVehicle extends Vehicle {
      */
     public void initialize(Vehicles myWorld, String filename, String vehicleType) {
         super.initialize(myWorld, state, vehicleType);
-        /*this.myWorld = myWorld;
 
-        //Create Vehicle Shape - This overrides the regular vehicle shape.
-        this.addFixture(Geometry.createEllipse(1, 1.5));
-        this.setMass(MassType.NORMAL);
-        this.setAngularDamping(ANGULAR_DAMPENING);
-        // -- grabbers
-        Convex leftGrabber = Geometry.createRectangle(.1, .2);
-        Convex rightGrabber = Geometry.createRectangle(.1, .2);
-        leftGrabber.translate(-.22,.75);
-        rightGrabber.translate(.22, .75);
-
-        this.addFixture(leftGrabber);
-        this.addFixture(rightGrabber);
-        // gripper
-        gripper = null;
-*/
         JsonObject deserialize = null;
 
         // Read in the vehicle's JSON file

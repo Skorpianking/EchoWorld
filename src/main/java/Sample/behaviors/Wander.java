@@ -44,9 +44,9 @@ public class Wander extends Behavior {
         if (limiter > LIMITER_MAX) {
             double left = rand.nextGaussian() * ST_DEV + state.getLeftWheelVelocity();
             double right = rand.nextGaussian() * ST_DEV + state.getRightWheelVelocity();
-            if (left < 0.0)  // Behavior: we want the vehicle always moving forward
+            if (left <= 0.0)  // Behavior: we want the vehicle always moving forward
                 left = 0.1;
-            if (right < 0.0)
+            if (right <= 0.0)
                 right = 0.1;
             action.setLeftWheelVelocity(left);
             action.setRightWheelVelocity(right);

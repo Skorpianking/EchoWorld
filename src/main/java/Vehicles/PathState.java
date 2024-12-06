@@ -25,12 +25,15 @@ public class PathState extends State {
     private double angleFromHome = 0.0;
     private int timestep;
     private double[] rawPath;
+    Vector2 relnavFollow;
+    private boolean relnavValid;
 
     private int PATH_STEP_SIZE = 30;
 
     public PathState() {
         rawPath = new double[PATH_STEP_SIZE];
         pathFollow = new int[50];
+        relnavFollow = new Vector2();
         Arrays.fill(pathFollow,9);
     }
 
@@ -124,6 +127,11 @@ public class PathState extends State {
             followPathValid = true;
         else
             followPathValid = false;
+        relnavFollow = h.receiveRelativePoint(new Vector2(distanceFromHome,angleFromHome));
+        if (relnavFollow.getXComponent().x != 0.0)
+            relnavValid = true;
+        else
+            relnavValid = false;
     }
 
     public String recordedPathToString() {
@@ -168,9 +176,12 @@ public class PathState extends State {
                 if (obj.getType().equals("Home")) {
                     distanceFromHome = obj.getDistance();
                     double angle = obj.getAngle();
-                    Rotation rot = new Rotation(angle);
-                    angleFromHome = rot.rotate180().toRadians();
-//                    System.out.println("Pickup: " + distanceFromHome + ", " + angleFromHome);
+                    Rotation rotAngle = new Rotation(angle);
+                    Rotation headingAngle = new Rotation(heading);
+                    Rotation rotTransformed = rotAngle.getRotated(headingAngle);
+                    rotTransformed.rotate180(); //This may not be wrong here - reverses things to be from here to home.
+                    angleFromHome = (rotTransformed.toRadians());
+                    System.out.println("Pickup: " + distanceFromHome + ", " + angleFromHome);
                     break;
                 }
             }
@@ -179,5 +190,9 @@ public class PathState extends State {
     }
     public boolean isFollowPathValid() {
         return followPathValid;
+    }
+
+    public boolean isRelnavValid() {
+        return relnavValid;
     }
 }
