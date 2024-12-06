@@ -1,3 +1,8 @@
 # Project exclude paths
 /out/
 /.idea/
+.idea
+
+# Folder config file
+[Dd]esktop.ini
+
