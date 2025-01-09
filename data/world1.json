@@ -1,5 +1,6 @@
 {
   "pixels_per_meter": 10,
+  "vehicle_type": "Braitenberg",
   "vehicles": [
     {
       "name": "Agent3",
@@ -37,10 +38,6 @@
   },
   "homes": [
     {
-      "name": "Marie_s",
-      "position": [5,-15],
-      "resource": 2
-    },{
       "name": "Callie_s",
       "position": [-15,5],
       "resource": 2

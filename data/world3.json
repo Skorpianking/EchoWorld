@@ -34,7 +34,8 @@
     {
       "name": "Callie_s",
       "position": [1,1],
-      "resource": 20
+      "resource": 20,
+      "logging": "true"
     }
   ]
 }
